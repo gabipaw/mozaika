@@ -1,58 +1,51 @@
 /**
  * Mozaika — punkt startowy backendu (apps/api).
  *
- * Na etapie "Fundament" skrypt nie łączy się jeszcze z bazą — sprawdza,
- * czy środowisko (Node.js + uruchamianie TypeScriptu przez tsx) jest gotowe
- * pod kolejne kroki (PostgreSQL + Prisma, logika biznesowa).
+ * Łączy się z bazą (PostgreSQL przez Prisma) i wypisuje stan warstwy danych:
+ * użytkowników oraz katalog mediów z liczbą recenzji i średnią oceną.
+ * To dowód, że schemat + migracja + zapytania działają end-to-end.
  */
+import { prisma } from "./db.js";
 
-interface EnvCheck {
-  name: string;
-  ok: boolean;
-  detail: string;
+function srednia(oceny: number[]): string {
+  if (oceny.length === 0) return "—";
+  const avg = oceny.reduce((a, b) => a + b, 0) / oceny.length;
+  return avg.toFixed(1);
 }
 
-const REQUIRED_NODE_MAJOR = 20;
+async function main(): Promise<void> {
+  console.log("🎨 Mozaika — warstwa danych (PostgreSQL + Prisma)\n");
 
-function checkNode(): EnvCheck {
-  const major = Number(process.versions.node.split(".")[0]);
-  return {
-    name: "Node.js",
-    ok: major >= REQUIRED_NODE_MAJOR,
-    detail: `v${process.versions.node} (wymagane >= ${REQUIRED_NODE_MAJOR})`,
-  };
-}
+  const [userCount, reviewCount] = await Promise.all([
+    prisma.user.count(),
+    prisma.review.count(),
+  ]);
+  console.log(`Użytkownicy: ${userCount} · Recenzje: ${reviewCount}\n`);
 
-function checkTypeScriptRuntime(): EnvCheck {
-  // Jeśli ten plik w ogóle się wykonuje, to znaczy że tsx odpalił TS bez ręcznej kompilacji.
-  return {
-    name: "TypeScript przez tsx",
-    ok: true,
-    detail: "kod .ts wykonany bez kroku kompilacji",
-  };
-}
+  const media = await prisma.media.findMany({
+    orderBy: { id: "asc" },
+    include: { reviews: { select: { rating: true } } },
+  });
 
-function runChecks(): EnvCheck[] {
-  return [checkNode(), checkTypeScriptRuntime()];
-}
-
-function main(): void {
-  console.log("🎨 Mozaika — fundament monorepo (Turborepo + TypeScript + tsx)\n");
-  console.log("Sprawdzenie środowiska:");
-
-  const checks = runChecks();
-  for (const c of checks) {
-    console.log(`  ${c.ok ? "✅" : "❌"} ${c.name}: ${c.detail}`);
+  console.log("Katalog mediów:");
+  for (const m of media) {
+    const oceny = m.reviews.map((r) => r.rating);
+    const rok = m.year ? ` (${m.year})` : "";
+    console.log(
+      `  • [${m.type}] ${m.title}${rok} — recenzji: ${oceny.length}, średnia: ${srednia(oceny)}/10`,
+    );
   }
 
-  const allOk = checks.every((c) => c.ok);
-  console.log(
-    `\n${allOk ? "Wszystko gotowe — fundament stoi. 🚀" : "Coś wymaga uwagi. ⚠️"}`,
-  );
+  if (media.length === 0) {
+    console.log("  (brak danych — odpal `npm run db:seed`)");
+  }
+}
 
-  if (!allOk) {
+main()
+  .catch((e) => {
+    console.error("Błąd połączenia z bazą:", e);
     process.exit(1);
-  }
-}
-
-main();
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

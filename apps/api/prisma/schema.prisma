@@ -1,0 +1,65 @@
+// Mozaika — schemat bazy danych (Prisma).
+// Uniwersalna tabela Media (pole `type`) pozwala oceniać wszystkie media
+// w jednej strukturze. Recenzje (Review) łączą użytkownika z tytułem i oceną.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooler transakcyjny (aplikacja)
+  directUrl = env("DIRECT_URL") // połączenie bezpośrednie (migracje)
+}
+
+/// Rodzaj tytułu — dzięki temu jedna tabela `Media` obsługuje wszystko.
+enum MediaType {
+  FILM
+  SERIAL
+  KSIAZKA
+  GRA
+  MUZYKA
+}
+
+/// Użytkownik platformy (autor recenzji).
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  displayName String
+  createdAt   DateTime @default(now())
+
+  reviews Review[]
+}
+
+/// Tytuł do oceniania (film, serial, książka, gra, muzyka).
+model Media {
+  id         Int       @id @default(autoincrement())
+  type       MediaType
+  title      String
+  externalId String? // np. ID z TMDB — żeby nie dublować tego samego tytułu
+  year       Int?
+  posterUrl  String?
+  createdAt  DateTime  @default(now())
+
+  reviews Review[]
+
+  // Ten sam tytuł z tego samego źródła nie może istnieć dwa razy.
+  @@unique([type, externalId])
+}
+
+/// Recenzja: ocena (1–10) danego tytułu przez danego użytkownika.
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int // 1–10
+  text      String?
+  createdAt DateTime @default(now())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  media   Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  mediaId Int
+
+  // Jeden użytkownik = jedna ocena danego tytułu.
+  @@unique([userId, mediaId])
+}

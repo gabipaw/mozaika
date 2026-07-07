@@ -14,6 +14,16 @@
     },
     "start": {
       "cache": false
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:seed": {
+      "cache": false
     }
   }
 }
