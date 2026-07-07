@@ -41,13 +41,13 @@ Model danych: **User** 1→N **Review** N←1 **Media**. Tabela `Media` ma pole 
 (FILM / SERIAL / KSIAZKA / GRA / MUZYKA), więc jedna struktura obsługuje wszystkie media.
 Oceny w skali **1–10**; jeden użytkownik ma najwyżej jedną recenzję danego tytułu.
 
-Potrzebny jest PostgreSQL. Ustaw connection string w `apps/api/.env`:
+Potrzebny jest PostgreSQL. W `apps/api/.env` ustaw dwa połączenia:
 
-```
-DATABASE_URL="postgresql://UŻYTKOWNIK:HASŁO@HOST:5432/BAZA"
-```
+- `DATABASE_URL` — pooler transakcyjny (port 6543), używa aplikacja,
+- `DIRECT_URL` — połączenie bezpośrednie (port 5432), używa Prisma do migracji.
 
-(np. z projektu Supabase → Project Settings → Database → Connection string.)
+Connection stringi znajdziesz w Supabase → **Connect → ORMs → Prisma**.
+Plik `.env` jest w `.gitignore` (i `.secretlintignore`) — sekrety nie trafiają do repo.
 
 ## Logika biznesowa (serce aplikacji)
 
@@ -125,6 +125,28 @@ husky - pre-commit script failed (code 1)
 # commit ZABLOKOWANY — nic nie trafiło do repo
 ```
 
+## Higiena i bezpieczeństwo (jscpd + secretlint)
+
+- **jscpd** (`.jscpd.json`) — wykrywa **duplikaty kodu** („kopiuj-wklej"). Próg: **1%**
+  (powyżej — błąd). Aktualny poziom duplikacji: **0%** (kod jest DRY dzięki współdzielonemu
+  klientowi Prisma i wydzielonym funkcjom). Uruchom: `npm run dupcheck`.
+- **secretlint** (`.secretlintrc.json`, preset `recommend`) — skanuje pliki pod kątem
+  **sekretów** (tokeny API, hasła, klucze). Uruchom na całym repo: `npm run secretcheck`.
+  Plik `.env` jest w `.secretlintignore` (trzyma prawdziwy `DATABASE_URL`, nie może blokować commitów).
+
+Oba podpięte do **pre-commit** (`.husky/pre-commit`): secretlint przez `lint-staged` na
+plikach z commita, jscpd jako skan duplikatów. Commit z sekretem jest **blokowany**.
+
+Dowód (próba commita z fałszywym tokenem Slack):
+
+```
+$ git commit -m "..."
+✖ secretlint:
+  2:3  error  [SLACK_TOKEN] found slack token: ***   @secretlint/secretlint-rule-slack
+husky - pre-commit script failed (code 1)
+# commit ZABLOKOWANY — sekret nie trafił do repo
+```
+
 ## Uruchomienie
 
 Wymagany Node.js >= 20, npm i działający PostgreSQL (`DATABASE_URL` w `apps/api/.env`).
@@ -152,15 +174,17 @@ Podgląd danych w przeglądarce: `npm run db:studio --workspace=@mozaika/api`.
 
 ## Skrypty (root)
 
-| Komenda             | Opis                                                             |
-| ------------------- | ---------------------------------------------------------------- |
-| `npm start`         | `turbo run start` → uruchamia `apps/api` przez tsx               |
-| `npm run dev`       | `turbo run dev` → tsx w trybie watch                             |
-| `npm run build`     | `turbo run build` → `prisma generate` + kompilacja TS do `dist/` |
-| `npm run typecheck` | `turbo run typecheck` → `prisma generate` + `tsc --noEmit`       |
-| `npm test`          | `turbo run test` → testy logiki (`node:test`)                    |
-| `npm run lint`      | `eslint .` — linter (0 błędów)                                   |
-| `npm run format`    | `prettier --write .` — formatowanie                              |
+| Komenda               | Opis                                                             |
+| --------------------- | ---------------------------------------------------------------- |
+| `npm start`           | `turbo run start` → uruchamia `apps/api` przez tsx               |
+| `npm run dev`         | `turbo run dev` → tsx w trybie watch                             |
+| `npm run build`       | `turbo run build` → `prisma generate` + kompilacja TS do `dist/` |
+| `npm run typecheck`   | `turbo run typecheck` → `prisma generate` + `tsc --noEmit`       |
+| `npm test`            | `turbo run test` → testy logiki (`node:test`)                    |
+| `npm run lint`        | `eslint .` — linter (0 błędów)                                   |
+| `npm run format`      | `prettier --write .` — formatowanie                              |
+| `npm run dupcheck`    | `jscpd apps` — wykrywanie duplikatów kodu                        |
+| `npm run secretcheck` | `secretlint` — skan sekretów w całym repo                        |
 
 ### Skrypty bazy (`--workspace=@mozaika/api`)
 

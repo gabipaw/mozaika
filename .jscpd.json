@@ -1,0 +1,12 @@
+{
+  "threshold": 1,
+  "reporters": ["console"],
+  "gitignore": true,
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.turbo/**",
+    "**/migrations/**",
+    "**/package-lock.json"
+  ]
+}

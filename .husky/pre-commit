@@ -1,2 +1,5 @@
-echo "🔍 pre-commit: sprawdzam pliki z commita (ESLint + Prettier)..."
+echo "🔍 pre-commit: ESLint + Prettier + secretlint (pliki z commita)..."
 npx lint-staged
+
+echo "🔁 jscpd: sprawdzam duplikaty kodu..."
+npx jscpd apps
