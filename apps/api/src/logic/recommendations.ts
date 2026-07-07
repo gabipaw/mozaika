@@ -81,6 +81,7 @@ export interface RecommendationWithMedia extends Recommendation {
   title: string;
   type: string;
   year: number | null;
+  posterUrl: string | null;
 }
 
 /** Rekomendacje dla użytkownika — dane z bazy, wzbogacone o tytuły. */
@@ -111,7 +112,7 @@ export async function recommendations(
 
   const media = await prisma.media.findMany({
     where: { id: { in: recs.map((r) => r.mediaId) } },
-    select: { id: true, title: true, type: true, year: true },
+    select: { id: true, title: true, type: true, year: true, posterUrl: true },
   });
   const mediaById = new Map(media.map((m) => [m.id, m]));
 
@@ -122,6 +123,7 @@ export async function recommendations(
       title: m?.title ?? "?",
       type: m?.type ?? "?",
       year: m?.year ?? null,
+      posterUrl: m?.posterUrl ?? null,
     };
   });
 }

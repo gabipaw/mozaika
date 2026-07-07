@@ -9,49 +9,53 @@
       content="Recenzje wszystkich mediów i rekomendacje przez dopasowanie gustu."
     />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#6d5cff" />
+    <meta name="theme-color" content="#0e0e14" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header>
-      <h1>🎨 Mozaika</h1>
-      <p class="tagline">Recenzje wszystkich mediów + dopasowanie gustu</p>
+    <header class="topbar">
+      <div class="brand">🎨 <span>Mozaika</span></div>
+      <div class="who">
+        <span>jako</span>
+        <select id="user" aria-label="Wybierz użytkownika"></select>
+      </div>
     </header>
 
     <main>
-      <section class="card">
-        <label for="user">Jesteś:</label>
-        <select id="user" aria-label="Wybierz użytkownika"></select>
-      </section>
+      <div class="searchwrap">
+        <input
+          id="search"
+          type="search"
+          placeholder="Szukaj tytułu w katalogu…"
+          autocomplete="off"
+        />
+      </div>
 
-      <section class="card">
-        <h2>🍿 Rekomendacje dla Ciebie</h2>
-        <ul id="recs" class="list">
-          <li class="muted">Ładowanie…</li>
-        </ul>
-      </section>
-
-      <section class="card">
-        <h2>🎯 Dopasowanie gustu</h2>
-        <div class="row">
-          <span>z</span>
-          <select id="other" aria-label="Drugi użytkownik"></select>
-          <button id="matchBtn" type="button">Policz</button>
+      <section>
+        <h2>Dla Ciebie</h2>
+        <p class="hint">Polecane przez osoby o podobnym guście.</p>
+        <div id="recs" class="poster-row">
+          <p class="muted">Ładowanie…</p>
         </div>
-        <p id="matchResult" class="result"></p>
       </section>
 
-      <section class="card">
-        <h2>📚 Katalog — oceń tytuł (1–10)</h2>
-        <ul id="catalog" class="list"></ul>
-        <p id="reviewMsg" class="result"></p>
+      <section>
+        <div class="section-head">
+          <h2>Katalog</h2>
+          <div class="match">
+            <span>dopasowanie z</span>
+            <select id="other" aria-label="Drugi użytkownik"></select>
+            <button id="matchBtn" type="button">?</button>
+            <span id="matchResult" class="match-result"></span>
+          </div>
+        </div>
+        <div id="catalog" class="poster-grid"></div>
+        <p id="reviewMsg" class="toast"></p>
       </section>
     </main>
 
-    <footer>
-      <p class="muted">Mozaika — projekt stażowy. Dane demonstracyjne.</p>
-    </footer>
+    <footer><p class="muted">Mozaika — projekt stażowy · dane z TMDB</p></footer>
 
     <script src="/app.js"></script>
   </body>
