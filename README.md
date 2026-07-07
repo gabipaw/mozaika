@@ -64,8 +64,8 @@ liczy **% zgodności** z ich wspólnie ocenionych tytułów:
 `score = 100 × (1 − średnia_różnica_ocen / 9)` (identyczne oceny = 100%).
 Reguła: potrzeba **min. 3 wspólnie ocenionych tytułów**, inaczej wynik „za mało danych".
 
-Demo (`npm start`) pokazuje oba przepływy na żywo z bazy, w tym odrzucenie błędnej oceny.
-Testy logiki: `npm test` (wbudowany `node:test`, bez bazy).
+Demo (`npm run demo`) pokazuje te przepływy na żywo z bazy, w tym odrzucenie błędnej oceny
+i rekomendacje. Testy logiki: `npm test` (wbudowany `node:test`, bez bazy).
 
 ## Jakość kodu (ESLint + Prettier)
 
@@ -147,6 +147,36 @@ husky - pre-commit script failed (code 1)
 # commit ZABLOKOWANY — sekret nie trafił do repo
 ```
 
+## Rekomendacje przez dopasowanie gustu
+
+`recommendations(userId)` (`apps/api/src/logic/recommendations.ts`) poleca tytuły
+w oparciu o **podobieństwo gustu**: znajduje użytkowników z wysokim `tasteMatch`
+(≥ 60%), bierze tytuły, które ocenili wysoko (≥ 7), a których cel jeszcze **nie ocenił**,
+i sortuje je po przewidywanej ocenie (średnia ważona % dopasowania). Reużywa
+`computeTasteMatch`; czysta część (`computeRecommendations`) ma testy jednostkowe.
+
+## API HTTP (Hono)
+
+Serwer (`apps/api/src/server.ts`) wystawia operacje Mozaiki. Uruchom: `npm start`
+(lub `npm run dev` z auto-reloadem). Domyślny port `3000` (zmienny przez `PORT`).
+
+| Metoda + ścieżka                 | Opis                                  |
+| -------------------------------- | ------------------------------------- |
+| `GET /health`                    | status serwera                        |
+| `GET /users`                     | lista użytkowników                    |
+| `GET /media`                     | katalog tytułów                       |
+| `POST /reviews`                  | dodaj/aktualizuj recenzję (body JSON) |
+| `GET /users/:a/taste-match/:b`   | dopasowanie gustu dwóch użytkowników  |
+| `GET /users/:id/recommendations` | rekomendacje dla użytkownika          |
+
+Błędy domenowe mapują się na kody HTTP: walidacja → **400**, brak zasobu → **404**.
+
+```bash
+curl localhost:3000/users/1/recommendations
+curl -X POST localhost:3000/reviews -H "content-type: application/json" \
+  -d '{"userId":1,"mediaId":2,"rating":9}'
+```
+
 ## Uruchomienie
 
 Wymagany Node.js >= 20, npm i działający PostgreSQL (`DATABASE_URL` w `apps/api/.env`).
@@ -176,7 +206,8 @@ Podgląd danych w przeglądarce: `npm run db:studio --workspace=@mozaika/api`.
 
 | Komenda               | Opis                                                             |
 | --------------------- | ---------------------------------------------------------------- |
-| `npm start`           | `turbo run start` → uruchamia `apps/api` przez tsx               |
+| `npm start`           | `turbo run start` → uruchamia serwer API (Hono)                  |
+| `npm run demo`        | `apps/api` demo logiki w terminalu (`tsx src/index.ts`)          |
 | `npm run dev`         | `turbo run dev` → tsx w trybie watch                             |
 | `npm run build`       | `turbo run build` → `prisma generate` + kompilacja TS do `dist/` |
 | `npm run typecheck`   | `turbo run typecheck` → `prisma generate` + `tsc --noEmit`       |
