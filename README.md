@@ -54,6 +54,7 @@ DATABASE_URL="postgresql://UŻYTKOWNIK:HASŁO@HOST:5432/BAZA"
 Cała logika w `apps/api/src/logic/` — czyste funkcje (łatwe do testów) oddzielone od bazy.
 
 **Dodaj recenzję** (`addReview`) — zapis z regułami, walidacja PRZED bazą:
+
 - ocena musi być liczbą całkowitą **1–10**,
 - użytkownik i tytuł muszą istnieć,
 - **jeden użytkownik = jedna ocena tytułu** (ponowna ocena aktualizuje poprzednią).
@@ -65,6 +66,37 @@ Reguła: potrzeba **min. 3 wspólnie ocenionych tytułów**, inaczej wynik „za
 
 Demo (`npm start`) pokazuje oba przepływy na żywo z bazy, w tym odrzucenie błędnej oceny.
 Testy logiki: `npm test` (wbudowany `node:test`, bez bazy).
+
+## Jakość kodu (ESLint + Prettier)
+
+Dwa różne narzędzia, dwa różne zadania:
+
+- **ESLint** (`eslint.config.mjs`) — **linter**: wykrywa błędy i antywzorce (np. nieużywane
+  zmienne, `==` zamiast `===`, `var`). Reguły: `@eslint/js` recommended + `typescript-eslint`
+  recommended + kilka własnych; `eslint-config-prettier` wyłącza reguły kolidujące z Prettierem.
+- **Prettier** (`.prettierrc.json`) — **formatter**: automatycznie ujednolica styl (wcięcia,
+  cudzysłowy, przecinki). Nie szuka błędów — tylko formatuje.
+
+Skrypty:
+
+```bash
+npm run lint          # eslint .            — 0 błędów
+npm run lint:fix      # eslint . --fix      — auto-naprawa
+npm run format        # prettier --write .  — sformatuj wszystko
+npm run format:check  # prettier --check .  — sprawdź spójność
+```
+
+Dowód, że lint przechodzi bez błędów (8 plików .ts, 0 problemów):
+
+```
+$ npm run lint
+> eslint .
+$ echo $?
+0
+$ npm run format:check
+Checking formatting...
+All matched files use Prettier code style!
+```
 
 ## Uruchomienie
 
@@ -93,18 +125,21 @@ Podgląd danych w przeglądarce: `npm run db:studio --workspace=@mozaika/api`.
 
 ## Skrypty (root)
 
-| Komenda | Opis |
-|---|---|
-| `npm start` | `turbo run start` → uruchamia `apps/api` przez tsx |
-| `npm run dev` | `turbo run dev` → tsx w trybie watch |
-| `npm run build` | `turbo run build` → `prisma generate` + kompilacja TS do `dist/` |
-| `npm run typecheck` | `turbo run typecheck` → `prisma generate` + `tsc --noEmit` |
+| Komenda             | Opis                                                             |
+| ------------------- | ---------------------------------------------------------------- |
+| `npm start`         | `turbo run start` → uruchamia `apps/api` przez tsx               |
+| `npm run dev`       | `turbo run dev` → tsx w trybie watch                             |
+| `npm run build`     | `turbo run build` → `prisma generate` + kompilacja TS do `dist/` |
+| `npm run typecheck` | `turbo run typecheck` → `prisma generate` + `tsc --noEmit`       |
+| `npm test`          | `turbo run test` → testy logiki (`node:test`)                    |
+| `npm run lint`      | `eslint .` — linter (0 błędów)                                   |
+| `npm run format`    | `prettier --write .` — formatowanie                              |
 
 ### Skrypty bazy (`--workspace=@mozaika/api`)
 
-| Komenda | Opis |
-|---|---|
-| `db:migrate` | `prisma migrate dev` — tworzy/aktualizuje tabele |
-| `db:seed` | `prisma db seed` — dane startowe |
-| `db:generate` | `prisma generate` — regeneruje klienta |
-| `db:studio` | `prisma studio` — podgląd danych w przeglądarce |
+| Komenda       | Opis                                             |
+| ------------- | ------------------------------------------------ |
+| `db:migrate`  | `prisma migrate dev` — tworzy/aktualizuje tabele |
+| `db:seed`     | `prisma db seed` — dane startowe                 |
+| `db:generate` | `prisma generate` — regeneruje klienta           |
+| `db:studio`   | `prisma studio` — podgląd danych w przeglądarce  |

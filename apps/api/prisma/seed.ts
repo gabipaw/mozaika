@@ -35,7 +35,12 @@ async function main() {
     const m = await prisma.media.upsert({
       where: { type_externalId: { type: MediaType.FILM, externalId: f.externalId } },
       update: {},
-      create: { type: MediaType.FILM, title: f.title, externalId: f.externalId, year: f.year },
+      create: {
+        type: MediaType.FILM,
+        title: f.title,
+        externalId: f.externalId,
+        year: f.year,
+      },
     });
     media.set(f.title, m);
   }
@@ -43,7 +48,12 @@ async function main() {
   // --- Recenzje (rating 1–10) ---
   const recenzje = [
     // Ala
-    { email: "ala@mozaika.dev", film: "Incepcja", rating: 9, text: "Genialna konstrukcja." },
+    {
+      email: "ala@mozaika.dev",
+      film: "Incepcja",
+      rating: 9,
+      text: "Genialna konstrukcja.",
+    },
     { email: "ala@mozaika.dev", film: "Interstellar", rating: 10, text: "Mój ulubiony." },
     { email: "ala@mozaika.dev", film: "Parasite", rating: 8 },
     { email: "ala@mozaika.dev", film: "Whiplash", rating: 9 },
@@ -52,7 +62,12 @@ async function main() {
     { email: "bartek@mozaika.dev", film: "Incepcja", rating: 8 },
     { email: "bartek@mozaika.dev", film: "Interstellar", rating: 9 },
     { email: "bartek@mozaika.dev", film: "Parasite", rating: 9 },
-    { email: "bartek@mozaika.dev", film: "Whiplash", rating: 10, text: "Napięcie do końca." },
+    {
+      email: "bartek@mozaika.dev",
+      film: "Whiplash",
+      rating: 10,
+      text: "Napięcie do końca.",
+    },
     { email: "bartek@mozaika.dev", film: "Skazani na Shawshank", rating: 10 },
     // Celina — tylko po 1 wspólnym tytule z każdym (za mało do dopasowania)
     { email: "celina@mozaika.dev", film: "Diuna", rating: 3 },
