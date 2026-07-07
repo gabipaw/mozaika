@@ -192,14 +192,16 @@ Serwer (`apps/api/src/server.ts`) serwuje **frontend PWA** (spod `/`) oraz **API
 `/api/*`) — z jednego procesu, więc bez CORS. Uruchom: `npm start` (lub `npm run dev`
 z auto-reloadem). Domyślny port `3000` (zmienny przez `PORT`).
 
-| Metoda + ścieżka                     | Opis                                  |
-| ------------------------------------ | ------------------------------------- |
-| `GET /api/health`                    | status serwera                        |
-| `GET /api/users`                     | lista użytkowników                    |
-| `GET /api/media`                     | katalog tytułów                       |
-| `POST /api/reviews`                  | dodaj/aktualizuj recenzję (body JSON) |
-| `GET /api/users/:a/taste-match/:b`   | dopasowanie gustu dwóch użytkowników  |
-| `GET /api/users/:id/recommendations` | rekomendacje dla użytkownika          |
+| Metoda + ścieżka                     | Opis                                   |
+| ------------------------------------ | -------------------------------------- |
+| `GET /api/health`                    | status serwera                         |
+| `GET /api/users`                     | lista użytkowników                     |
+| `GET /api/media`                     | katalog tytułów                        |
+| `GET /api/search?q=`                 | szukaj filmów w TMDB                   |
+| `POST /api/media`                    | dodaj film z TMDB (body: `externalId`) |
+| `POST /api/reviews`                  | dodaj/aktualizuj recenzję (body JSON)  |
+| `GET /api/users/:a/taste-match/:b`   | dopasowanie gustu dwóch użytkowników   |
+| `GET /api/users/:id/recommendations` | rekomendacje dla użytkownika           |
 
 Błędy domenowe mapują się na kody HTTP: walidacja → **400**, brak zasobu → **404**.
 
@@ -221,7 +223,8 @@ liczy dopasowanie gustu i pozwala oceniać tytuły. To **PWA**: ma `manifest.web
 Repo zawiera `render.yaml` (Blueprint). W panelu Render: **New → Blueprint → wybierz to repo**.
 Render zbuduje (`npm install --include=dev && npm run build`) i uruchomi
 (`cd apps/api && node dist/server.js`). W zakładce **Environment** ustaw sekrety
-`DATABASE_URL` i `DIRECT_URL` (z Supabase). Po wdrożeniu apka jest pod publicznym
+`DATABASE_URL` i `DIRECT_URL` (z Supabase) oraz `TMDB_API_KEY` (klucz TMDB v3 —
+do wyszukiwarki filmów; trzymany po stronie serwera, nie w repo). Po wdrożeniu apka jest pod publicznym
 `https://…onrender.com`. Uwaga: darmowy plan usypia po ~15 min → pierwszy request budzi
 serwer ~50 s.
 

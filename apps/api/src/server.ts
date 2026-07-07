@@ -14,6 +14,7 @@ import { NotFoundError, ValidationError } from "./errors.js";
 import { addReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
+import { addMediaFromTmdb, searchTmdb } from "./logic/tmdb.js";
 
 const app = new Hono();
 const api = new Hono();
@@ -42,6 +43,18 @@ api.get("/users", async (c) => {
 api.get("/media", async (c) => {
   const media = await prisma.media.findMany({ orderBy: { id: "asc" } });
   return c.json(media);
+});
+
+// Wyszukiwarka filmów w TMDB (wyniki nie są jeszcze w bazie).
+api.get("/search", async (c) => {
+  return c.json(await searchTmdb(c.req.query("q") ?? ""));
+});
+
+// Dodaj film z TMDB do katalogu. Body: { externalId }.
+api.post("/media", async (c) => {
+  const body = await c.req.json();
+  const media = await addMediaFromTmdb(String(body.externalId ?? ""));
+  return c.json(media, 201);
 });
 
 // Dodaj/aktualizuj recenzję. Body: { userId, mediaId, rating, text? }.

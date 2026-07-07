@@ -1,7 +1,8 @@
-// Frontend Mozaiki — plakaty + wyszukiwarka. Woła API pod /api/*.
+// Frontend Mozaiki — plakaty + wyszukiwarka TMDB. Woła API pod /api/*.
 
 const $ = (id) => document.getElementById(id);
 let allMedia = [];
+let searchTimer = null;
 
 async function api(path, options) {
   const res = await fetch(`/api${path}`, options);
@@ -29,7 +30,7 @@ function toast(msg) {
   window.setTimeout(() => t.classList.remove("show"), 2200);
 }
 
-// Wspólna „karta plakatu" — używana i w katalogu, i w rekomendacjach.
+// Wspólna „karta plakatu" — używana w katalogu, wynikach TMDB i rekomendacjach.
 function posterCard(m, opts = {}) {
   const card = document.createElement("article");
   card.className = "card";
@@ -82,7 +83,8 @@ function posterCard(m, opts = {}) {
   return { card, meta };
 }
 
-function renderCatalog(list) {
+// Siatka kart z kontrolką oceny. onRate(item, rating) decyduje co się dzieje.
+function renderGrid(list, onRate, addLabel) {
   const grid = $("catalog");
   grid.innerHTML = "";
   if (list.length === 0) {
@@ -103,8 +105,8 @@ function renderCatalog(list) {
     }
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.textContent = "Oceń";
-    btn.addEventListener("click", () => rateMedia(m.id, Number(sel.value)));
+    btn.textContent = addLabel;
+    btn.addEventListener("click", () => onRate(m, Number(sel.value)));
     rate.append(sel, btn);
     meta.append(rate);
     grid.append(card);
@@ -113,12 +115,30 @@ function renderCatalog(list) {
 
 async function loadCatalog() {
   allMedia = await api("/media");
-  renderCatalog(allMedia);
+  $("catalogTitle").textContent = "Katalog";
+  renderGrid(allMedia, (m, rating) => rateMedia(m.id, rating), "Oceń");
 }
 
-function filterCatalog() {
-  const q = $("search").value.trim().toLowerCase();
-  renderCatalog(q ? allMedia.filter((m) => m.title.toLowerCase().includes(q)) : allMedia);
+async function runSearch(q) {
+  $("catalogTitle").textContent = `Wyniki z TMDB: „${q}”`;
+  const grid = $("catalog");
+  grid.innerHTML = '<p class="muted">Szukam…</p>';
+  try {
+    const results = await api(`/search?q=${encodeURIComponent(q)}`);
+    renderGrid(results, (m, rating) => addAndRate(m.externalId, rating), "Dodaj i oceń");
+  } catch (e) {
+    grid.innerHTML = `<p class="muted">${e.message}</p>`;
+  }
+}
+
+function onSearchInput() {
+  const q = $("search").value.trim();
+  window.clearTimeout(searchTimer);
+  if (!q) {
+    loadCatalog();
+    return;
+  }
+  searchTimer = window.setTimeout(() => runSearch(q), 350);
 }
 
 async function loadRecommendations() {
@@ -157,6 +177,21 @@ async function rateMedia(mediaId, rating) {
   }
 }
 
+// Dodaje film z TMDB do katalogu, potem zapisuje ocenę.
+async function addAndRate(externalId, rating) {
+  try {
+    const media = await api("/media", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ externalId }),
+    });
+    await rateMedia(media.id, rating);
+    toast("✅ Dodano i oceniono");
+  } catch (e) {
+    toast(`⚠️ ${e.message}`);
+  }
+}
+
 async function showMatch() {
   const out = $("matchResult");
   try {
@@ -177,7 +212,7 @@ async function init() {
   if (users.length > 1) $("other").selectedIndex = 1;
 
   $("user").addEventListener("change", loadRecommendations);
-  $("search").addEventListener("input", filterCatalog);
+  $("search").addEventListener("input", onSearchInput);
   $("matchBtn").addEventListener("click", showMatch);
 
   await Promise.all([loadRecommendations(), loadCatalog()]);
