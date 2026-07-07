@@ -1,0 +1,22 @@
+# Render Blueprint — hosting Mozaiki (API + PWA z jednego serwera).
+# Deploy: w panelu Render → New → Blueprint → wskaż to repo.
+# Sekrety (DATABASE_URL, DIRECT_URL) uzupełnij w panelu — NIE trzymamy ich w repo.
+services:
+  - type: web
+    name: mozaika
+    runtime: node
+    plan: free
+    region: frankfurt
+    # --include=dev: Render domyślnie ustawia NODE_ENV=production i pomija devDependencies,
+    # a build potrzebuje prisma + typescript. Build kompiluje TS do dist/.
+    buildCommand: npm install --include=dev && npm run build --workspace=@mozaika/api
+    # Uruchamiamy skompilowany serwer z katalogu apps/api (żeby ./public się zgadzało).
+    startCommand: cd apps/api && node dist/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # uzupełnij w panelu Render (Environment)
+      - key: DIRECT_URL
+        sync: false # uzupełnij w panelu Render (Environment)

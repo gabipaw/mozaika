@@ -20,7 +20,7 @@
     "format:check": "prettier --check .",
     "dupcheck": "jscpd apps",
     "secretcheck": "secretlint \"**/*\"",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "lint-staged": {
     "*": [

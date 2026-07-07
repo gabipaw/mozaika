@@ -18,7 +18,8 @@ użytkownikami z ich wspólnie ocenionych tytułów, a na tej podstawie generuje
 - **Recenzje z regułami** — ocena 1–10, walidacja przed zapisem, jeden użytkownik = jedna ocena tytułu.
 - **Dopasowanie gustu** — % zgodności dwóch użytkowników (reguła: min. 3 wspólne oceny).
 - **Rekomendacje** — tytuły od użytkowników o podobnym guście, których cel jeszcze nie ocenił.
-- **HTTP API (Hono)** — operacje wystawione pod endpointami, błędy mapowane na kody HTTP.
+- **HTTP API (Hono)** — operacje wystawione pod `/api/*`, błędy mapowane na kody HTTP.
+- **Aplikacja webowa (PWA)** — mobilna strona wołająca API, instalowalna na telefonie.
 
 ## Narzędzia (cały stack) — i po co
 
@@ -54,10 +55,11 @@ mozaika/
       ├─ prisma/
       │  ├─ schema.prisma  # modele User, Media, Review (+ enum MediaType)
       │  └─ seed.ts        # dane startowe (filmy z TMDB)
+      ├─ public/            # frontend PWA (index.html, app.js, manifest, service worker, ikony)
       └─ src/
          ├─ db.ts          # współdzielony klient Prisma
          ├─ errors.ts      # błędy domenowe (Validation / NotFound)
-         ├─ server.ts      # serwer HTTP (Hono) — punkt wejścia API
+         ├─ server.ts      # serwer HTTP (Hono) — API /api/* + serwuje PWA
          ├─ index.ts       # demo logiki w terminalu
          └─ logic/         # reviews, tasteMatch, recommendations (+ testy)
 ```
@@ -186,25 +188,42 @@ i sortuje je po przewidywanej ocenie (średnia ważona % dopasowania). Reużywa
 
 ## API HTTP (Hono)
 
-Serwer (`apps/api/src/server.ts`) wystawia operacje Mozaiki. Uruchom: `npm start`
-(lub `npm run dev` z auto-reloadem). Domyślny port `3000` (zmienny przez `PORT`).
+Serwer (`apps/api/src/server.ts`) serwuje **frontend PWA** (spod `/`) oraz **API** (spod
+`/api/*`) — z jednego procesu, więc bez CORS. Uruchom: `npm start` (lub `npm run dev`
+z auto-reloadem). Domyślny port `3000` (zmienny przez `PORT`).
 
-| Metoda + ścieżka                 | Opis                                  |
-| -------------------------------- | ------------------------------------- |
-| `GET /health`                    | status serwera                        |
-| `GET /users`                     | lista użytkowników                    |
-| `GET /media`                     | katalog tytułów                       |
-| `POST /reviews`                  | dodaj/aktualizuj recenzję (body JSON) |
-| `GET /users/:a/taste-match/:b`   | dopasowanie gustu dwóch użytkowników  |
-| `GET /users/:id/recommendations` | rekomendacje dla użytkownika          |
+| Metoda + ścieżka                     | Opis                                  |
+| ------------------------------------ | ------------------------------------- |
+| `GET /api/health`                    | status serwera                        |
+| `GET /api/users`                     | lista użytkowników                    |
+| `GET /api/media`                     | katalog tytułów                       |
+| `POST /api/reviews`                  | dodaj/aktualizuj recenzję (body JSON) |
+| `GET /api/users/:a/taste-match/:b`   | dopasowanie gustu dwóch użytkowników  |
+| `GET /api/users/:id/recommendations` | rekomendacje dla użytkownika          |
 
 Błędy domenowe mapują się na kody HTTP: walidacja → **400**, brak zasobu → **404**.
 
 ```bash
-curl localhost:3000/users/1/recommendations
-curl -X POST localhost:3000/reviews -H "content-type: application/json" \
+curl localhost:3000/api/users/1/recommendations
+curl -X POST localhost:3000/api/reviews -H "content-type: application/json" \
   -d '{"userId":1,"mediaId":2,"rating":9}'
 ```
+
+## Frontend PWA (instalowalny na telefonie)
+
+Pod `/` działa prosta strona (`apps/api/public/`) wołająca API — pokazuje rekomendacje,
+liczy dopasowanie gustu i pozwala oceniać tytuły. To **PWA**: ma `manifest.webmanifest`,
+`service-worker.js` (cache powłoki, działa offline) i ikony, więc na telefonie można ją
+**„Dodać do ekranu głównego"** i uruchamiać jak natywną apkę (wymaga HTTPS — daje go hosting).
+
+## Wdrożenie (Render)
+
+Repo zawiera `render.yaml` (Blueprint). W panelu Render: **New → Blueprint → wybierz to repo**.
+Render zbuduje (`npm install --include=dev && npm run build`) i uruchomi
+(`cd apps/api && node dist/server.js`). W zakładce **Environment** ustaw sekrety
+`DATABASE_URL` i `DIRECT_URL` (z Supabase). Po wdrożeniu apka jest pod publicznym
+`https://…onrender.com`. Uwaga: darmowy plan usypia po ~15 min → pierwszy request budzi
+serwer ~50 s.
 
 ## Uruchomienie
 
