@@ -6,10 +6,13 @@
  */
 import { MediaType, PrismaClient } from "@prisma/client";
 
+import { hashPassword } from "../src/logic/auth.js";
+
 const prisma = new PrismaClient();
 
 async function main() {
-  // --- Użytkownicy ---
+  // --- Użytkownicy (konta demo, hasło: demo123456) ---
+  const passwordHash = hashPassword("demo123456");
   const users = await Promise.all(
     [
       { email: "ala@mozaika.dev", displayName: "Ala" },
@@ -17,7 +20,11 @@ async function main() {
       { email: "celina@mozaika.dev", displayName: "Celina" },
       { email: "darek@mozaika.dev", displayName: "Darek" },
     ].map((u) =>
-      prisma.user.upsert({ where: { email: u.email }, update: {}, create: u }),
+      prisma.user.upsert({
+        where: { email: u.email },
+        update: { passwordHash },
+        create: { ...u, passwordHash },
+      }),
     ),
   );
   const byEmail = new Map(users.map((u) => [u.email, u]));

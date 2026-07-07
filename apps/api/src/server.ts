@@ -1,23 +1,31 @@
 /**
  * Mozaika API — serwer HTTP (Hono).
  * Wystawia operacje domenowe pod `/api/*` oraz serwuje frontend PWA z `public/`.
- * Błędy domenowe mapowane na kody HTTP (400/404).
+ * Uwierzytelnianie: JWT (Bearer). Błędy domenowe mapowane na kody HTTP (400/401/404).
  */
 import { fileURLToPath } from "node:url";
 
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
+import type { MiddlewareHandler } from "hono";
+import { sign, verify } from "hono/jwt";
 
 import { prisma } from "./db.js";
 import { NotFoundError, ValidationError } from "./errors.js";
+import { login, register } from "./logic/auth.js";
 import { addReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
 import { addMediaFromTmdb, searchTmdb } from "./logic/tmdb.js";
 
+const JWT_SECRET = process.env.JWT_SECRET ?? "mozaika-dev-secret-ustaw-JWT_SECRET";
+const TOKEN_TTL = 60 * 60 * 24 * 30; // 30 dni
+
+type Vars = { Variables: { userId: number } };
+
 const app = new Hono();
-const api = new Hono();
+const api = new Hono<Vars>();
 
 /** Parsuje parametr ścieżki na dodatnią liczbę całkowitą lub rzuca ValidationError. */
 function intParam(value: string, name: string): number {
@@ -28,9 +36,64 @@ function intParam(value: string, name: string): number {
   return n;
 }
 
+function makeToken(userId: number): Promise<string> {
+  const payload = { userId, exp: Math.floor(Date.now() / 1000) + TOKEN_TTL };
+  return sign(payload, JWT_SECRET, "HS256");
+}
+
+/** Wymaga poprawnego tokenu JWT; zapisuje userId w kontekście. */
+const requireAuth: MiddlewareHandler<Vars> = async (c, next) => {
+  const header = c.req.header("Authorization") ?? "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  try {
+    const payload = await verify(token, JWT_SECRET, "HS256");
+    c.set("userId", Number(payload.userId));
+  } catch {
+    return c.json({ error: "Wymagane logowanie." }, 401);
+  }
+  await next();
+};
+
 api.get("/health", (c) => c.json({ status: "ok" }));
 
-// Lista użytkowników (id + nazwa).
+// --- Uwierzytelnianie ---
+api.post("/auth/register", async (c) => {
+  const user = await register(await c.req.json());
+  return c.json({ token: await makeToken(user.id), user }, 201);
+});
+
+api.post("/auth/login", async (c) => {
+  const user = await login(await c.req.json());
+  return c.json({ token: await makeToken(user.id), user });
+});
+
+// Profil zalogowanego użytkownika + jego oceny i statystyki.
+api.get("/me", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: { id: true, email: true, displayName: true },
+  });
+  const reviews = await prisma.review.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      rating: true,
+      text: true,
+      media: { select: { id: true, title: true, year: true, posterUrl: true } },
+    },
+  });
+  const avg = reviews.length
+    ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
+    : null;
+  return c.json({ user, count: reviews.length, avg, reviews });
+});
+
+api.get("/me/recommendations", requireAuth, async (c) => {
+  return c.json(await recommendations(c.get("userId")));
+});
+
+// Lista pozostałych użytkowników (do dopasowania gustu).
 api.get("/users", async (c) => {
   const users = await prisma.user.findMany({
     select: { id: true, displayName: true },
@@ -57,10 +120,10 @@ api.post("/media", async (c) => {
   return c.json(media, 201);
 });
 
-// Dodaj/aktualizuj recenzję. Body: { userId, mediaId, rating, text? }.
-api.post("/reviews", async (c) => {
+// Dodaj/aktualizuj recenzję (jako zalogowany użytkownik). Body: { mediaId, rating, text? }.
+api.post("/reviews", requireAuth, async (c) => {
   const body = await c.req.json();
-  const review = await addReview(body);
+  const review = await addReview({ ...body, userId: c.get("userId") });
   return c.json(review, 201);
 });
 
@@ -71,7 +134,7 @@ api.get("/users/:a/taste-match/:b", async (c) => {
   return c.json(await tasteMatch(a, b));
 });
 
-// Rekomendacje dla użytkownika (przez dopasowanie gustu).
+// Rekomendacje dla wskazanego użytkownika.
 api.get("/users/:id/recommendations", async (c) => {
   const id = intParam(c.req.param("id"), "id");
   return c.json(await recommendations(id));

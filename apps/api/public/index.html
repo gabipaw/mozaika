@@ -16,43 +16,88 @@
   <body>
     <header class="topbar">
       <div class="brand">🎨 <span>Mozaika</span></div>
-      <div class="who">
-        <span>jako</span>
-        <select id="user" aria-label="Wybierz użytkownika"></select>
+      <div id="userBox" class="userbox hidden">
+        <span id="hello"></span>
+        <button id="logout" type="button">Wyloguj</button>
       </div>
     </header>
 
     <main>
-      <div class="searchwrap">
-        <input
-          id="search"
-          type="search"
-          placeholder="Szukaj dowolnego filmu (TMDB)…"
-          autocomplete="off"
-        />
+      <!-- Ekran logowania / rejestracji -->
+      <section id="authView" class="auth">
+        <div class="card auth-card">
+          <div class="tabs">
+            <button id="tabLogin" class="tab active" type="button">Zaloguj</button>
+            <button id="tabRegister" class="tab" type="button">Załóż konto</button>
+          </div>
+          <form id="authForm" autocomplete="on">
+            <input
+              id="displayName"
+              class="hidden"
+              placeholder="Twoja nazwa"
+              autocomplete="name"
+            />
+            <input
+              id="email"
+              type="email"
+              placeholder="E-mail"
+              autocomplete="email"
+              required
+            />
+            <input
+              id="password"
+              type="password"
+              placeholder="Hasło (min. 6 znaków)"
+              autocomplete="current-password"
+              required
+            />
+            <button id="authSubmit" type="submit">Zaloguj</button>
+          </form>
+          <p id="authMsg" class="err"></p>
+          <p class="muted small">
+            Konto demo: <b>ala@mozaika.dev</b> / <b>demo123456</b>
+          </p>
+        </div>
+      </section>
+
+      <!-- Aplikacja (po zalogowaniu) -->
+      <div id="appView" class="hidden">
+        <div class="searchwrap">
+          <input
+            id="search"
+            type="search"
+            placeholder="Szukaj dowolnego filmu (TMDB)…"
+            autocomplete="off"
+          />
+        </div>
+
+        <section>
+          <h2>Dla Ciebie</h2>
+          <p class="hint">Polecane przez osoby o podobnym guście.</p>
+          <div id="recs" class="poster-row"></div>
+        </section>
+
+        <section>
+          <div class="section-head">
+            <h2>Twój profil</h2>
+            <div class="match">
+              <span>dopasowanie z</span>
+              <select id="other" aria-label="Drugi użytkownik"></select>
+              <button id="matchBtn" type="button">?</button>
+              <span id="matchResult" class="match-result"></span>
+            </div>
+          </div>
+          <p id="profileStats" class="hint"></p>
+          <div id="myReviews" class="poster-grid"></div>
+        </section>
+
+        <section>
+          <h2 id="catalogTitle">Katalog</h2>
+          <div id="catalog" class="poster-grid"></div>
+        </section>
       </div>
 
-      <section>
-        <h2>Dla Ciebie</h2>
-        <p class="hint">Polecane przez osoby o podobnym guście.</p>
-        <div id="recs" class="poster-row">
-          <p class="muted">Ładowanie…</p>
-        </div>
-      </section>
-
-      <section>
-        <div class="section-head">
-          <h2 id="catalogTitle">Katalog</h2>
-          <div class="match">
-            <span>dopasowanie z</span>
-            <select id="other" aria-label="Drugi użytkownik"></select>
-            <button id="matchBtn" type="button">?</button>
-            <span id="matchResult" class="match-result"></span>
-          </div>
-        </div>
-        <div id="catalog" class="poster-grid"></div>
-        <p id="reviewMsg" class="toast"></p>
-      </section>
+      <p id="reviewMsg" class="toast"></p>
     </main>
 
     <footer><p class="muted">Mozaika — projekt stażowy · dane z TMDB</p></footer>

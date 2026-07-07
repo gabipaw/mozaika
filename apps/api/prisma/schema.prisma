@@ -23,10 +23,11 @@ enum MediaType {
 
 /// Użytkownik platformy (autor recenzji).
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  displayName String
-  createdAt   DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  displayName  String
+  passwordHash String? // scrypt: "salt:hash"; null dla starych kont demo
+  createdAt    DateTime @default(now())
 
   reviews Review[]
 }

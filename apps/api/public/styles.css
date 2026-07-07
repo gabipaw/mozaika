@@ -278,6 +278,84 @@ h2 {
   color: var(--muted);
 }
 
+.hidden {
+  display: none !important;
+}
+
+.small {
+  font-size: 0.8rem;
+}
+
+/* Topbar user */
+.userbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.userbox button {
+  background: var(--bg-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+}
+
+/* Ekran logowania */
+.auth {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  flex: 1;
+  background: var(--bg-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 10px;
+}
+
+.tab.active {
+  background: var(--accent);
+  color: #05221d;
+}
+
+#authForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#authForm input {
+  padding: 12px 14px;
+  font-size: 1rem;
+}
+
+#authForm button {
+  padding: 12px;
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
+.err {
+  color: var(--accent-2);
+  min-height: 1.2em;
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+}
+
 footer {
   text-align: center;
   padding: 24px 16px;

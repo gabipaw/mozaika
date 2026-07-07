@@ -19,6 +19,8 @@ użytkownikami z ich wspólnie ocenionych tytułów, a na tej podstawie generuje
 - **Dopasowanie gustu** — % zgodności dwóch użytkowników (reguła: min. 3 wspólne oceny).
 - **Rekomendacje** — tytuły od użytkowników o podobnym guście, których cel jeszcze nie ocenił.
 - **HTTP API (Hono)** — operacje wystawione pod `/api/*`, błędy mapowane na kody HTTP.
+- **Logowanie i profil** — konta z hasłem (scrypt) + token **JWT**; własne oceny i portret gustu.
+- **Wyszukiwarka TMDB** — znajdź dowolny film i dodaj go do katalogu.
 - **Aplikacja webowa (PWA)** — mobilna strona wołająca API, instalowalna na telefonie.
 
 ## Narzędzia (cały stack) — i po co
@@ -192,23 +194,30 @@ Serwer (`apps/api/src/server.ts`) serwuje **frontend PWA** (spod `/`) oraz **API
 `/api/*`) — z jednego procesu, więc bez CORS. Uruchom: `npm start` (lub `npm run dev`
 z auto-reloadem). Domyślny port `3000` (zmienny przez `PORT`).
 
-| Metoda + ścieżka                     | Opis                                   |
-| ------------------------------------ | -------------------------------------- |
-| `GET /api/health`                    | status serwera                         |
-| `GET /api/users`                     | lista użytkowników                     |
-| `GET /api/media`                     | katalog tytułów                        |
-| `GET /api/search?q=`                 | szukaj filmów w TMDB                   |
-| `POST /api/media`                    | dodaj film z TMDB (body: `externalId`) |
-| `POST /api/reviews`                  | dodaj/aktualizuj recenzję (body JSON)  |
-| `GET /api/users/:a/taste-match/:b`   | dopasowanie gustu dwóch użytkowników   |
-| `GET /api/users/:id/recommendations` | rekomendacje dla użytkownika           |
+| Metoda + ścieżka                     | Opis                                    |
+| ------------------------------------ | --------------------------------------- |
+| `GET /api/health`                    | status serwera                          |
+| `POST /api/auth/register`            | rejestracja → token JWT                 |
+| `POST /api/auth/login`               | logowanie → token JWT                   |
+| `GET /api/me`                        | profil zalogowanego (oceny, statystyki) |
+| `GET /api/me/recommendations`        | rekomendacje dla zalogowanego           |
+| `GET /api/users`                     | lista użytkowników                      |
+| `GET /api/media`                     | katalog tytułów                         |
+| `GET /api/search?q=`                 | szukaj filmów w TMDB                    |
+| `POST /api/media`                    | dodaj film z TMDB (body: `externalId`)  |
+| `POST /api/reviews`                  | dodaj/aktualizuj recenzję (body JSON)   |
+| `GET /api/users/:a/taste-match/:b`   | dopasowanie gustu dwóch użytkowników    |
+| `GET /api/users/:id/recommendations` | rekomendacje dla użytkownika            |
 
-Błędy domenowe mapują się na kody HTTP: walidacja → **400**, brak zasobu → **404**.
+Błędy domenowe → kody HTTP: walidacja → **400**, brak logowania → **401**, brak zasobu → **404**.
+`POST /api/reviews`, `GET /api/me` i `GET /api/me/recommendations` wymagają nagłówka
+`Authorization: Bearer <token>` (token z logowania/rejestracji). Hasła hashowane `scrypt`,
+sekret podpisu JWT z `JWT_SECRET` (opcjonalny — ma fallback dev; na produkcji warto ustawić).
 
 ```bash
-curl localhost:3000/api/users/1/recommendations
-curl -X POST localhost:3000/api/reviews -H "content-type: application/json" \
-  -d '{"userId":1,"mediaId":2,"rating":9}'
+TOKEN=$(curl -s -X POST localhost:3000/api/auth/login -H "content-type: application/json" \
+  -d '{"email":"ala@mozaika.dev","password":"demo123456"}' | jq -r .token)
+curl localhost:3000/api/me -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Frontend PWA (instalowalny na telefonie)

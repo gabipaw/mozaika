@@ -1,26 +1,27 @@
-// Frontend Mozaiki — plakaty + wyszukiwarka TMDB. Woła API pod /api/*.
+// Frontend Mozaiki — logowanie (JWT), profil, plakaty, wyszukiwarka TMDB.
 
 const $ = (id) => document.getElementById(id);
 let allMedia = [];
 let searchTimer = null;
+let me = null;
+let authMode = "login";
 
-async function api(path, options) {
-  const res = await fetch(`/api${path}`, options);
+const getToken = () => localStorage.getItem("mozaika_token");
+const setToken = (t) => localStorage.setItem("mozaika_token", t);
+const clearToken = () => localStorage.removeItem("mozaika_token");
+
+async function api(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`/api${path}`, { ...options, headers });
+  if (res.status === 401) {
+    logout();
+    throw new Error("Zaloguj się.");
+  }
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Błąd API");
   return data;
-}
-
-const currentUserId = () => Number($("user").value);
-
-function fillSelect(select, users) {
-  select.innerHTML = "";
-  for (const u of users) {
-    const opt = document.createElement("option");
-    opt.value = String(u.id);
-    opt.textContent = u.displayName;
-    select.append(opt);
-  }
 }
 
 function toast(msg) {
@@ -30,7 +31,7 @@ function toast(msg) {
   window.setTimeout(() => t.classList.remove("show"), 2200);
 }
 
-// Wspólna „karta plakatu" — używana w katalogu, wynikach TMDB i rekomendacjach.
+// Wspólna „karta plakatu".
 function posterCard(m, opts = {}) {
   const card = document.createElement("article");
   card.className = "card";
@@ -84,15 +85,14 @@ function posterCard(m, opts = {}) {
 }
 
 // Siatka kart z kontrolką oceny. onRate(item, rating) decyduje co się dzieje.
-function renderGrid(list, onRate, addLabel) {
-  const grid = $("catalog");
-  grid.innerHTML = "";
+function renderGrid(container, list, onRate, addLabel) {
+  container.innerHTML = "";
   if (list.length === 0) {
-    grid.innerHTML = '<p class="muted">Nic nie znaleziono.</p>';
+    container.innerHTML = '<p class="muted">Nic nie znaleziono.</p>';
     return;
   }
   for (const m of list) {
-    const { card, meta } = posterCard(m);
+    const { card, meta } = posterCard(m, { score: m.myRating });
     const rate = document.createElement("div");
     rate.className = "rate";
     const sel = document.createElement("select");
@@ -109,14 +109,14 @@ function renderGrid(list, onRate, addLabel) {
     btn.addEventListener("click", () => onRate(m, Number(sel.value)));
     rate.append(sel, btn);
     meta.append(rate);
-    grid.append(card);
+    container.append(card);
   }
 }
 
 async function loadCatalog() {
   allMedia = await api("/media");
   $("catalogTitle").textContent = "Katalog";
-  renderGrid(allMedia, (m, rating) => rateMedia(m.id, rating), "Oceń");
+  renderGrid($("catalog"), allMedia, (m, rating) => rateMedia(m.id, rating), "Oceń");
 }
 
 async function runSearch(q) {
@@ -125,7 +125,12 @@ async function runSearch(q) {
   grid.innerHTML = '<p class="muted">Szukam…</p>';
   try {
     const results = await api(`/search?q=${encodeURIComponent(q)}`);
-    renderGrid(results, (m, rating) => addAndRate(m.externalId, rating), "Dodaj i oceń");
+    renderGrid(
+      grid,
+      results,
+      (m, rating) => addAndRate(m.externalId, rating),
+      "Dodaj i oceń",
+    );
   } catch (e) {
     grid.innerHTML = `<p class="muted">${e.message}</p>`;
   }
@@ -145,21 +150,32 @@ async function loadRecommendations() {
   const row = $("recs");
   row.innerHTML = '<p class="muted">Ładowanie…</p>';
   try {
-    const recs = await api(`/users/${currentUserId()}/recommendations`);
+    const recs = await api("/me/recommendations");
     if (recs.length === 0) {
       row.innerHTML = '<p class="muted">Brak — oceń kilka tytułów, a coś dobierzemy.</p>';
       return;
     }
     row.innerHTML = "";
     for (const r of recs) {
-      const { card } = posterCard(r, {
-        score: r.score,
-        recby: `poleca ${r.recommenders.length} os.`,
-      });
-      row.append(card);
+      row.append(
+        posterCard(r, { score: r.score, recby: `poleca ${r.recommenders.length} os.` })
+          .card,
+      );
     }
   } catch (e) {
     row.innerHTML = `<p class="muted">${e.message}</p>`;
+  }
+}
+
+async function loadProfile() {
+  const data = await api("/me");
+  const box = $("myReviews");
+  $("profileStats").textContent = data.count
+    ? `Ocen: ${data.count} · średnia Twoja ocena: ${data.avg}/10`
+    : "Nie masz jeszcze ocen — oceń coś z katalogu poniżej.";
+  box.innerHTML = "";
+  for (const r of data.reviews) {
+    box.append(posterCard(r.media, { score: r.rating }).card);
   }
 }
 
@@ -168,16 +184,16 @@ async function rateMedia(mediaId, rating) {
     await api("/reviews", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ userId: currentUserId(), mediaId, rating }),
+      body: JSON.stringify({ mediaId, rating }),
     });
     toast("✅ Zapisano ocenę");
+    loadProfile();
     loadRecommendations();
   } catch (e) {
     toast(`⚠️ ${e.message}`);
   }
 }
 
-// Dodaje film z TMDB do katalogu, potem zapisuje ocenę.
 async function addAndRate(externalId, rating) {
   try {
     const media = await api("/media", {
@@ -186,18 +202,28 @@ async function addAndRate(externalId, rating) {
       body: JSON.stringify({ externalId }),
     });
     await rateMedia(media.id, rating);
-    toast("✅ Dodano i oceniono");
   } catch (e) {
     toast(`⚠️ ${e.message}`);
+  }
+}
+
+async function loadOthers() {
+  const users = await api("/users");
+  const other = $("other");
+  other.innerHTML = "";
+  for (const u of users) {
+    if (me && u.id === me.id) continue;
+    const o = document.createElement("option");
+    o.value = String(u.id);
+    o.textContent = u.displayName;
+    other.append(o);
   }
 }
 
 async function showMatch() {
   const out = $("matchResult");
   try {
-    const m = await api(
-      `/users/${currentUserId()}/taste-match/${Number($("other").value)}`,
-    );
+    const m = await api(`/users/${me.id}/taste-match/${Number($("other").value)}`);
     out.textContent =
       m.status === "OK" ? `${m.score}%` : `za mało danych (${m.shared}/${m.minShared})`;
   } catch (e) {
@@ -205,17 +231,78 @@ async function showMatch() {
   }
 }
 
-async function init() {
-  const users = await api("/users");
-  fillSelect($("user"), users);
-  fillSelect($("other"), users);
-  if (users.length > 1) $("other").selectedIndex = 1;
+// --- Widoki: logowanie vs aplikacja ---
+function showAuth() {
+  me = null;
+  $("appView").classList.add("hidden");
+  $("userBox").classList.add("hidden");
+  $("authView").classList.remove("hidden");
+}
 
-  $("user").addEventListener("change", loadRecommendations);
+async function showApp() {
+  $("authView").classList.add("hidden");
+  $("appView").classList.remove("hidden");
+  $("userBox").classList.remove("hidden");
+  $("hello").textContent = `Cześć, ${me.displayName}`;
+  await Promise.all([loadProfile(), loadRecommendations(), loadCatalog(), loadOthers()]);
+}
+
+function logout() {
+  clearToken();
+  showAuth();
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  $("tabLogin").classList.toggle("active", mode === "login");
+  $("tabRegister").classList.toggle("active", mode === "register");
+  $("displayName").classList.toggle("hidden", mode !== "register");
+  $("authSubmit").textContent = mode === "login" ? "Zaloguj" : "Załóż konto";
+  $("authMsg").textContent = "";
+}
+
+async function submitAuth(ev) {
+  ev.preventDefault();
+  $("authMsg").textContent = "";
+  const body = {
+    email: $("email").value,
+    password: $("password").value,
+    displayName: $("displayName").value,
+  };
+  try {
+    const path = authMode === "login" ? "/auth/login" : "/auth/register";
+    const res = await api(path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    setToken(res.token);
+    me = res.user;
+    await showApp();
+  } catch (e) {
+    $("authMsg").textContent = e.message;
+  }
+}
+
+async function init() {
+  $("tabLogin").addEventListener("click", () => setAuthMode("login"));
+  $("tabRegister").addEventListener("click", () => setAuthMode("register"));
+  $("authForm").addEventListener("submit", submitAuth);
+  $("logout").addEventListener("click", logout);
   $("search").addEventListener("input", onSearchInput);
   $("matchBtn").addEventListener("click", showMatch);
 
-  await Promise.all([loadRecommendations(), loadCatalog()]);
+  if (getToken()) {
+    try {
+      const data = await api("/me");
+      me = data.user;
+      await showApp();
+      return;
+    } catch {
+      clearToken();
+    }
+  }
+  showAuth();
 }
 
 if ("serviceWorker" in navigator) {
