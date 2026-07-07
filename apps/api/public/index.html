@@ -17,7 +17,7 @@
     <header class="topbar">
       <div class="brand">🎨 <span>Mozaika</span></div>
       <div id="userBox" class="userbox hidden">
-        <span id="hello"></span>
+        <button id="hello" class="hello-link" type="button" title="Twój profil"></button>
         <button id="logout" type="button">Wyloguj</button>
       </div>
     </header>
@@ -55,7 +55,7 @@
           </form>
           <p id="authMsg" class="err"></p>
           <p class="muted small">
-            Konto demo: <b>ala@mozaika.dev</b> / <b>demo123456</b>
+            Załóż konto i oceniaj filmy — Twój gust dobierze Ci rekomendacje.
           </p>
         </div>
       </section>
@@ -77,7 +77,7 @@
           <div id="recs" class="poster-row"></div>
         </section>
 
-        <section>
+        <section id="profile">
           <div class="section-head">
             <h2>Twój profil</h2>
             <div class="match">

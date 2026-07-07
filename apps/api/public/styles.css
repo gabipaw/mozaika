@@ -301,6 +301,20 @@ h2 {
   padding: 6px 12px;
 }
 
+.hello-link {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text) !important;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 4px !important;
+}
+
+.hello-link:hover {
+  color: var(--accent) !important;
+  text-decoration: underline;
+}
+
 /* Ekran logowania */
 .auth {
   display: flex;

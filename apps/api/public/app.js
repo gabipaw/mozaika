@@ -289,6 +289,9 @@ async function init() {
   $("tabRegister").addEventListener("click", () => setAuthMode("register"));
   $("authForm").addEventListener("submit", submitAuth);
   $("logout").addEventListener("click", logout);
+  $("hello").addEventListener("click", () => {
+    $("profile").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   $("search").addEventListener("input", onSearchInput);
   $("matchBtn").addEventListener("click", showMatch);
 
