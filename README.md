@@ -49,6 +49,23 @@ DATABASE_URL="postgresql://UŻYTKOWNIK:HASŁO@HOST:5432/BAZA"
 
 (np. z projektu Supabase → Project Settings → Database → Connection string.)
 
+## Logika biznesowa (serce aplikacji)
+
+Cała logika w `apps/api/src/logic/` — czyste funkcje (łatwe do testów) oddzielone od bazy.
+
+**Dodaj recenzję** (`addReview`) — zapis z regułami, walidacja PRZED bazą:
+- ocena musi być liczbą całkowitą **1–10**,
+- użytkownik i tytuł muszą istnieć,
+- **jeden użytkownik = jedna ocena tytułu** (ponowna ocena aktualizuje poprzednią).
+
+**Dopasowanie gustu** (`tasteMatch`) — funkcja sygnaturowa: dla dwóch użytkowników
+liczy **% zgodności** z ich wspólnie ocenionych tytułów:
+`score = 100 × (1 − średnia_różnica_ocen / 9)` (identyczne oceny = 100%).
+Reguła: potrzeba **min. 3 wspólnie ocenionych tytułów**, inaczej wynik „za mało danych".
+
+Demo (`npm start`) pokazuje oba przepływy na żywo z bazy, w tym odrzucenie błędnej oceny.
+Testy logiki: `npm test` (wbudowany `node:test`, bez bazy).
+
 ## Uruchomienie
 
 Wymagany Node.js >= 20, npm i działający PostgreSQL (`DATABASE_URL` w `apps/api/.env`).

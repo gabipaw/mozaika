@@ -1,49 +1,77 @@
 /**
- * Mozaika — punkt startowy backendu (apps/api).
- *
- * Łączy się z bazą (PostgreSQL przez Prisma) i wypisuje stan warstwy danych:
- * użytkowników oraz katalog mediów z liczbą recenzji i średnią oceną.
- * To dowód, że schemat + migracja + zapytania działają end-to-end.
+ * Mozaika — demo serca aplikacji (logika biznesowa) na danych z bazy.
+ * Pokazuje: (1) dopasowanie gustu dla pary z wystarczającą liczbą wspólnych ocen,
+ * (2) regułę progu dla pary z małą liczbą wspólnych, (3) zapis recenzji z walidacją,
+ * (4) odrzucenie recenzji z oceną poza zakresem.
  */
 import { prisma } from "./db.js";
+import { NotFoundError, ValidationError } from "./errors.js";
+import { addReview } from "./logic/reviews.js";
+import { tasteMatch } from "./logic/tasteMatch.js";
 
-function srednia(oceny: number[]): string {
-  if (oceny.length === 0) return "—";
-  const avg = oceny.reduce((a, b) => a + b, 0) / oceny.length;
-  return avg.toFixed(1);
+async function userIdByEmail(email: string): Promise<number> {
+  const u = await prisma.user.findUniqueOrThrow({ where: { email } });
+  return u.id;
+}
+
+function opiszDopasowanie(
+  label: string,
+  wynik: Awaited<ReturnType<typeof tasteMatch>>,
+): void {
+  console.log(`🎯 Dopasowanie gustu — ${label}:`);
+  if (wynik.status === "OK") {
+    console.log(`   ${wynik.score}% zgodności (wspólnych tytułów: ${wynik.shared})`);
+  } else {
+    console.log(
+      `   za mało danych (wspólnych: ${wynik.shared}, wymagane: ${wynik.minShared}) — reguła progu zadziałała`,
+    );
+  }
 }
 
 async function main(): Promise<void> {
-  console.log("🎨 Mozaika — warstwa danych (PostgreSQL + Prisma)\n");
+  console.log("🎨 Mozaika — serce aplikacji (logika biznesowa)\n");
 
-  const [userCount, reviewCount] = await Promise.all([
-    prisma.user.count(),
-    prisma.review.count(),
+  const [ala, bartek, celina] = await Promise.all([
+    userIdByEmail("ala@mozaika.dev"),
+    userIdByEmail("bartek@mozaika.dev"),
+    userIdByEmail("celina@mozaika.dev"),
   ]);
-  console.log(`Użytkownicy: ${userCount} · Recenzje: ${reviewCount}\n`);
 
-  const media = await prisma.media.findMany({
-    orderBy: { id: "asc" },
-    include: { reviews: { select: { rating: true } } },
+  // 1) Para z 4 wspólnymi ocenami — dopasowanie się liczy.
+  opiszDopasowanie("Ala ↔ Bartek", await tasteMatch(ala, bartek));
+
+  // 2) Para z 1 wspólną oceną — reguła progu blokuje wynik.
+  console.log();
+  opiszDopasowanie("Ala ↔ Celina", await tasteMatch(ala, celina));
+
+  // 3) Zapis recenzji (poprawny) — aktualizacja istniejącej oceny.
+  const parasite = await prisma.media.findFirstOrThrow({ where: { title: "Parasite" } });
+  console.log("\n📝 addReview (poprawny): Ala zmienia ocenę Parasite na 9");
+  const zapis = await addReview({
+    userId: ala,
+    mediaId: parasite.id,
+    rating: 9,
+    text: "Po ponownym seansie — jeszcze lepszy.",
   });
+  console.log(`   ✅ zapisano: ocena = ${zapis.rating}`);
 
-  console.log("Katalog mediów:");
-  for (const m of media) {
-    const oceny = m.reviews.map((r) => r.rating);
-    const rok = m.year ? ` (${m.year})` : "";
-    console.log(
-      `  • [${m.type}] ${m.title}${rok} — recenzji: ${oceny.length}, średnia: ${srednia(oceny)}/10`,
-    );
-  }
-
-  if (media.length === 0) {
-    console.log("  (brak danych — odpal `npm run db:seed`)");
+  // 4) Reguła walidacji — ocena 11 odrzucona PRZED zapisem do bazy.
+  console.log("\n🛑 addReview (błędny): ocena 11 — powinno zostać odrzucone");
+  try {
+    await addReview({ userId: ala, mediaId: parasite.id, rating: 11 });
+    console.log("   ❌ BŁĄD: zapis przeszedł, a nie powinien!");
+  } catch (e) {
+    if (e instanceof ValidationError || e instanceof NotFoundError) {
+      console.log(`   ✅ odrzucono: ${e.message}`);
+    } else {
+      throw e;
+    }
   }
 }
 
 main()
   .catch((e) => {
-    console.error("Błąd połączenia z bazą:", e);
+    console.error("Błąd:", e);
     process.exit(1);
   })
   .finally(async () => {
