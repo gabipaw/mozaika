@@ -98,6 +98,33 @@ Checking formatting...
 All matched files use Prettier code style!
 ```
 
+## Automatyzacja: git hooks (Husky)
+
+**Git hooks** to skrypty, które git odpala przy zdarzeniach (np. przed commitem).
+**Husky** podpina je w repo (katalog `.husky/`), a **lint-staged** uruchamia narzędzia
+tylko na plikach z danego commita (szybko, bez skanowania całego repo).
+
+**pre-commit** (`.husky/pre-commit`) uruchamia `lint-staged`, który na plikach z commita:
+
+- `*.ts` → **ESLint** (błędy lintu) + **Prettier --check** (spójny format),
+- `*.{js,mjs,json,md}` → **Prettier --check**.
+
+Jeśli którekolwiek sprawdzenie nie przejdzie, **commit jest blokowany** — wadliwy lub
+niesformatowany kod nie wejdzie do repozytorium. Hooki instalują się same przy
+`npm install` (skrypt `prepare: husky`).
+
+Dowód (próba commita kodu z `==` i nieużywaną zmienną):
+
+```
+$ git commit -m "..."
+🔍 pre-commit: sprawdzam pliki z commita (ESLint + Prettier)...
+✖ eslint:
+  1:7  error  'nieuzywana' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  2:7  error  Expected '===' and instead saw '=='                eqeqeq
+husky - pre-commit script failed (code 1)
+# commit ZABLOKOWANY — nic nie trafiło do repo
+```
+
 ## Uruchomienie
 
 Wymagany Node.js >= 20, npm i działający PostgreSQL (`DATABASE_URL` w `apps/api/.env`).

@@ -1,0 +1,2 @@
+echo "🔍 pre-commit: sprawdzam pliki z commita (ESLint + Prettier)..."
+npx lint-staged
