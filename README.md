@@ -1,36 +1,65 @@
 # Mozaika
 
-Monorepo aplikacji biznesowej **Mozaika** — platformy recenzji wszystkich mediów
-(film / serial / książka / gra / muzyka) z profilem jako „portretem gustu" i funkcją
-sygnaturową **Dopasowanie gustu** (% zgodności między użytkownikami).
+**Mozaika** to aplikacja biznesowa — platforma recenzji **wszystkich mediów naraz**
+(film / serial / książka / gra / muzyka) w jednym miejscu. Zbudowana na pełnym stacku
+(Node.js + TypeScript, PostgreSQL + Prisma, monorepo Turbo) z kompletem bramek jakości.
 
-To jest **fundament** projektu: szkielet monorepo na docelowym stacku. Kolejne kroki
-(baza PostgreSQL + Prisma, logika biznesowa, API) będą dobudowywane w tym samym repo.
+## Problem
 
-## Stack
+Serwisy z recenzjami są zwykle osobne dla każdego medium (film osobno, książki osobno).
+Mozaika je łączy: jeden profil to **„portret gustu"** złożony z ocen różnych mediów.
+Na tym opiera się funkcja sygnaturowa — **Dopasowanie gustu**: liczy % zgodności między
+użytkownikami z ich wspólnie ocenionych tytułów, a na tej podstawie generuje
+**rekomendacje** („ludzie o podobnym guście polecają Ci tytuł, którego jeszcze nie znasz").
 
-- **Node.js** (>= 20) + **TypeScript** (strict)
-- **Turborepo** — orkiestracja zadań w monorepo
-- **tsx** — uruchamianie TypeScriptu bez ręcznej kompilacji
-- **PostgreSQL** — baza danych
-- **Prisma** — ORM: schemat, migracje i typowane zapytania
+## Funkcje
+
+- **Katalog mediów** — jedna uniwersalna tabela `Media` (pole `type`) na wszystkie rodzaje.
+- **Recenzje z regułami** — ocena 1–10, walidacja przed zapisem, jeden użytkownik = jedna ocena tytułu.
+- **Dopasowanie gustu** — % zgodności dwóch użytkowników (reguła: min. 3 wspólne oceny).
+- **Rekomendacje** — tytuły od użytkowników o podobnym guście, których cel jeszcze nie ocenił.
+- **HTTP API (Hono)** — operacje wystawione pod endpointami, błędy mapowane na kody HTTP.
+
+## Narzędzia (cały stack) — i po co
+
+| Narzędzie       | Rola         | Po co w Mozaice                                       |
+| --------------- | ------------ | ----------------------------------------------------- |
+| **Node.js**     | runtime      | uruchamia backend                                     |
+| **TypeScript**  | język + typy | łapie błędy przed uruchomieniem (tryb `strict`)       |
+| **tsx**         | runner       | uruchamia `.ts` bez ręcznej kompilacji                |
+| **Turborepo**   | monorepo     | orkiestruje zadania (build / test / lint / typecheck) |
+| **PostgreSQL**  | baza danych  | trwałe dane: użytkownicy, media, recenzje             |
+| **Prisma**      | ORM          | schemat, migracje, typowane zapytania                 |
+| **ESLint**      | linter       | wykrywa błędy i antywzorce w kodzie                   |
+| **Prettier**    | formatter    | ujednolica styl (wcięcia, cudzysłowy)                 |
+| **Husky**       | git hooks    | pre-commit uruchamia bramki automatycznie             |
+| **lint-staged** | runner hooka | odpala narzędzia tylko na plikach z commita           |
+| **jscpd**       | duplikaty    | pilnuje niskiego poziomu „kopiuj-wklej"               |
+| **secretlint**  | sekrety      | blokuje wyciek haseł / kluczy do repo                 |
 
 ## Struktura
 
 ```
 mozaika/
-├─ package.json          # root: npm workspaces + skrypty turbo
-├─ turbo.json            # definicje zadań (build / start / dev / typecheck)
+├─ package.json          # root: workspaces + skrypty + lint-staged
+├─ turbo.json            # zadania monorepo (build / test / lint / typecheck …)
 ├─ tsconfig.base.json    # wspólna konfiguracja TypeScript
+├─ eslint.config.mjs     # reguły ESLint (flat config)
+├─ .prettierrc.json      # reguły Prettier
+├─ .jscpd.json           # próg duplikatów kodu
+├─ .secretlintrc.json    # reguły secretlint
+├─ .husky/pre-commit     # bramka jakości przed commitem
 └─ apps/
-   └─ api/               # backend
+   └─ api/               # backend — Mozaika API
       ├─ prisma/
-      │  ├─ schema.prisma  # modele: User, Media, Review (+ enum MediaType)
-      │  └─ seed.ts        # dane startowe (filmy z TMDB, recenzje)
-      ├─ src/
-      │  ├─ db.ts          # współdzielony klient Prisma
-      │  └─ index.ts       # odczyt danych z bazy
-      └─ tsconfig.json
+      │  ├─ schema.prisma  # modele User, Media, Review (+ enum MediaType)
+      │  └─ seed.ts        # dane startowe (filmy z TMDB)
+      └─ src/
+         ├─ db.ts          # współdzielony klient Prisma
+         ├─ errors.ts      # błędy domenowe (Validation / NotFound)
+         ├─ server.ts      # serwer HTTP (Hono) — punkt wejścia API
+         ├─ index.ts       # demo logiki w terminalu
+         └─ logic/         # reviews, tasteMatch, recommendations (+ testy)
 ```
 
 Katalog `apps/*` (i przyszły `packages/*`) to workspace'y npm, którymi zarządza Turbo.
@@ -86,7 +115,7 @@ npm run format        # prettier --write .  — sformatuj wszystko
 npm run format:check  # prettier --check .  — sprawdź spójność
 ```
 
-Dowód, że lint przechodzi bez błędów (8 plików .ts, 0 problemów):
+Dowód, że lint przechodzi bez błędów (wszystkie pliki `.ts`, 0 problemów):
 
 ```
 $ npm run lint
@@ -191,16 +220,20 @@ npm run db:migrate --workspace=@mozaika/api   # prisma migrate dev
 # 3. wrzuć dane startowe
 npm run db:seed --workspace=@mozaika/api       # prisma db seed
 
-# 4. uruchom backend przez Turbo (odpala tsx → czyta z bazy)
-npm start                                      # turbo run start
+# 4. uruchom serwer API (Hono) — domyślnie http://localhost:3000
+npm start
 
-# sprawdź typy / kompilację
+# (opcjonalnie) demo logiki w terminalu zamiast serwera
+npm run demo
+
+# sprawdź typy / kompilację / bramki jakości
 npm run typecheck   # prisma generate + tsc --noEmit
-npm run build       # prisma generate + tsc → apps/api/dist
+npm test            # testy logiki (node:test)
+npm run lint        # ESLint (0 błędów)
 ```
 
-Po `npm start` zobaczysz katalog mediów z liczbą recenzji i średnią oceną.
-Podgląd danych w przeglądarce: `npm run db:studio --workspace=@mozaika/api`.
+Po `npm start` API działa na `http://localhost:3000` — sprawdź np.
+`curl localhost:3000/users/1/recommendations`. Podgląd danych: `npm run db:studio --workspace=@mozaika/api`.
 
 ## Skrypty (root)
 
