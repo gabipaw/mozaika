@@ -11,6 +11,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "start": "turbo run start",
+    "demo": "npm run demo --workspace=@mozaika/api",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "lint": "eslint .",
