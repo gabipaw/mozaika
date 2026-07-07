@@ -7,6 +7,7 @@
 import { prisma } from "./db.js";
 import { NotFoundError, ValidationError } from "./errors.js";
 import { addReview } from "./logic/reviews.js";
+import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
 
 async function userIdByEmail(email: string): Promise<number> {
@@ -65,6 +66,18 @@ async function main(): Promise<void> {
       console.log(`   ✅ odrzucono: ${e.message}`);
     } else {
       throw e;
+    }
+  }
+
+  // 5) Rekomendacje przez dopasowanie gustu — tytuły od podobnych użytkowników.
+  console.log("\n🍿 Rekomendacje dla Ali (od użytkowników o podobnym guście):");
+  const recs = await recommendations(ala);
+  if (recs.length === 0) {
+    console.log("   brak — za mało podobnych użytkowników");
+  } else {
+    for (const r of recs) {
+      const kto = r.recommenders.map((x) => `#${x.userId}@${x.matchScore}%`).join(", ");
+      console.log(`   • ${r.title} — przewidywana ocena ${r.score}/10 (poleca: ${kto})`);
     }
   }
 }

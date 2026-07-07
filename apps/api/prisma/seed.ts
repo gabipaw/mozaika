@@ -15,6 +15,7 @@ async function main() {
       { email: "ala@mozaika.dev", displayName: "Ala" },
       { email: "bartek@mozaika.dev", displayName: "Bartek" },
       { email: "celina@mozaika.dev", displayName: "Celina" },
+      { email: "darek@mozaika.dev", displayName: "Darek" },
     ].map((u) =>
       prisma.user.upsert({ where: { email: u.email }, update: {}, create: u }),
     ),
@@ -29,6 +30,8 @@ async function main() {
     { externalId: "244786", title: "Whiplash", year: 2014 },
     { externalId: "438631", title: "Diuna", year: 2021 },
     { externalId: "278", title: "Skazani na Shawshank", year: 1994 },
+    { externalId: "68718", title: "Django", year: 2012 },
+    { externalId: "807", title: "Siedem", year: 1995 },
   ];
   const media = new Map<string, { id: number }>();
   for (const f of filmy) {
@@ -72,6 +75,13 @@ async function main() {
     // Celina — tylko po 1 wspólnym tytule z każdym (za mało do dopasowania)
     { email: "celina@mozaika.dev", film: "Diuna", rating: 3 },
     { email: "celina@mozaika.dev", film: "Skazani na Shawshank", rating: 5 },
+    // Darek — bardzo podobny gust do Ali (3 wspólne, prawie identyczne oceny);
+    // poleca Ali tytuły, których jeszcze nie widziała: Django i Siedem.
+    { email: "darek@mozaika.dev", film: "Incepcja", rating: 9 },
+    { email: "darek@mozaika.dev", film: "Interstellar", rating: 9 },
+    { email: "darek@mozaika.dev", film: "Parasite", rating: 8 },
+    { email: "darek@mozaika.dev", film: "Django", rating: 9 },
+    { email: "darek@mozaika.dev", film: "Siedem", rating: 8 },
   ];
 
   for (const r of recenzje) {
