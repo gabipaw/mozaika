@@ -1,0 +1,21 @@
+{
+  "name": "mozaika",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mozaika — platforma recenzji wszystkich mediów. Monorepo (Turborepo).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "npm@9.2.0"
+}
