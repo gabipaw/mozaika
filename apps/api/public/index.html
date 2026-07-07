@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mozaika</title>
+    <meta
+      name="description"
+      content="Recenzje wszystkich mediów i rekomendacje przez dopasowanie gustu."
+    />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#6d5cff" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>🎨 Mozaika</h1>
+      <p class="tagline">Recenzje wszystkich mediów + dopasowanie gustu</p>
+    </header>
+
+    <main>
+      <section class="card">
+        <label for="user">Jesteś:</label>
+        <select id="user" aria-label="Wybierz użytkownika"></select>
+      </section>
+
+      <section class="card">
+        <h2>🍿 Rekomendacje dla Ciebie</h2>
+        <ul id="recs" class="list">
+          <li class="muted">Ładowanie…</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>🎯 Dopasowanie gustu</h2>
+        <div class="row">
+          <span>z</span>
+          <select id="other" aria-label="Drugi użytkownik"></select>
+          <button id="matchBtn" type="button">Policz</button>
+        </div>
+        <p id="matchResult" class="result"></p>
+      </section>
+
+      <section class="card">
+        <h2>📚 Katalog — oceń tytuł (1–10)</h2>
+        <ul id="catalog" class="list"></ul>
+        <p id="reviewMsg" class="result"></p>
+      </section>
+    </main>
+
+    <footer>
+      <p class="muted">Mozaika — projekt stażowy. Dane demonstracyjne.</p>
+    </footer>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

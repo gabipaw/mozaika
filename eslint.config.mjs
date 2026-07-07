@@ -27,5 +27,12 @@ export default tseslint.config(
       "prefer-const": "error",
     },
   },
+  {
+    // Frontend PWA działa w przeglądarce / service workerze, nie w Node.
+    files: ["apps/api/public/**/*.js"],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.serviceworker },
+    },
+  },
   prettier,
 );
