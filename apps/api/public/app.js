@@ -259,6 +259,7 @@ function setAuthMode(mode) {
   $("authSubmit").textContent = login ? "Zaloguj się" : "Załóż konto";
   $("switchText").textContent = login ? "Nie masz jeszcze konta?" : "Masz już konto?";
   $("switchBtn").textContent = login ? "Załóż konto" : "Zaloguj się";
+  $("password").placeholder = login ? "Hasło" : "Hasło (min. 6 znaków)";
   $("password").setAttribute("autocomplete", login ? "current-password" : "new-password");
   $("authMsg").textContent = "";
 }
