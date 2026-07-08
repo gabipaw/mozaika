@@ -1,5 +1,5 @@
 // Service worker Mozaiki — cache'uje „powłokę" aplikacji (offline + instalowalność PWA).
-const CACHE = "mozaika-v10";
+const CACHE = "mozaika-v11";
 const SHELL = [
   "/",
   "/index.html",
@@ -28,9 +28,19 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  // Zapytania do API zawsze z sieci (świeże dane); powłokę z cache (fallback do sieci).
+  if (request.method !== "GET") return;
+  // Zapytania do API zawsze z sieci (świeże dane) — bez cache.
   if (new URL(request.url).pathname.startsWith("/api/")) {
     return;
   }
-  event.respondWith(caches.match(request).then((hit) => hit || fetch(request)));
+  // Powłoka: najpierw sieć (świeży front gdy online), cache tylko jako fallback offline.
+  event.respondWith(
+    fetch(request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((cache) => cache.put(request, copy));
+        return res;
+      })
+      .catch(() => caches.match(request)),
+  );
 });
