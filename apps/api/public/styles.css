@@ -322,8 +322,6 @@ h2 {
   border-radius: 14px;
   overflow: hidden;
   background: linear-gradient(135deg, #23232f, #191922);
-  position: sticky;
-  top: 76px;
 }
 
 .detail-poster img {
@@ -468,7 +466,7 @@ h2 {
 
 .review .who .name {
   font-weight: 600;
-  color: var(--text);
+  color: #ffffff;
 }
 
 .review .who .rating {
@@ -478,7 +476,7 @@ h2 {
 
 .review .text {
   font-size: 0.9rem;
-  color: var(--text);
+  color: #ffffff;
   line-height: 1.4;
 }
 
