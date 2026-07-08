@@ -64,6 +64,29 @@ export async function searchManga(query: string): Promise<ExternalMedia[]> {
     .map(toManga);
 }
 
+/**
+ * Zwraca surowe tytuły mang (romaji + english) dla frazy — do wykluczania mangi
+ * z wyników wyszukiwania książek. Gdy AniList niedostępny, zwraca [] (nie blokuje).
+ */
+export async function searchMangaTitles(query: string): Promise<string[]> {
+  const q = query.trim();
+  if (!q) return [];
+  try {
+    const data = await gql<{ Page: { media: AniListMedia[] } }>(
+      `query ($q: String) { Page(perPage: 18) { media(search: $q, type: MANGA, sort: SEARCH_MATCH) { id title { romaji english } } } }`,
+      { q },
+    );
+    const out: string[] = [];
+    for (const m of data.Page.media ?? []) {
+      if (m.title.romaji) out.push(m.title.romaji);
+      if (m.title.english) out.push(m.title.english);
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
 /** Dodaje mangę z AniList do katalogu (upsert po externalId = AniList id). */
 export async function addMangaFromAniList(externalId: string) {
   const id = externalId.trim();

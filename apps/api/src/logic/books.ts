@@ -5,6 +5,7 @@
 import { MediaType } from "@prisma/client";
 
 import { NotFoundError, ValidationError } from "../errors.js";
+import { searchMangaTitles } from "./manga.js";
 import { type ExternalMedia, upsertExternalMedia } from "./media.js";
 
 const OL = "https://openlibrary.org";
@@ -49,6 +50,18 @@ function dedupKey(raw: string): string {
     .trim();
 }
 
+/**
+ * Klucz do por\u00f3wnywania ksi\u0105\u017cki z mang\u0105 \u2014 same znaki alfanumeryczne (bez spacji,
+ * apostrof\u00f3w, my\u015blnik\u00f3w), \u017ceby "JoJo's Bizarre\u2026" i "JOJOS BIZARRE\u2026" si\u0119 zr\u00f3wna\u0142y.
+ */
+function matchKey(raw: string): string {
+  return cleanTitle(raw)
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
 interface OlDoc {
   key: string; // np. "/works/OL45804W"
   title: string;
@@ -85,17 +98,31 @@ export async function searchBooks(query: string): Promise<ExternalMedia[]> {
   if (!res.ok) throw new Error(`Open Library search error ${res.status}`);
 
   const data = (await res.json()) as { docs?: OlDoc[] };
+
+  // Manga trafia do Open Library jako „książki" (tomy) — pytamy AniList o tę samą
+  // frazę i wykluczamy z wyników książek tytuły, które są mangą (mają swoją zakładkę).
+  const mangaKeys = (await searchMangaTitles(q))
+    .map(matchKey)
+    .filter((k) => k.length >= 5);
+
   const seen = new Set<string>();
   const out: ExternalMedia[] = [];
   for (const d of data.docs ?? []) {
     if (!d.title || !d.key || !d.cover_i) continue; // tylko z okładką
     const key = dedupKey(d.title);
     if (!key || seen.has(key)) continue; // ten sam tytuł (kolejny tom serii) już był
+    if (isManga(matchKey(d.title), mangaKeys)) continue; // manga → zakładka Manga
     seen.add(key);
     out.push(toBook(d));
     if (out.length >= 18) break;
   }
   return out;
+}
+
+/** Czy klucz tytułu książki pasuje do którejś mangi (zawiera się / jest zawarty). */
+function isManga(bookKey: string, mangaKeys: string[]): boolean {
+  if (bookKey.length < 5) return false;
+  return mangaKeys.some((mk) => mk.includes(bookKey) || bookKey.includes(mk));
 }
 
 /** Dodaje książkę z Open Library do katalogu (upsert po externalId). */
