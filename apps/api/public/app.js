@@ -400,7 +400,7 @@ async function saveDetail() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ mediaId, rating, text }),
     });
-    toast("✅ Zapisano");
+    toast("Zapisano");
     await Promise.all([loadProfile(), loadRecommendations(), loadCatalog()]);
     loadDetailReviews(mediaId);
   } catch (e) {
