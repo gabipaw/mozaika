@@ -301,10 +301,15 @@ async function openDetail(item) {
   $("detailComment").value = "";
   $("detailDesc").textContent = "Ładowanie opisu…";
   $("detailReviews").innerHTML = "";
-  detailReturn = $("searchResults").classList.contains("hidden") ? "browse" : "results";
+  detailReturn = !$("profileView").classList.contains("hidden")
+    ? "profile"
+    : $("searchResults").classList.contains("hidden")
+      ? "browse"
+      : "results";
   $("searchbar").classList.add("hidden");
   $("searchResults").classList.add("hidden");
   $("browse").classList.add("hidden");
+  $("profileView").classList.add("hidden");
   $("detailView").classList.remove("hidden");
   window.scrollTo(0, 0);
 
@@ -410,10 +415,33 @@ async function saveDetail() {
 
 function closeDetail() {
   $("detailView").classList.add("hidden");
+  detailCtx = null;
+  if (detailReturn === "profile") {
+    openProfile();
+    return;
+  }
   $("searchbar").classList.remove("hidden");
   $("searchResults").classList.toggle("hidden", detailReturn !== "results");
   $("browse").classList.toggle("hidden", detailReturn === "results");
-  detailCtx = null;
+}
+
+// --- Twój profil (osobna strona) ---
+async function openProfile() {
+  $("searchbar").classList.add("hidden");
+  $("searchResults").classList.add("hidden");
+  $("browse").classList.add("hidden");
+  $("detailView").classList.add("hidden");
+  $("profileView").classList.remove("hidden");
+  window.scrollTo(0, 0);
+  if (me) $("profileName").textContent = `Cześć, ${me.displayName}`;
+  await Promise.all([loadProfile(), loadOthers()]);
+}
+
+function closeProfile() {
+  $("profileView").classList.add("hidden");
+  $("searchbar").classList.remove("hidden");
+  $("searchResults").classList.add("hidden");
+  $("browse").classList.remove("hidden");
 }
 
 async function loadOthers() {
@@ -502,9 +530,8 @@ async function init() {
   );
   $("authForm").addEventListener("submit", submitAuth);
   $("logout").addEventListener("click", logout);
-  $("hello").addEventListener("click", () => {
-    $("profile").scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+  $("hello").addEventListener("click", openProfile);
+  $("profileBack").addEventListener("click", closeProfile);
   $("search").addEventListener("input", onSearchInput);
   $("typeFilm").addEventListener("click", () => setSearchType("film"));
   $("typeBook").addEventListener("click", () => setSearchType("book"));

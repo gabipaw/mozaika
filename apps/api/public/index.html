@@ -106,20 +106,6 @@
             <div id="recs" class="poster-row"></div>
           </section>
 
-          <section id="profile">
-            <div class="section-head">
-              <h2>Twój profil</h2>
-              <div class="match">
-                <span>dopasowanie z</span>
-                <select id="other" aria-label="Drugi użytkownik"></select>
-                <button id="matchBtn" type="button">?</button>
-                <span id="matchResult" class="match-result"></span>
-              </div>
-            </div>
-            <p id="profileStats" class="hint"></p>
-            <div id="myReviews" class="poster-grid"></div>
-          </section>
-
           <section>
             <h2>Katalog</h2>
             <div id="catalog" class="poster-grid"></div>
@@ -163,6 +149,21 @@
             <h3>Komentarze</h3>
             <div id="detailReviews"></div>
           </div>
+        </section>
+
+        <!-- Twój profil (osobna strona) -->
+        <section id="profileView" class="detail-page hidden">
+          <button id="profileBack" class="linkbtn back" type="button">← Wróć</button>
+          <h1 id="profileName"></h1>
+          <p id="profileStats" class="hint"></p>
+          <div class="match">
+            <span>dopasowanie z</span>
+            <select id="other" aria-label="Drugi użytkownik"></select>
+            <button id="matchBtn" type="button">?</button>
+            <span id="matchResult" class="match-result"></span>
+          </div>
+          <h2 class="profile-h">Twoje oceny</h2>
+          <div id="myReviews" class="poster-grid"></div>
         </section>
       </div>
 

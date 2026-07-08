@@ -449,6 +449,20 @@ h2 {
   margin-bottom: 4px;
 }
 
+#profileName {
+  margin: 0 0 6px;
+  font-size: 1.7rem;
+}
+
+.profile-h {
+  margin: 22px 0 12px;
+  font-size: 1.15rem;
+}
+
+#profileView .match {
+  margin: 10px 0 4px;
+}
+
 .detail-comments {
   margin-top: 24px;
 }
