@@ -352,6 +352,7 @@ h2 {
   font-size: 0.95rem;
   line-height: 1.6;
   margin: 0 0 18px;
+  white-space: pre-line;
 }
 
 .detail-rateline {

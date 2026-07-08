@@ -68,18 +68,30 @@ export async function addMusicFromItunes(externalId: string) {
   return upsertExternalMedia(MediaType.MUZYKA, toAlbum(album));
 }
 
-/** „Opis" albumu (gatunek · liczba utworów · prawa) — albumy nie mają streszczeń. */
+interface ItunesTrack {
+  wrapperType?: string;
+  trackName?: string;
+  trackNumber?: number;
+}
+
+/** „Opis" albumu = nagłówek (gatunek · liczba utworów) + lista utworów (z iTunes). */
 export async function musicDescription(externalId: string): Promise<string> {
   const id = externalId.trim();
   if (!/^\d+$/.test(id)) return "";
-  const res = await fetch(`${ITUNES}/lookup?id=${id}`);
+  const res = await fetch(`${ITUNES}/lookup?id=${id}&entity=song`);
   if (!res.ok) return "";
-  const data = (await res.json()) as { results?: ItunesAlbum[] };
-  const a = (data.results ?? []).find((x) => String(x.collectionId) === id);
-  if (!a) return "";
-  const parts: string[] = [];
-  if (a.primaryGenreName) parts.push(a.primaryGenreName);
-  if (a.trackCount) parts.push(`${a.trackCount} utworów`);
-  if (a.copyright) parts.push(a.copyright);
-  return parts.join(" · ");
+  const data = (await res.json()) as { results?: (ItunesAlbum & ItunesTrack)[] };
+  const results = data.results ?? [];
+
+  const album = results.find((x) => String(x.collectionId) === id && x.collectionName);
+  const header: string[] = [];
+  if (album?.primaryGenreName) header.push(album.primaryGenreName);
+  if (album?.trackCount) header.push(`${album.trackCount} utworów`);
+
+  const tracks = results
+    .filter((x) => x.wrapperType === "track" && x.trackName)
+    .sort((a, b) => (a.trackNumber ?? 0) - (b.trackNumber ?? 0))
+    .map((x) => `${x.trackNumber}. ${x.trackName}`);
+
+  return [header.join(" · "), ...tracks].filter(Boolean).join("\n");
 }
