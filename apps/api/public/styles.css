@@ -383,6 +383,34 @@ h2 {
   border-color: var(--accent);
 }
 
+.pw-field {
+  position: relative;
+  display: flex;
+}
+
+#authForm .pw-field input {
+  flex: 1;
+  padding-right: 46px;
+}
+
+.pw-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.pw-toggle:hover {
+  filter: brightness(1.25);
+}
+
 #authForm button {
   padding: 13px;
   font-size: 1rem;

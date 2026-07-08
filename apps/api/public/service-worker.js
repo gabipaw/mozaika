@@ -1,5 +1,5 @@
 // Service worker Mozaiki — cache'uje „powłokę" aplikacji (offline + instalowalność PWA).
-const CACHE = "mozaika-v8";
+const CACHE = "mozaika-v9";
 const SHELL = [
   "/",
   "/index.html",

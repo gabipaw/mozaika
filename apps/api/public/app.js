@@ -298,6 +298,13 @@ async function init() {
   });
   $("search").addEventListener("input", onSearchInput);
   $("matchBtn").addEventListener("click", showMatch);
+  $("pwToggle").addEventListener("click", () => {
+    const pw = $("password");
+    const show = pw.type === "password";
+    pw.type = show ? "text" : "password";
+    $("pwToggle").textContent = show ? "🙈" : "👁";
+    $("pwToggle").setAttribute("aria-label", show ? "Ukryj hasło" : "Pokaż hasło");
+  });
   setAuthMode("login");
 
   if (getToken()) {

@@ -49,13 +49,23 @@
               autocomplete="email"
               required
             />
-            <input
-              id="password"
-              type="password"
-              placeholder="Hasło"
-              autocomplete="current-password"
-              required
-            />
+            <div class="pw-field">
+              <input
+                id="password"
+                type="password"
+                placeholder="Hasło"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                id="pwToggle"
+                type="button"
+                class="pw-toggle"
+                aria-label="Pokaż hasło"
+              >
+                👁
+              </button>
+            </div>
             <button id="authSubmit" type="submit">Zaloguj się</button>
           </form>
           <p id="authMsg" class="err"></p>
