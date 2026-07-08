@@ -14,6 +14,20 @@ function coverUrl(coverId: number | null | undefined): string | null {
   return coverId ? `${COVER}/${coverId}-L.jpg` : null;
 }
 
+/**
+ * Usuwa z tytułu oznaczenia tomu/wydania ("Vol. 1", "Tom 2", "#3", końcowy numer),
+ * żeby wszystkie tomy jednej serii zwijały się do jednego tytułu (np. "Naruto").
+ */
+function cleanTitle(raw: string): string {
+  const cleaned = raw
+    .replace(/[,:#]/g, " ")
+    .replace(/\b(vol|volume|tom|no|nr|part|cz|czesc|book)\b\.?\s*\d+/gi, " ")
+    .replace(/\s+\d+\s*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned || raw.trim();
+}
+
 interface OlDoc {
   key: string; // np. "/works/OL45804W"
   title: string;
@@ -24,31 +38,43 @@ interface OlDoc {
 
 function toBook(d: OlDoc): ExternalMedia {
   const author = d.author_name?.[0];
+  const title = cleanTitle(d.title);
   return {
     externalId: d.key.replace("/works/", ""),
-    title: author ? `${d.title} — ${author}` : d.title,
+    title: author ? `${title} — ${author}` : title,
     year: d.first_publish_year ?? null,
     posterUrl: coverUrl(d.cover_i),
   };
 }
 
-/** Szuka książek w Open Library. Zwraca do 18 wyników (bez zapisu w bazie). */
+/**
+ * Szuka książek w Open Library. Pomija pozycje bez okładki i zwija wszystkie
+ * tomy tej samej serii/autora do jednego wpisu. Zwraca do 18 wyników.
+ */
 export async function searchBooks(query: string): Promise<ExternalMedia[]> {
   const q = query.trim();
   if (!q) throw new ValidationError("Podaj frazę do wyszukania.");
 
+  // Pobieramy z zapasem (60), bo po odfiltrowaniu bez-okładek i dedupie zostaje mniej.
   const url =
-    `${OL}/search.json?limit=18` +
+    `${OL}/search.json?limit=60` +
     `&fields=key,title,first_publish_year,cover_i,author_name` +
     `&q=${encodeURIComponent(q)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Open Library search error ${res.status}`);
 
   const data = (await res.json()) as { docs?: OlDoc[] };
-  return (data.docs ?? [])
-    .filter((d) => d.title && d.key)
-    .slice(0, 18)
-    .map(toBook);
+  const seen = new Set<string>();
+  const out: ExternalMedia[] = [];
+  for (const d of data.docs ?? []) {
+    if (!d.title || !d.key || !d.cover_i) continue; // tylko z okładką
+    const key = `${cleanTitle(d.title).toLowerCase()}|${(d.author_name?.[0] ?? "").toLowerCase()}`;
+    if (seen.has(key)) continue; // ten sam tytuł+autor już był (kolejny tom)
+    seen.add(key);
+    out.push(toBook(d));
+    if (out.length >= 18) break;
+  }
+  return out;
 }
 
 /** Dodaje książkę z Open Library do katalogu (upsert po externalId). */
@@ -73,7 +99,7 @@ export async function addBookFromOpenLibrary(externalId: string) {
     ? Number((work.first_publish_date.match(/\d{4}/) ?? [])[0]) || null
     : null;
   const author = await authorName(work.authors?.[0]?.author?.key);
-  const baseTitle = work.title ?? id;
+  const baseTitle = cleanTitle(work.title ?? id);
   return upsertExternalMedia(MediaType.KSIAZKA, {
     externalId: id,
     title: author ? `${baseTitle} — ${author}` : baseTitle,
