@@ -20,6 +20,7 @@ enum MediaType {
   GRA
   MUZYKA
   MANGA
+  ANIME
 }
 
 /// Użytkownik platformy (autor recenzji).

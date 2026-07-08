@@ -128,11 +128,17 @@ async function loadCatalog() {
   renderGrid($("catalog"), allMedia, (m, rating) => rateMedia(m.id, rating), "Oceń");
 }
 
-const SEARCH_SRC = { film: "TMDB", book: "Open Library", manga: "AniList" };
+const SEARCH_SRC = {
+  film: "TMDB",
+  book: "Open Library",
+  manga: "AniList",
+  anime: "AniList",
+};
 const SEARCH_PH = {
   film: "Szukaj filmu (TMDB)…",
   book: "Szukaj książki (Open Library)…",
   manga: "Szukaj mangi (AniList)…",
+  anime: "Szukaj anime (AniList)…",
 };
 
 async function runSearch(q) {
@@ -160,6 +166,7 @@ function setSearchType(t) {
   $("typeFilm").classList.toggle("active", t === "film");
   $("typeBook").classList.toggle("active", t === "book");
   $("typeManga").classList.toggle("active", t === "manga");
+  $("typeAnime").classList.toggle("active", t === "anime");
   $("search").placeholder = SEARCH_PH[t] ?? SEARCH_PH.film;
   const q = $("search").value.trim();
   if (q) runSearch(q);
@@ -330,6 +337,7 @@ async function init() {
   $("typeFilm").addEventListener("click", () => setSearchType("film"));
   $("typeBook").addEventListener("click", () => setSearchType("book"));
   $("typeManga").addEventListener("click", () => setSearchType("manga"));
+  $("typeAnime").addEventListener("click", () => setSearchType("anime"));
   $("matchBtn").addEventListener("click", showMatch);
   $("pwToggle").innerHTML = pwIcon(false);
   $("pwToggle").addEventListener("click", () => {

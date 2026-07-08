@@ -5,7 +5,7 @@
 import { MediaType } from "@prisma/client";
 
 import { NotFoundError, ValidationError } from "../errors.js";
-import { searchMangaTitles } from "./manga.js";
+import { aniListTitles } from "./anilist.js";
 import { type ExternalMedia, upsertExternalMedia } from "./media.js";
 
 const OL = "https://openlibrary.org";
@@ -101,7 +101,7 @@ export async function searchBooks(query: string): Promise<ExternalMedia[]> {
 
   // Manga trafia do Open Library jako „książki" (tomy) — pytamy AniList o tę samą
   // frazę i wykluczamy z wyników książek tytuły, które są mangą (mają swoją zakładkę).
-  const mangaKeys = (await searchMangaTitles(q))
+  const mangaKeys = (await aniListTitles("MANGA", q))
     .map(matchKey)
     .filter((k) => k.length >= 5);
 
