@@ -14,18 +14,39 @@ function coverUrl(coverId: number | null | undefined): string | null {
   return coverId ? `${COVER}/${coverId}-L.jpg` : null;
 }
 
+// Oznaczenia tomu/części w wielu językach: "Vol. 1", "Tome 01", "Part7", "Parte 7", "Band 3"…
+// (brak \b po słowie celowo — łapie też sklejone formy typu "Part7").
+const VOLUME_MARKER =
+  /\b(volume|vol|tome|tomo|tom|teil|band|parte|part|deel|book)\.?\s*#?\s*\d+/gi;
+
 /**
- * Usuwa z tytułu oznaczenia tomu/wydania ("Vol. 1", "Tom 2", "#3", końcowy numer),
+ * Usuwa z tytułu oznaczenia tomu/wydania (Vol/Tome/Part/…, "#3", końcowy numer),
  * żeby wszystkie tomy jednej serii zwijały się do jednego tytułu (np. "Naruto").
  */
 function cleanTitle(raw: string): string {
   const cleaned = raw
-    .replace(/[,:#]/g, " ")
-    .replace(/\b(vol|volume|tom|no|nr|part|cz|czesc|book)\b\.?\s*\d+/gi, " ")
+    .replace(/[,:#._-]+/g, " ")
+    .replace(VOLUME_MARKER, " ")
     .replace(/\s+\d+\s*$/, "")
     .replace(/\s+/g, " ")
     .trim();
   return cleaned || raw.trim();
+}
+
+/**
+ * Klucz do zwijania tomów tej samej serii. Agresywnie normalizuje: bez oznaczeń tomu,
+ * bez znaków niełacińskich (jap./interpunkcja) i diakrytyków — dzięki temu warianty
+ * "STEEL BALL RUN 1", "…スティール… 3", "…Vol. 9" trafiają pod jeden klucz.
+ */
+function dedupKey(raw: string): string {
+  return cleanTitle(raw)
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+\d+\s*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 interface OlDoc {
@@ -49,7 +70,7 @@ function toBook(d: OlDoc): ExternalMedia {
 
 /**
  * Szuka książek w Open Library. Pomija pozycje bez okładki i zwija wszystkie
- * tomy tej samej serii/autora do jednego wpisu. Zwraca do 18 wyników.
+ * tomy tej samej serii do jednego wpisu. Zwraca do 18 wyników.
  */
 export async function searchBooks(query: string): Promise<ExternalMedia[]> {
   const q = query.trim();
@@ -68,8 +89,8 @@ export async function searchBooks(query: string): Promise<ExternalMedia[]> {
   const out: ExternalMedia[] = [];
   for (const d of data.docs ?? []) {
     if (!d.title || !d.key || !d.cover_i) continue; // tylko z okładką
-    const key = `${cleanTitle(d.title).toLowerCase()}|${(d.author_name?.[0] ?? "").toLowerCase()}`;
-    if (seen.has(key)) continue; // ten sam tytuł+autor już był (kolejny tom)
+    const key = dedupKey(d.title);
+    if (!key || seen.has(key)) continue; // ten sam tytuł (kolejny tom serii) już był
     seen.add(key);
     out.push(toBook(d));
     if (out.length >= 18) break;
