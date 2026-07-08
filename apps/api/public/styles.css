@@ -398,17 +398,21 @@ h2 {
   right: 6px;
   top: 50%;
   transform: translateY(-50%);
+  display: grid;
+  place-items: center;
   background: transparent;
   border: none;
   color: var(--muted);
-  font-size: 1.15rem;
-  line-height: 1;
   padding: 6px 8px;
   cursor: pointer;
 }
 
+.pw-toggle svg {
+  display: block;
+}
+
 .pw-toggle:hover {
-  filter: brightness(1.25);
+  color: var(--text);
 }
 
 #authForm button {

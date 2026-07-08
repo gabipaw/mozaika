@@ -10,6 +10,14 @@ const getToken = () => localStorage.getItem("mozaika_token");
 const setToken = (t) => localStorage.setItem("mozaika_token", t);
 const clearToken = () => localStorage.removeItem("mozaika_token");
 
+// Ikona oka do podglądu hasła. off=true → oko przekreślone ukośną linią (hasło widoczne).
+function pwIcon(off) {
+  const eye =
+    '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>';
+  const slash = off ? '<line x1="3" y1="3" x2="21" y2="21"/>' : "";
+  return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${eye}${slash}</svg>`;
+}
+
 async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   const token = getToken();
@@ -298,11 +306,12 @@ async function init() {
   });
   $("search").addEventListener("input", onSearchInput);
   $("matchBtn").addEventListener("click", showMatch);
+  $("pwToggle").innerHTML = pwIcon(false);
   $("pwToggle").addEventListener("click", () => {
     const pw = $("password");
     const show = pw.type === "password";
     pw.type = show ? "text" : "password";
-    $("pwToggle").textContent = show ? "🙈" : "👁";
+    $("pwToggle").innerHTML = pwIcon(show);
     $("pwToggle").setAttribute("aria-label", show ? "Ukryj hasło" : "Pokaż hasło");
   });
   setAuthMode("login");
