@@ -93,10 +93,22 @@ function posterCard(m, opts = {}) {
   return { card, meta };
 }
 
+// Enum typu w bazie (WIELKIE) → klucz źródła używany na froncie i w API (małe).
+const ENUM_TYPE = {
+  FILM: "film",
+  SERIAL: "film",
+  KSIAZKA: "book",
+  MANGA: "manga",
+  ANIME: "anime",
+  MUZYKA: "music",
+};
+
 // Buduje obiekt szczegółów z rekordu (media z bazy / wynik wyszukiwania).
+// Typ zawsze normalizowany do małego klucza (film/book/manga/anime/music).
 function toDetail(m, type, mediaId, myRating) {
+  const raw = type ?? m.type;
   return {
-    type: type ?? m.type,
+    type: ENUM_TYPE[raw] ?? raw,
     externalId: m.externalId ?? null,
     title: m.title,
     year: m.year ?? null,
@@ -306,9 +318,12 @@ async function openDetail(item) {
   }
 
   // Jeśli tytuł jest już w katalogu, znajdź mediaId, żeby pokazać komentarze.
+  // (typ w bazie jest WIELKIMI literami, więc normalizujemy przez ENUM_TYPE.)
   if (!item.mediaId && item.externalId) {
     const found = allMedia.find(
-      (m) => m.type === item.type && String(m.externalId) === String(item.externalId),
+      (m) =>
+        ENUM_TYPE[m.type] === item.type &&
+        String(m.externalId) === String(item.externalId),
     );
     if (found) item.mediaId = found.id;
   }
@@ -381,7 +396,7 @@ async function saveDetail() {
       body: JSON.stringify({ mediaId, rating, text }),
     });
     toast("✅ Zapisano");
-    await Promise.all([loadProfile(), loadRecommendations()]);
+    await Promise.all([loadProfile(), loadRecommendations(), loadCatalog()]);
     loadDetailReviews(mediaId);
   } catch (e) {
     $("detailMsg").textContent = e.message;

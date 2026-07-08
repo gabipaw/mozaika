@@ -68,7 +68,7 @@ export async function searchAniList(
   if (!q) throw new ValidationError("Podaj frazę do wyszukania.");
 
   const data = await gql<{ Page: { media: AniListMedia[] } }>(
-    `query ($q: String) { Page(perPage: 18) { media(search: $q, type: ${type}, sort: SEARCH_MATCH) { ${MEDIA_FIELDS} } } }`,
+    `query ($q: String) { Page(perPage: 18) { media(search: $q, type: ${type}, isAdult: false, sort: SEARCH_MATCH) { ${MEDIA_FIELDS} } } }`,
     { q },
   );
   return (data.Page.media ?? [])
@@ -119,7 +119,7 @@ export async function aniListTitles(type: AniType, query: string): Promise<strin
   if (!q) return [];
   try {
     const data = await gql<{ Page: { media: AniListMedia[] } }>(
-      `query ($q: String) { Page(perPage: 18) { media(search: $q, type: ${type}, sort: SEARCH_MATCH) { id title { romaji english } } } }`,
+      `query ($q: String) { Page(perPage: 18) { media(search: $q, type: ${type}, isAdult: false, sort: SEARCH_MATCH) { id title { romaji english } } } }`,
       { q },
     );
     const out: string[] = [];
