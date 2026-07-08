@@ -23,6 +23,16 @@ interface TmdbMovie {
   title: string;
   release_date?: string;
   poster_path?: string | null;
+  genre_ids?: number[];
+  original_language?: string;
+}
+
+// Anime = animacja (gatunek TMDB 16) w języku japońskim → należy do zakładki Anime.
+const ANIMATION_GENRE = 16;
+function isAnime(m: TmdbMovie): boolean {
+  return (
+    (m.genre_ids?.includes(ANIMATION_GENRE) ?? false) && m.original_language === "ja"
+  );
 }
 
 function toFilm(m: TmdbMovie): ExternalMedia {
@@ -47,7 +57,7 @@ export async function searchTmdb(query: string): Promise<ExternalMedia[]> {
 
   const data = (await res.json()) as { results?: TmdbMovie[] };
   return (data.results ?? [])
-    .filter((m) => m.title)
+    .filter((m) => m.title && !isAnime(m)) // anime → osobna zakładka
     .slice(0, 18)
     .map(toFilm);
 }
