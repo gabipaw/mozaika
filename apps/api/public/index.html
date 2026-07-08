@@ -92,30 +92,39 @@
           />
         </div>
 
-        <section>
-          <h2>Dla Ciebie</h2>
-          <p class="hint">Polecane przez osoby o podobnym guście.</p>
-          <div id="recs" class="poster-row"></div>
+        <!-- Wyniki wyszukiwania — od razu pod wyszukiwarką -->
+        <section id="searchResults" class="hidden">
+          <h2 id="searchTitle">Wyniki</h2>
+          <div id="searchGrid" class="poster-grid"></div>
         </section>
 
-        <section id="profile">
-          <div class="section-head">
-            <h2>Twój profil</h2>
-            <div class="match">
-              <span>dopasowanie z</span>
-              <select id="other" aria-label="Drugi użytkownik"></select>
-              <button id="matchBtn" type="button">?</button>
-              <span id="matchResult" class="match-result"></span>
+        <!-- Przeglądanie (chowane podczas wyszukiwania) -->
+        <div id="browse">
+          <section>
+            <h2>Dla Ciebie</h2>
+            <p class="hint">Polecane przez osoby o podobnym guście.</p>
+            <div id="recs" class="poster-row"></div>
+          </section>
+
+          <section id="profile">
+            <div class="section-head">
+              <h2>Twój profil</h2>
+              <div class="match">
+                <span>dopasowanie z</span>
+                <select id="other" aria-label="Drugi użytkownik"></select>
+                <button id="matchBtn" type="button">?</button>
+                <span id="matchResult" class="match-result"></span>
+              </div>
             </div>
-          </div>
-          <p id="profileStats" class="hint"></p>
-          <div id="myReviews" class="poster-grid"></div>
-        </section>
+            <p id="profileStats" class="hint"></p>
+            <div id="myReviews" class="poster-grid"></div>
+          </section>
 
-        <section>
-          <h2 id="catalogTitle">Katalog</h2>
-          <div id="catalog" class="poster-grid"></div>
-        </section>
+          <section>
+            <h2>Katalog</h2>
+            <div id="catalog" class="poster-grid"></div>
+          </section>
+        </div>
       </div>
 
       <p id="reviewMsg" class="toast"></p>
@@ -138,8 +147,9 @@
 
         <div class="modal-form">
           <div class="modal-rateline">
-            <label for="detailRating">Twoja ocena</label>
-            <select id="detailRating" aria-label="Ocena"></select>
+            <label>Twoja ocena</label>
+            <div id="detailStars" class="stars" role="slider" aria-label="Ocena"></div>
+            <span id="detailStarVal" class="starval"></span>
           </div>
           <textarea
             id="detailComment"

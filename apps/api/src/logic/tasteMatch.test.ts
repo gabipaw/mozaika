@@ -83,3 +83,12 @@ test("poprawne wejście przechodzi walidację i przycina tekst", () => {
   assert.equal(v.rating, 7);
   assert.equal(v.text, "spoko");
 });
+
+test("półgwiazdka (0.5) jest dozwolona, ćwierćgwiazdka nie", () => {
+  assert.equal(validateReviewInput({ userId: 1, mediaId: 1, rating: 7.5 }).rating, 7.5);
+  assert.equal(validateReviewInput({ userId: 1, mediaId: 1, rating: 0.5 }).rating, 0.5);
+  assert.throws(
+    () => validateReviewInput({ userId: 1, mediaId: 1, rating: 7.3 }),
+    ValidationError,
+  );
+});

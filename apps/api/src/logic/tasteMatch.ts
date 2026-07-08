@@ -58,7 +58,7 @@ export function computeTasteMatch(
   }
 
   const avgDiff = details.reduce((sum, d) => sum + d.diff, 0) / details.length;
-  const score = Math.round(100 * (1 - avgDiff / MAX_DIFF));
+  const score = Math.max(0, Math.round(100 * (1 - avgDiff / MAX_DIFF)));
   return { status: "OK", score, shared: details.length, details };
 }
 

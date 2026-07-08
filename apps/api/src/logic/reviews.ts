@@ -6,7 +6,7 @@
 import { prisma } from "../db.js";
 import { NotFoundError, ValidationError } from "../errors.js";
 
-export const MIN_RATING = 1;
+export const MIN_RATING = 0.5;
 export const MAX_RATING = 10;
 
 export interface ReviewInput {
@@ -33,9 +33,15 @@ export function validateReviewInput(input: ReviewInput): ValidReviewInput {
   if (!Number.isInteger(mediaId) || mediaId <= 0) {
     throw new ValidationError("mediaId musi być dodatnią liczbą całkowitą.");
   }
-  if (!Number.isInteger(rating) || rating < MIN_RATING || rating > MAX_RATING) {
+  if (
+    typeof rating !== "number" ||
+    !Number.isFinite(rating) ||
+    rating < MIN_RATING ||
+    rating > MAX_RATING ||
+    (rating * 2) % 1 !== 0 // dozwolone tylko wielokrotności 0.5 (półgwiazdki)
+  ) {
     throw new ValidationError(
-      `Ocena musi być liczbą całkowitą ${MIN_RATING}–${MAX_RATING} (podano: ${rating}).`,
+      `Ocena musi być wielokrotnością 0,5 w zakresie ${MIN_RATING}–${MAX_RATING} (podano: ${rating}).`,
     );
   }
 

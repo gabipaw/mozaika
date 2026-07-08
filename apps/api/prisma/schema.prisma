@@ -53,7 +53,7 @@ model Media {
 /// Recenzja: ocena (1–10) danego tytułu przez danego użytkownika.
 model Review {
   id        Int      @id @default(autoincrement())
-  rating    Int // 1–10
+  rating    Float // 0.5–10 (co 0.5 — półgwiazdki)
   text      String?
   createdAt DateTime @default(now())
 

@@ -391,6 +391,48 @@ h2 {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Gwiazdki 0.5–10 (półgwiazdki) */
+.stars {
+  display: inline-flex;
+  gap: 2px;
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.star {
+  position: relative;
+  width: 1em;
+  height: 1em;
+  color: var(--line);
+}
+
+.star::before {
+  content: "★";
+  position: absolute;
+  inset: 0;
+}
+
+.star .fill {
+  position: absolute;
+  inset: 0;
+  width: 0;
+  overflow: hidden;
+  color: var(--gold);
+  pointer-events: none;
+}
+
+.star .fill::before {
+  content: "★";
+}
+
+.starval {
+  color: var(--gold);
+  font-weight: 800;
+  min-width: 3.5em;
 }
 
 .modal-form textarea {

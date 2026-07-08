@@ -122,8 +122,17 @@ function renderGrid(container, list, onClick) {
 
 async function loadCatalog() {
   allMedia = await api("/media");
-  $("catalogTitle").textContent = "Katalog";
   renderGrid($("catalog"), allMedia, (m) => openDetail(toDetail(m, m.type, m.id)));
+}
+
+// Wyniki wyszukiwania vs przeglądanie (rekomendacje/profil/katalog).
+function showResults() {
+  $("searchResults").classList.remove("hidden");
+  $("browse").classList.add("hidden");
+}
+function showBrowse() {
+  $("searchResults").classList.add("hidden");
+  $("browse").classList.remove("hidden");
 }
 
 const SEARCH_SRC = {
@@ -143,9 +152,10 @@ const SEARCH_PH = {
 
 async function runSearch(q) {
   const src = SEARCH_SRC[searchType] ?? "TMDB";
-  $("catalogTitle").textContent = `Wyniki z ${src}: „${q}”`;
-  const grid = $("catalog");
+  $("searchTitle").textContent = `Wyniki z ${src}: „${q}”`;
+  const grid = $("searchGrid");
   grid.innerHTML = '<p class="muted">Szukam…</p>';
+  showResults();
   try {
     const results = await api(`/search?q=${encodeURIComponent(q)}&type=${searchType}`);
     renderGrid(grid, results, (m) => openDetail(toDetail(m, searchType, null)));
@@ -166,14 +176,14 @@ function setSearchType(t) {
   $("search").placeholder = SEARCH_PH[t] ?? SEARCH_PH.film;
   const q = $("search").value.trim();
   if (q) runSearch(q);
-  else loadCatalog();
+  else showBrowse();
 }
 
 function onSearchInput() {
   const q = $("search").value.trim();
   window.clearTimeout(searchTimer);
   if (!q) {
-    loadCatalog();
+    showBrowse();
     return;
   }
   searchTimer = window.setTimeout(() => runSearch(q), 350);
@@ -220,6 +230,44 @@ async function loadProfile() {
 
 // --- Szczegóły tytułu (opis + ocena + komentarz) ---
 let detailCtx = null;
+let detailStars = null;
+
+// Widget gwiazdek 0.5–10 (półgwiazdki: lewa połowa = x.5, prawa = x.0).
+function buildStars(container, label) {
+  container.innerHTML = "";
+  let committed = 0;
+  const fills = [];
+  const paint = (v) => {
+    for (let i = 0; i < 10; i += 1) {
+      fills[i].style.width = `${Math.max(0, Math.min(1, v - i)) * 100}%`;
+    }
+    label.textContent = v ? `${v}/10` : "";
+  };
+  for (let i = 0; i < 10; i += 1) {
+    const star = document.createElement("span");
+    star.className = "star";
+    const fill = document.createElement("span");
+    fill.className = "fill";
+    star.append(fill);
+    fills.push(fill);
+    star.addEventListener("mousemove", (e) => {
+      paint(i + (e.offsetX < star.offsetWidth / 2 ? 0.5 : 1));
+    });
+    star.addEventListener("click", (e) => {
+      committed = i + (e.offsetX < star.offsetWidth / 2 ? 0.5 : 1);
+      paint(committed);
+    });
+    container.append(star);
+  }
+  container.addEventListener("mouseleave", () => paint(committed));
+  return {
+    get: () => committed,
+    set: (v) => {
+      committed = v || 0;
+      paint(committed);
+    },
+  };
+}
 
 async function openDetail(item) {
   detailCtx = item;
@@ -236,15 +284,7 @@ async function openDetail(item) {
     poster.append(img);
   }
 
-  const sel = $("detailRating");
-  sel.innerHTML = "";
-  for (let n = 1; n <= 10; n += 1) {
-    const o = document.createElement("option");
-    o.value = String(n);
-    o.textContent = String(n);
-    sel.append(o);
-  }
-  sel.value = String(item.myRating ?? 8);
+  detailStars.set(item.myRating ?? 0);
   $("detailComment").value = "";
   $("detailDesc").textContent = "Ładowanie opisu…";
   $("detailReviews").innerHTML = "";
@@ -287,7 +327,7 @@ async function loadDetailReviews(mediaId) {
     for (const r of reviews) {
       // Wstępnie wypełnij swoją poprzednią ocenę/komentarz.
       if (me && r.user.displayName === me.displayName) {
-        $("detailRating").value = String(r.rating);
+        detailStars.set(r.rating);
         if (r.text) $("detailComment").value = r.text;
       }
       const el = document.createElement("div");
@@ -318,8 +358,12 @@ async function loadDetailReviews(mediaId) {
 async function saveDetail() {
   if (!detailCtx) return;
   $("detailMsg").textContent = "";
-  const rating = Number($("detailRating").value);
+  const rating = detailStars.get();
   const text = $("detailComment").value;
+  if (rating < 0.5) {
+    $("detailMsg").textContent = "Wybierz ocenę (kliknij gwiazdki).";
+    return;
+  }
   try {
     let mediaId = detailCtx.mediaId;
     if (!mediaId) {
@@ -445,6 +489,7 @@ async function init() {
   $("typeManga").addEventListener("click", () => setSearchType("manga"));
   $("typeAnime").addEventListener("click", () => setSearchType("anime"));
   $("typeMusic").addEventListener("click", () => setSearchType("music"));
+  detailStars = buildStars($("detailStars"), $("detailStarVal"));
   $("detailClose").addEventListener("click", closeDetail);
   $("detailSave").addEventListener("click", saveDetail);
   $("detailOverlay").addEventListener("click", (e) => {
