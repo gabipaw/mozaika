@@ -15,6 +15,7 @@ import { prisma } from "./db.js";
 import { NotFoundError, ValidationError } from "./errors.js";
 import { login, register } from "./logic/auth.js";
 import { addBookFromOpenLibrary, searchBooks } from "./logic/books.js";
+import { addMangaFromAniList, searchManga } from "./logic/manga.js";
 import { addReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
@@ -110,21 +111,28 @@ api.get("/media", async (c) => {
 });
 
 // Wyszukiwarka tytułów w zewnętrznym źródle (wyniki nie są jeszcze w bazie).
-// type=book → książki (Open Library); domyślnie filmy (TMDB).
+// type=book → książki (Open Library), type=manga → manga (MyAnimeList); domyślnie filmy (TMDB).
+async function searchByType(type: string, q: string) {
+  if (type === "book") return searchBooks(q);
+  if (type === "manga") return searchManga(q);
+  return searchTmdb(q);
+}
+
 api.get("/search", async (c) => {
   const q = c.req.query("q") ?? "";
-  const type = c.req.query("type") ?? "film";
-  return c.json(type === "book" ? await searchBooks(q) : await searchTmdb(q));
+  return c.json(await searchByType(c.req.query("type") ?? "film", q));
 });
 
-// Dodaj tytuł do katalogu. Body: { externalId, type? }. type=book → Open Library.
+// Dodaj tytuł do katalogu. Body: { externalId, type? }. book → Open Library, manga → MAL.
+async function addByType(type: string, externalId: string) {
+  if (type === "book") return addBookFromOpenLibrary(externalId);
+  if (type === "manga") return addMangaFromAniList(externalId);
+  return addMediaFromTmdb(externalId);
+}
+
 api.post("/media", async (c) => {
   const body = await c.req.json();
-  const externalId = String(body.externalId ?? "");
-  const media =
-    body.type === "book"
-      ? await addBookFromOpenLibrary(externalId)
-      : await addMediaFromTmdb(externalId);
+  const media = await addByType(String(body.type ?? ""), String(body.externalId ?? ""));
   return c.json(media, 201);
 });
 

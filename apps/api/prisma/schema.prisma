@@ -19,6 +19,7 @@ enum MediaType {
   KSIAZKA
   GRA
   MUZYKA
+  MANGA
 }
 
 /// Użytkownik platformy (autor recenzji).
