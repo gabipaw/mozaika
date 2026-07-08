@@ -154,16 +154,16 @@
         <!-- Twój profil (osobna strona) -->
         <section id="profileView" class="detail-page hidden">
           <button id="profileBack" class="linkbtn back" type="button">← Wróć</button>
-          <h1 id="profileName"></h1>
-          <p id="profileStats" class="hint"></p>
-          <div class="match">
-            <span>dopasowanie z</span>
-            <select id="other" aria-label="Drugi użytkownik"></select>
-            <button id="matchBtn" type="button">?</button>
-            <span id="matchResult" class="match-result"></span>
+          <div class="profile-head">
+            <button id="avatarBtn" class="avatar" type="button" title="Zmień zdjęcie">
+              <img id="avatarImg" class="hidden" alt="" />
+              <span id="avatarInitial"></span>
+            </button>
+            <input id="avatarFile" type="file" accept="image/*" class="hidden" />
+            <h1 id="profileName"></h1>
           </div>
-          <h2 class="profile-h">Twoje oceny</h2>
-          <div id="myReviews" class="poster-grid"></div>
+          <h2 class="profile-h">Top 5 ulubionych mediów</h2>
+          <div id="topMedia" class="poster-grid"></div>
         </section>
       </div>
 

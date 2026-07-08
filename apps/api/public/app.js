@@ -226,17 +226,83 @@ async function loadRecommendations() {
 
 async function loadProfile() {
   const data = await api("/me");
-  const box = $("myReviews");
-  $("profileStats").textContent = data.count
-    ? `Ocen: ${data.count} · średnia Twoja ocena: ${data.avg}/10`
-    : "Nie masz jeszcze ocen — oceń coś z katalogu poniżej.";
+
+  // Nagłówek: zdjęcie profilowe + imię.
+  $("profileName").textContent = `Cześć, ${data.user.displayName}`;
+  const img = $("avatarImg");
+  const initial = $("avatarInitial");
+  if (data.user.avatarUrl) {
+    img.src = data.user.avatarUrl;
+    img.classList.remove("hidden");
+    initial.classList.add("hidden");
+  } else {
+    img.classList.add("hidden");
+    initial.classList.remove("hidden");
+    initial.textContent = (data.user.displayName[0] || "?").toUpperCase();
+  }
+
+  // Top 5 ulubionych = 5 najwyżej ocenionych tytułów.
+  const top = [...data.reviews].sort((a, b) => b.rating - a.rating).slice(0, 5);
+  const box = $("topMedia");
   box.innerHTML = "";
-  for (const r of data.reviews) {
+  if (top.length === 0) {
+    box.innerHTML =
+      '<p class="muted">Oceń kilka tytułów, a pojawią się tu Twoje ulubione.</p>';
+    return;
+  }
+  for (const r of top) {
     const { card } = posterCard(r.media, { score: r.rating });
     card.addEventListener("click", () =>
       openDetail(toDetail(r.media, r.media.type, r.media.id, r.rating)),
     );
     box.append(card);
+  }
+}
+
+// Wgranie zdjęcia profilowego: kompresja do 256px (canvas) → data:image → zapis.
+function fileToAvatar(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    const img = new Image();
+    reader.onload = () => {
+      img.src = String(reader.result);
+    };
+    reader.onerror = () => reject(new Error("Nie udało się wczytać pliku."));
+    img.onload = () => {
+      const size = 256;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const scale = Math.max(size / img.width, size / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => reject(new Error("Nieprawidłowy obraz."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function onAvatarPick(ev) {
+  const file = ev.target.value && ev.target.files ? ev.target.files[0] : null;
+  if (!file) return;
+  try {
+    const avatarUrl = await fileToAvatar(file);
+    await api("/me/avatar", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ avatarUrl }),
+    });
+    $("avatarImg").src = avatarUrl;
+    $("avatarImg").classList.remove("hidden");
+    $("avatarInitial").classList.add("hidden");
+    toast("Zapisano zdjęcie");
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    ev.target.value = "";
   }
 }
 
@@ -433,8 +499,7 @@ async function openProfile() {
   $("detailView").classList.add("hidden");
   $("profileView").classList.remove("hidden");
   window.scrollTo(0, 0);
-  if (me) $("profileName").textContent = `Cześć, ${me.displayName}`;
-  await Promise.all([loadProfile(), loadOthers()]);
+  await loadProfile();
 }
 
 function closeProfile() {
@@ -442,30 +507,6 @@ function closeProfile() {
   $("searchbar").classList.remove("hidden");
   $("searchResults").classList.add("hidden");
   $("browse").classList.remove("hidden");
-}
-
-async function loadOthers() {
-  const users = await api("/users");
-  const other = $("other");
-  other.innerHTML = "";
-  for (const u of users) {
-    if (me && u.id === me.id) continue;
-    const o = document.createElement("option");
-    o.value = String(u.id);
-    o.textContent = u.displayName;
-    other.append(o);
-  }
-}
-
-async function showMatch() {
-  const out = $("matchResult");
-  try {
-    const m = await api(`/users/${me.id}/taste-match/${Number($("other").value)}`);
-    out.textContent =
-      m.status === "OK" ? `${m.score}%` : `za mało danych (${m.shared}/${m.minShared})`;
-  } catch (e) {
-    out.textContent = e.message;
-  }
 }
 
 // --- Widoki: logowanie vs aplikacja ---
@@ -481,7 +522,7 @@ async function showApp() {
   $("appView").classList.remove("hidden");
   $("userBox").classList.remove("hidden");
   $("hello").textContent = `Cześć, ${me.displayName}`;
-  await Promise.all([loadProfile(), loadRecommendations(), loadCatalog(), loadOthers()]);
+  await Promise.all([loadRecommendations(), loadCatalog()]);
 }
 
 function logout() {
@@ -532,6 +573,8 @@ async function init() {
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", openProfile);
   $("profileBack").addEventListener("click", closeProfile);
+  $("avatarBtn").addEventListener("click", () => $("avatarFile").click());
+  $("avatarFile").addEventListener("change", onAvatarPick);
   $("search").addEventListener("input", onSearchInput);
   $("typeFilm").addEventListener("click", () => setSearchType("film"));
   $("typeBook").addEventListener("click", () => setSearchType("book"));
@@ -546,7 +589,6 @@ async function init() {
       closeDetail();
     }
   });
-  $("matchBtn").addEventListener("click", showMatch);
   $("pwToggle").innerHTML = pwIcon(false);
   $("pwToggle").addEventListener("click", () => {
     const pw = $("password");

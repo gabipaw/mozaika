@@ -29,6 +29,7 @@ model User {
   email        String   @unique
   displayName  String
   passwordHash String? // scrypt: "salt:hash"; null dla starych kont demo
+  avatarUrl    String? // zdjęcie profilowe jako data:image (skompresowane ~256px)
   createdAt    DateTime @default(now())
 
   reviews Review[]

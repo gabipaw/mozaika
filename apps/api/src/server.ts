@@ -76,7 +76,7 @@ api.get("/me", requireAuth, async (c) => {
   const userId = c.get("userId");
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { id: true, email: true, displayName: true },
+    select: { id: true, email: true, displayName: true, avatarUrl: true },
   });
   const reviews = await prisma.review.findMany({
     where: { userId },
@@ -104,6 +104,17 @@ api.get("/me", requireAuth, async (c) => {
 
 api.get("/me/recommendations", requireAuth, async (c) => {
   return c.json(await recommendations(c.get("userId")));
+});
+
+// Ustaw zdjęcie profilowe (data:image, skompresowane po stronie klienta).
+api.post("/me/avatar", requireAuth, async (c) => {
+  const body = await c.req.json();
+  const avatarUrl = String(body.avatarUrl ?? "");
+  if (!avatarUrl.startsWith("data:image/") || avatarUrl.length > 600000) {
+    throw new ValidationError("Nieprawidłowy obraz (dozwolone data:image, do ~400 KB).");
+  }
+  await prisma.user.update({ where: { id: c.get("userId") }, data: { avatarUrl } });
+  return c.json({ avatarUrl });
 });
 
 // Lista pozostałych użytkowników (do dopasowania gustu).
