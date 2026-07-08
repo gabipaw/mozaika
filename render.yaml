@@ -22,3 +22,5 @@ services:
         sync: false # uzupełnij w panelu Render (Environment)
       - key: TMDB_API_KEY
         sync: false # klucz TMDB v3 — do wyszukiwarki filmów
+      - key: RAWG_API_KEY
+        sync: false # klucz RAWG — do wyszukiwarki gier (rawg.io/apikey)

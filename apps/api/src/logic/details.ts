@@ -4,6 +4,7 @@
  */
 import { aniListDescription } from "./anilist.js";
 import { bookDescription } from "./books.js";
+import { gameDescription } from "./games.js";
 import { musicDescription } from "./music.js";
 import { tmdbDescription } from "./tmdb.js";
 
@@ -12,5 +13,6 @@ export async function getDescription(type: string, externalId: string): Promise<
   if (type === "manga") return aniListDescription("MANGA", externalId);
   if (type === "anime") return aniListDescription("ANIME", externalId);
   if (type === "music") return musicDescription(externalId);
+  if (type === "game") return gameDescription(externalId);
   return tmdbDescription(externalId);
 }

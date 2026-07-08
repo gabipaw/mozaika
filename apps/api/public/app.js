@@ -101,6 +101,7 @@ const ENUM_TYPE = {
   MANGA: "manga",
   ANIME: "anime",
   MUZYKA: "music",
+  GRA: "game",
 };
 
 // Buduje obiekt szczegółów z rekordu (media z bazy / wynik wyszukiwania).
@@ -153,6 +154,7 @@ const SEARCH_SRC = {
   manga: "AniList",
   anime: "AniList",
   music: "iTunes",
+  game: "RAWG",
 };
 const SEARCH_PH = {
   film: "Szukaj filmu (TMDB)…",
@@ -160,6 +162,7 @@ const SEARCH_PH = {
   manga: "Szukaj mangi (AniList)…",
   anime: "Szukaj anime (AniList)…",
   music: "Szukaj albumu (iTunes)…",
+  game: "Szukaj gry (RAWG)…",
 };
 
 async function runSearch(q) {
@@ -185,6 +188,7 @@ function setSearchType(t) {
   $("typeManga").classList.toggle("active", t === "manga");
   $("typeAnime").classList.toggle("active", t === "anime");
   $("typeMusic").classList.toggle("active", t === "music");
+  $("typeGame").classList.toggle("active", t === "game");
   $("search").placeholder = SEARCH_PH[t] ?? SEARCH_PH.film;
   const q = $("search").value.trim();
   if (q) runSearch(q);
@@ -589,6 +593,7 @@ async function init() {
   $("typeManga").addEventListener("click", () => setSearchType("manga"));
   $("typeAnime").addEventListener("click", () => setSearchType("anime"));
   $("typeMusic").addEventListener("click", () => setSearchType("music"));
+  $("typeGame").addEventListener("click", () => setSearchType("game"));
   detailStars = buildStars($("detailStars"), $("detailStarVal"));
   $("detailSave").addEventListener("click", saveDetail);
   document.addEventListener("keydown", (e) => {
