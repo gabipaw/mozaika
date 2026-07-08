@@ -402,7 +402,7 @@ h2 {
   place-items: center;
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: var(--text);
   padding: 0;
   cursor: pointer;
 }
@@ -413,6 +413,11 @@ h2 {
 
 .pw-toggle:hover {
   opacity: 0.75;
+}
+
+/* Nie pozwól, by globalny button:active (scale) skasował wyśrodkowanie i zrzucił oko w dół. */
+.pw-toggle:active {
+  transform: translateY(-50%);
 }
 
 #authSubmit {
