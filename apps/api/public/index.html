@@ -15,7 +15,10 @@
   </head>
   <body>
     <header class="topbar">
-      <div class="brand">🎨 <span>Mozaika</span></div>
+      <div class="topbar-left">
+        <div class="brand">🎨 <span>Mozaika</span></div>
+        <button id="topBack" class="topback hidden" type="button">← Wróć</button>
+      </div>
       <div id="userBox" class="userbox hidden">
         <button id="hello" class="hello-link" type="button" title="Twój profil"></button>
         <button id="logout" type="button">Wyloguj</button>
@@ -114,7 +117,6 @@
 
         <!-- Szczegóły tytułu jako pełna strona (opis + ocena + komentarze) -->
         <section id="detailView" class="detail-page hidden">
-          <button id="detailBack" class="linkbtn back" type="button">← Wróć</button>
           <div class="detail-layout">
             <div id="detailPoster" class="detail-poster"></div>
             <div class="detail-main">
@@ -153,7 +155,6 @@
 
         <!-- Twój profil (osobna strona) -->
         <section id="profileView" class="detail-page hidden">
-          <button id="profileBack" class="linkbtn back" type="button">← Wróć</button>
           <div class="profile-head">
             <button id="avatarBtn" class="avatar" type="button" title="Zmień zdjęcie">
               <img id="avatarImg" class="hidden" alt="" />

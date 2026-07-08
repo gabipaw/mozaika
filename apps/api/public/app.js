@@ -377,6 +377,7 @@ async function openDetail(item) {
   $("browse").classList.add("hidden");
   $("profileView").classList.add("hidden");
   $("detailView").classList.remove("hidden");
+  $("topBack").classList.remove("hidden");
   window.scrollTo(0, 0);
 
   if (item.type && item.externalId) {
@@ -486,6 +487,7 @@ function closeDetail() {
     openProfile();
     return;
   }
+  $("topBack").classList.add("hidden");
   $("searchbar").classList.remove("hidden");
   $("searchResults").classList.toggle("hidden", detailReturn !== "results");
   $("browse").classList.toggle("hidden", detailReturn === "results");
@@ -498,12 +500,14 @@ async function openProfile() {
   $("browse").classList.add("hidden");
   $("detailView").classList.add("hidden");
   $("profileView").classList.remove("hidden");
+  $("topBack").classList.remove("hidden");
   window.scrollTo(0, 0);
   await loadProfile();
 }
 
 function closeProfile() {
   $("profileView").classList.add("hidden");
+  $("topBack").classList.add("hidden");
   $("searchbar").classList.remove("hidden");
   $("searchResults").classList.add("hidden");
   $("browse").classList.remove("hidden");
@@ -512,6 +516,7 @@ function closeProfile() {
 // --- Widoki: logowanie vs aplikacja ---
 function showAuth() {
   me = null;
+  $("topBack").classList.add("hidden");
   $("appView").classList.add("hidden");
   $("userBox").classList.add("hidden");
   $("authView").classList.remove("hidden");
@@ -572,7 +577,10 @@ async function init() {
   $("authForm").addEventListener("submit", submitAuth);
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", openProfile);
-  $("profileBack").addEventListener("click", closeProfile);
+  $("topBack").addEventListener("click", () => {
+    if (!$("detailView").classList.contains("hidden")) closeDetail();
+    else if (!$("profileView").classList.contains("hidden")) closeProfile();
+  });
   $("avatarBtn").addEventListener("click", () => $("avatarFile").click());
   $("avatarFile").addEventListener("change", onAvatarPick);
   $("search").addEventListener("input", onSearchInput);
@@ -582,7 +590,6 @@ async function init() {
   $("typeAnime").addEventListener("click", () => setSearchType("anime"));
   $("typeMusic").addEventListener("click", () => setSearchType("music"));
   detailStars = buildStars($("detailStars"), $("detailStarVal"));
-  $("detailBack").addEventListener("click", closeDetail);
   $("detailSave").addEventListener("click", saveDetail);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$("detailView").classList.contains("hidden")) {
