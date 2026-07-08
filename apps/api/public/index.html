@@ -136,6 +136,11 @@
                 <span id="detailStarVal" class="starval"></span>
               </div>
 
+              <div class="detail-actions">
+                <button id="favBtn" type="button" class="chip">☆ TOP 4</button>
+                <button id="watchBtn" type="button" class="chip">＋ Do listy</button>
+              </div>
+
               <div class="detail-write">
                 <textarea
                   id="detailComment"
@@ -164,8 +169,18 @@
             <input id="avatarFile" type="file" accept="image/*" class="hidden" />
             <h1 id="profileName"></h1>
           </div>
-          <h2 class="profile-h">Top 5 ulubionych mediów</h2>
-          <div id="topMedia" class="poster-grid"></div>
+
+          <div class="profile-cols">
+            <div class="profile-left">
+              <h2 class="profile-h">Top 4 ulubione</h2>
+              <div id="topMedia" class="poster-grid"></div>
+              <h2 class="profile-h">Do obejrzenia / zagrania</h2>
+              <div id="watchlist" class="poster-grid"></div>
+            </div>
+            <div class="profile-right">
+              <div id="ratedByCat"></div>
+            </div>
+          </div>
         </section>
       </div>
 

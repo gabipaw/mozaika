@@ -79,28 +79,35 @@ api.get("/me", requireAuth, async (c) => {
     where: { id: userId },
     select: { id: true, email: true, displayName: true, avatarUrl: true },
   });
-  const reviews = await prisma.review.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    select: {
-      rating: true,
-      text: true,
-      media: {
-        select: {
-          id: true,
-          title: true,
-          type: true,
-          externalId: true,
-          year: true,
-          posterUrl: true,
-        },
+  const mediaSelect = {
+    id: true,
+    title: true,
+    type: true,
+    externalId: true,
+    year: true,
+    posterUrl: true,
+  } as const;
+  const [reviews, watchlist] = await Promise.all([
+    prisma.review.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        rating: true,
+        text: true,
+        favorite: true,
+        media: { select: mediaSelect },
       },
-    },
-  });
+    }),
+    prisma.watchlistItem.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: { media: { select: mediaSelect } },
+    }),
+  ]);
   const avg = reviews.length
     ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
     : null;
-  return c.json({ user, count: reviews.length, avg, reviews });
+  return c.json({ user, count: reviews.length, avg, reviews, watchlist });
 });
 
 api.get("/me/recommendations", requireAuth, async (c) => {
@@ -116,6 +123,54 @@ api.post("/me/avatar", requireAuth, async (c) => {
   }
   await prisma.user.update({ where: { id: c.get("userId") }, data: { avatarUrl } });
   return c.json({ avatarUrl });
+});
+
+// Przypnij/odepnij tytuł do TOP 4 (wymaga wcześniejszej oceny; max 4 ulubione).
+api.post("/me/favorite", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const body = await c.req.json();
+  const mediaId = Number(body.mediaId);
+  const favorite = Boolean(body.favorite);
+  const review = await prisma.review.findUnique({
+    where: { userId_mediaId: { userId, mediaId } },
+  });
+  if (!review) {
+    throw new NotFoundError("Najpierw oceń ten tytuł, żeby dodać go do TOP 4.");
+  }
+  if (favorite && !review.favorite) {
+    const count = await prisma.review.count({ where: { userId, favorite: true } });
+    if (count >= 4) {
+      throw new ValidationError("Masz już 4 ulubione — najpierw odepnij inny tytuł.");
+    }
+  }
+  await prisma.review.update({
+    where: { userId_mediaId: { userId, mediaId } },
+    data: { favorite },
+  });
+  return c.json({ favorite });
+});
+
+// Dodaj tytuł do listy „do obejrzenia/zagrania".
+api.post("/me/watchlist", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const mediaId = Number((await c.req.json()).mediaId);
+  if (!Number.isInteger(mediaId) || mediaId <= 0) {
+    throw new ValidationError("Nieprawidłowy mediaId.");
+  }
+  await prisma.watchlistItem.upsert({
+    where: { userId_mediaId: { userId, mediaId } },
+    update: {},
+    create: { userId, mediaId },
+  });
+  return c.json({ ok: true });
+});
+
+// Usuń tytuł z listy.
+api.delete("/me/watchlist/:id", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const mediaId = intParam(c.req.param("id"), "id");
+  await prisma.watchlistItem.deleteMany({ where: { userId, mediaId } });
+  return c.json({ ok: true });
 });
 
 // Lista pozostałych użytkowników (do dopasowania gustu).

@@ -228,8 +228,52 @@ async function loadRecommendations() {
   }
 }
 
+// Cache danych zalogowanego usera (oceny + lista) — używany na profilu i w detalu.
+let myProfile = { user: null, reviews: [], watchlist: [] };
+async function loadMe() {
+  myProfile = await api("/me");
+  return myProfile;
+}
+
+// Grupy kategorii na prawej stronie profilu.
+const CAT_GROUPS = [
+  { label: "Filmy / Seriale", types: ["FILM", "SERIAL"] },
+  { label: "Anime", types: ["ANIME"] },
+  { label: "Książki / Manga", types: ["KSIAZKA", "MANGA"] },
+  { label: "Muzyka", types: ["MUZYKA"] },
+  { label: "Gry", types: ["GRA"] },
+];
+
+// Dodaje klikalną kartę (otwiera szczegóły) do kontenera.
+function appendCard(container, media, rating) {
+  const { card } = posterCard(media, { score: rating });
+  card.addEventListener("click", () =>
+    openDetail(toDetail(media, media.type, media.id, rating)),
+  );
+  container.append(card);
+}
+
+function renderRatedByCat(reviews) {
+  const box = $("ratedByCat");
+  box.innerHTML = "";
+  for (const g of CAT_GROUPS) {
+    const items = reviews.filter((r) => g.types.includes(r.media.type));
+    if (items.length === 0) continue;
+    const h = document.createElement("h3");
+    h.className = "cat-h";
+    h.textContent = g.label;
+    const row = document.createElement("div");
+    row.className = "poster-row";
+    for (const r of items) appendCard(row, r.media, r.rating);
+    box.append(h, row);
+  }
+  if (box.children.length === 0) {
+    box.innerHTML = '<p class="muted">Nic jeszcze nie ocenione.</p>';
+  }
+}
+
 async function loadProfile() {
-  const data = await api("/me");
+  const data = await loadMe();
 
   // Nagłówek: zdjęcie profilowe + imię.
   $("profileName").textContent = `Cześć, ${data.user.displayName}`;
@@ -245,22 +289,28 @@ async function loadProfile() {
     initial.textContent = (data.user.displayName[0] || "?").toUpperCase();
   }
 
-  // Top 5 ulubionych = 5 najwyżej ocenionych tytułów.
-  const top = [...data.reviews].sort((a, b) => b.rating - a.rating).slice(0, 5);
-  const box = $("topMedia");
-  box.innerHTML = "";
+  // Top 4 = tytuły przypięte przez usera (favorite).
+  const top = data.reviews.filter((r) => r.favorite).slice(0, 4);
+  const topBox = $("topMedia");
+  topBox.innerHTML = "";
   if (top.length === 0) {
-    box.innerHTML =
-      '<p class="muted">Oceń kilka tytułów, a pojawią się tu Twoje ulubione.</p>';
-    return;
+    topBox.innerHTML =
+      '<p class="muted">Przypnij ulubione przyciskiem „TOP 4" na stronie tytułu.</p>';
+  } else {
+    for (const r of top) appendCard(topBox, r.media, r.rating);
   }
-  for (const r of top) {
-    const { card } = posterCard(r.media, { score: r.rating });
-    card.addEventListener("click", () =>
-      openDetail(toDetail(r.media, r.media.type, r.media.id, r.rating)),
-    );
-    box.append(card);
+
+  // Lista „do obejrzenia/zagrania".
+  const watchBox = $("watchlist");
+  watchBox.innerHTML = "";
+  if (data.watchlist.length === 0) {
+    watchBox.innerHTML = '<p class="muted">Pusto — dodaj coś przyciskiem „Do listy".</p>';
+  } else {
+    for (const w of data.watchlist) appendCard(watchBox, w.media, undefined);
   }
+
+  // Prawa strona: ocenione pogrupowane po kategoriach.
+  renderRatedByCat(data.reviews);
 }
 
 // Wgranie zdjęcia profilowego: kompresja do 256px (canvas) → data:image → zapis.
@@ -409,6 +459,74 @@ async function openDetail(item) {
     if (found) item.mediaId = found.id;
   }
   if (item.mediaId) loadDetailReviews(item.mediaId);
+  updateDetailButtons();
+}
+
+// Stan przycisków TOP 4 / Do listy na podstawie cache myProfile.
+function updateDetailButtons() {
+  const mid = detailCtx?.mediaId;
+  const rev = mid ? myProfile.reviews.find((r) => r.media.id === mid) : null;
+  const onWatch = mid ? myProfile.watchlist.some((w) => w.media.id === mid) : false;
+  const isFav = !!rev?.favorite;
+  $("favBtn").classList.toggle("active", isFav);
+  $("favBtn").textContent = isFav ? "★ w TOP 4" : "☆ TOP 4";
+  $("watchBtn").classList.toggle("active", onWatch);
+  $("watchBtn").textContent = onWatch ? "✓ Na liście" : "＋ Do listy";
+}
+
+// Upewnia się, że tytuł jest w bazie (dodaje, jeśli to świeży wynik wyszukiwania).
+async function ensureMedia() {
+  if (detailCtx.mediaId) return detailCtx.mediaId;
+  const media = await api("/media", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ externalId: detailCtx.externalId, type: detailCtx.type }),
+  });
+  detailCtx.mediaId = media.id;
+  await loadCatalog();
+  return media.id;
+}
+
+async function toggleFavorite() {
+  const mid = detailCtx?.mediaId;
+  const rev = mid ? myProfile.reviews.find((r) => r.media.id === mid) : null;
+  if (!mid || !rev) {
+    toast("Najpierw oceń ten tytuł (gwiazdki), żeby dodać do TOP 4.");
+    return;
+  }
+  try {
+    await api("/me/favorite", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ mediaId: mid, favorite: !rev.favorite }),
+    });
+    await loadMe();
+    updateDetailButtons();
+    toast(rev.favorite ? "Usunięto z TOP 4" : "Dodano do TOP 4");
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function toggleWatchlist() {
+  try {
+    const mid = await ensureMedia();
+    const onWatch = myProfile.watchlist.some((w) => w.media.id === mid);
+    if (onWatch) {
+      await api(`/me/watchlist/${mid}`, { method: "DELETE" });
+    } else {
+      await api("/me/watchlist", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mediaId: mid }),
+      });
+    }
+    await loadMe();
+    updateDetailButtons();
+    toast(onWatch ? "Usunięto z listy" : "Dodano do listy");
+  } catch (e) {
+    toast(e.message);
+  }
 }
 
 async function loadDetailReviews(mediaId) {
@@ -477,7 +595,8 @@ async function saveDetail() {
       body: JSON.stringify({ mediaId, rating, text }),
     });
     toast("Zapisano");
-    await Promise.all([loadProfile(), loadRecommendations(), loadCatalog()]);
+    await Promise.all([loadMe(), loadRecommendations(), loadCatalog()]);
+    updateDetailButtons();
     loadDetailReviews(mediaId);
   } catch (e) {
     $("detailMsg").textContent = e.message;
@@ -531,7 +650,7 @@ async function showApp() {
   $("appView").classList.remove("hidden");
   $("userBox").classList.remove("hidden");
   $("hello").textContent = `Cześć, ${me.displayName}`;
-  await Promise.all([loadRecommendations(), loadCatalog()]);
+  await Promise.all([loadMe(), loadRecommendations(), loadCatalog()]);
 }
 
 function logout() {
@@ -587,6 +706,8 @@ async function init() {
   });
   $("avatarBtn").addEventListener("click", () => $("avatarFile").click());
   $("avatarFile").addEventListener("change", onAvatarPick);
+  $("favBtn").addEventListener("click", toggleFavorite);
+  $("watchBtn").addEventListener("click", toggleWatchlist);
   $("search").addEventListener("input", onSearchInput);
   $("typeFilm").addEventListener("click", () => setSearchType("film"));
   $("typeBook").addEventListener("click", () => setSearchType("book"));

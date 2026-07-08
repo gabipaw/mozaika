@@ -502,6 +502,59 @@ h2 {
   font-size: 1.15rem;
 }
 
+.profile-cols {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+.profile-left {
+  flex: 0 0 320px;
+}
+
+.profile-right {
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-h {
+  font-size: 1rem;
+  margin: 6px 0 8px;
+  color: var(--muted);
+}
+
+.detail-actions {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.chip {
+  background: var(--bg-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: 8px 14px;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.chip.active {
+  background: var(--accent);
+  color: #05221d;
+  border-color: transparent;
+}
+
+@media (max-width: 720px) {
+  .profile-cols {
+    flex-direction: column;
+  }
+  .profile-left {
+    flex-basis: auto;
+    width: 100%;
+  }
+}
+
 .detail-comments {
   margin-top: 24px;
 }

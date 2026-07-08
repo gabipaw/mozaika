@@ -32,7 +32,8 @@ model User {
   avatarUrl    String? // zdjęcie profilowe jako data:image (skompresowane ~256px)
   createdAt    DateTime @default(now())
 
-  reviews Review[]
+  reviews   Review[]
+  watchlist WatchlistItem[]
 }
 
 /// Tytuł do oceniania (film, serial, książka, gra, muzyka).
@@ -45,7 +46,8 @@ model Media {
   posterUrl  String?
   createdAt  DateTime  @default(now())
 
-  reviews Review[]
+  reviews   Review[]
+  watchlist WatchlistItem[]
 
   // Ten sam tytuł z tego samego źródła nie może istnieć dwa razy.
   @@unique([type, externalId])
@@ -56,6 +58,7 @@ model Review {
   id        Int      @id @default(autoincrement())
   rating    Float // 0.5–10 (co 0.5 — półgwiazdki)
   text      String?
+  favorite  Boolean  @default(false) // przypięte do TOP 4 na profilu
   createdAt DateTime @default(now())
 
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -65,5 +68,19 @@ model Review {
   mediaId Int
 
   // Jeden użytkownik = jedna ocena danego tytułu.
+  @@unique([userId, mediaId])
+}
+
+/// Lista „do obejrzenia/zagrania" — tytuły, które user chce sprawdzić później.
+model WatchlistItem {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  media   Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  mediaId Int
+
   @@unique([userId, mediaId])
 }
