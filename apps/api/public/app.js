@@ -242,6 +242,7 @@ async function loadProfile() {
 
 // --- Szczegóły tytułu (opis + ocena + komentarz) ---
 let detailCtx = null;
+let detailReturn = "browse"; // dokąd wrócić z widoku szczegółów
 let detailStars = null;
 
 // Widget gwiazdek 0.5–10 (półgwiazdki: lewa połowa = x.5, prawa = x.0).
@@ -300,8 +301,12 @@ async function openDetail(item) {
   $("detailComment").value = "";
   $("detailDesc").textContent = "Ładowanie opisu…";
   $("detailReviews").innerHTML = "";
-  $("detailOverlay").classList.remove("hidden");
-  document.body.style.overflow = "hidden";
+  detailReturn = $("searchResults").classList.contains("hidden") ? "browse" : "results";
+  $("searchbar").classList.add("hidden");
+  $("searchResults").classList.add("hidden");
+  $("browse").classList.add("hidden");
+  $("detailView").classList.remove("hidden");
+  window.scrollTo(0, 0);
 
   if (item.type && item.externalId) {
     api(
@@ -404,8 +409,10 @@ async function saveDetail() {
 }
 
 function closeDetail() {
-  $("detailOverlay").classList.add("hidden");
-  document.body.style.overflow = "";
+  $("detailView").classList.add("hidden");
+  $("searchbar").classList.remove("hidden");
+  $("searchResults").classList.toggle("hidden", detailReturn !== "results");
+  $("browse").classList.toggle("hidden", detailReturn === "results");
   detailCtx = null;
 }
 
@@ -505,13 +512,12 @@ async function init() {
   $("typeAnime").addEventListener("click", () => setSearchType("anime"));
   $("typeMusic").addEventListener("click", () => setSearchType("music"));
   detailStars = buildStars($("detailStars"), $("detailStarVal"));
-  $("detailClose").addEventListener("click", closeDetail);
+  $("detailBack").addEventListener("click", closeDetail);
   $("detailSave").addEventListener("click", saveDetail);
-  $("detailOverlay").addEventListener("click", (e) => {
-    if (e.target === $("detailOverlay")) closeDetail();
-  });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeDetail();
+    if (e.key === "Escape" && !$("detailView").classList.contains("hidden")) {
+      closeDetail();
+    }
   });
   $("matchBtn").addEventListener("click", showMatch);
   $("pwToggle").innerHTML = pwIcon(false);
