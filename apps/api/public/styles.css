@@ -421,31 +421,40 @@ h2 {
   min-width: 3.5em;
 }
 
-.detail-comments {
-  margin-top: 18px;
+.detail-write {
+  margin-top: 16px;
 }
 
-.detail-comments h3 {
-  font-size: 1.05rem;
-  margin: 0 0 10px;
-}
-
-.detail-comments textarea {
+.detail-write textarea {
   width: 100%;
   resize: vertical;
   font-family: inherit;
+  color: #ffffff;
   padding: 10px 12px;
   background: var(--bg-2);
   margin-bottom: 10px;
 }
 
-.detail-comments textarea:focus {
+.detail-write textarea::placeholder {
+  color: var(--muted);
+}
+
+.detail-write textarea:focus {
   outline: none;
   border-color: var(--accent);
 }
 
 #detailSave {
-  margin-bottom: 12px;
+  margin-bottom: 4px;
+}
+
+.detail-comments {
+  margin-top: 24px;
+}
+
+.detail-comments h3 {
+  font-size: 1.05rem;
+  margin: 0 0 10px;
 }
 
 .review {

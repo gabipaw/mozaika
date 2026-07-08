@@ -146,18 +146,21 @@
                 ></div>
                 <span id="detailStarVal" class="starval"></span>
               </div>
+
+              <div class="detail-write">
+                <textarea
+                  id="detailComment"
+                  rows="3"
+                  placeholder="Napisz komentarz (opcjonalnie)…"
+                ></textarea>
+                <button id="detailSave" type="button">Zapisz ocenę i komentarz</button>
+                <p id="detailMsg" class="err"></p>
+              </div>
             </div>
           </div>
 
           <div class="detail-comments">
             <h3>Komentarze</h3>
-            <textarea
-              id="detailComment"
-              rows="3"
-              placeholder="Napisz komentarz (opcjonalnie)…"
-            ></textarea>
-            <button id="detailSave" type="button">Zapisz ocenę i komentarz</button>
-            <p id="detailMsg" class="err"></p>
             <div id="detailReviews"></div>
           </div>
         </section>
