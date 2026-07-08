@@ -16,6 +16,7 @@ import { NotFoundError, ValidationError } from "./errors.js";
 import { login, register } from "./logic/auth.js";
 import { addBookFromOpenLibrary, searchBooks } from "./logic/books.js";
 import { addFromAniList, searchAniList } from "./logic/anilist.js";
+import { addMusicFromItunes, searchMusic } from "./logic/music.js";
 import { addReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
@@ -116,6 +117,7 @@ async function searchByType(type: string, q: string) {
   if (type === "book") return searchBooks(q);
   if (type === "manga") return searchAniList("MANGA", q);
   if (type === "anime") return searchAniList("ANIME", q);
+  if (type === "music") return searchMusic(q);
   return searchTmdb(q);
 }
 
@@ -129,6 +131,7 @@ async function addByType(type: string, externalId: string) {
   if (type === "book") return addBookFromOpenLibrary(externalId);
   if (type === "manga") return addFromAniList("MANGA", externalId);
   if (type === "anime") return addFromAniList("ANIME", externalId);
+  if (type === "music") return addMusicFromItunes(externalId);
   return addMediaFromTmdb(externalId);
 }
 

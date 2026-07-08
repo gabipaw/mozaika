@@ -133,12 +133,14 @@ const SEARCH_SRC = {
   book: "Open Library",
   manga: "AniList",
   anime: "AniList",
+  music: "iTunes",
 };
 const SEARCH_PH = {
   film: "Szukaj filmu (TMDB)…",
   book: "Szukaj książki (Open Library)…",
   manga: "Szukaj mangi (AniList)…",
   anime: "Szukaj anime (AniList)…",
+  music: "Szukaj albumu (iTunes)…",
 };
 
 async function runSearch(q) {
@@ -167,6 +169,7 @@ function setSearchType(t) {
   $("typeBook").classList.toggle("active", t === "book");
   $("typeManga").classList.toggle("active", t === "manga");
   $("typeAnime").classList.toggle("active", t === "anime");
+  $("typeMusic").classList.toggle("active", t === "music");
   $("search").placeholder = SEARCH_PH[t] ?? SEARCH_PH.film;
   const q = $("search").value.trim();
   if (q) runSearch(q);
@@ -338,6 +341,7 @@ async function init() {
   $("typeBook").addEventListener("click", () => setSearchType("book"));
   $("typeManga").addEventListener("click", () => setSearchType("manga"));
   $("typeAnime").addEventListener("click", () => setSearchType("anime"));
+  $("typeMusic").addEventListener("click", () => setSearchType("music"));
   $("matchBtn").addEventListener("click", showMatch);
   $("pwToggle").innerHTML = pwIcon(false);
   $("pwToggle").addEventListener("click", () => {
