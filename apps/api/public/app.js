@@ -5,6 +5,7 @@ let allMedia = [];
 let searchTimer = null;
 let me = null;
 let authMode = "login";
+let searchType = "film"; // "film" (TMDB) | "book" (Open Library)
 
 const getToken = () => localStorage.getItem("mozaika_token");
 const setToken = (t) => localStorage.setItem("mozaika_token", t);
@@ -128,11 +129,12 @@ async function loadCatalog() {
 }
 
 async function runSearch(q) {
-  $("catalogTitle").textContent = `Wyniki z TMDB: „${q}”`;
+  const src = searchType === "book" ? "Open Library" : "TMDB";
+  $("catalogTitle").textContent = `Wyniki z ${src}: „${q}”`;
   const grid = $("catalog");
   grid.innerHTML = '<p class="muted">Szukam…</p>';
   try {
-    const results = await api(`/search?q=${encodeURIComponent(q)}`);
+    const results = await api(`/search?q=${encodeURIComponent(q)}&type=${searchType}`);
     renderGrid(
       grid,
       results,
@@ -142,6 +144,19 @@ async function runSearch(q) {
   } catch (e) {
     grid.innerHTML = `<p class="muted">${e.message}</p>`;
   }
+}
+
+// Przełącznik źródła wyszukiwania: filmy (TMDB) / książki (Open Library).
+function setSearchType(t) {
+  if (searchType === t) return;
+  searchType = t;
+  $("typeFilm").classList.toggle("active", t === "film");
+  $("typeBook").classList.toggle("active", t === "book");
+  $("search").placeholder =
+    t === "book" ? "Szukaj książki (Open Library)…" : "Szukaj filmu (TMDB)…";
+  const q = $("search").value.trim();
+  if (q) runSearch(q);
+  else loadCatalog();
 }
 
 function onSearchInput() {
@@ -207,7 +222,7 @@ async function addAndRate(externalId, rating) {
     const media = await api("/media", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ externalId }),
+      body: JSON.stringify({ externalId, type: searchType }),
     });
     await rateMedia(media.id, rating);
   } catch (e) {
@@ -305,6 +320,8 @@ async function init() {
     $("profile").scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $("search").addEventListener("input", onSearchInput);
+  $("typeFilm").addEventListener("click", () => setSearchType("film"));
+  $("typeBook").addEventListener("click", () => setSearchType("book"));
   $("matchBtn").addEventListener("click", showMatch);
   $("pwToggle").innerHTML = pwIcon(false);
   $("pwToggle").addEventListener("click", () => {

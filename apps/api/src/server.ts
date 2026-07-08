@@ -14,6 +14,7 @@ import { sign, verify } from "hono/jwt";
 import { prisma } from "./db.js";
 import { NotFoundError, ValidationError } from "./errors.js";
 import { login, register } from "./logic/auth.js";
+import { addBookFromOpenLibrary, searchBooks } from "./logic/books.js";
 import { addReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
@@ -108,15 +109,22 @@ api.get("/media", async (c) => {
   return c.json(media);
 });
 
-// Wyszukiwarka filmów w TMDB (wyniki nie są jeszcze w bazie).
+// Wyszukiwarka tytułów w zewnętrznym źródle (wyniki nie są jeszcze w bazie).
+// type=book → książki (Open Library); domyślnie filmy (TMDB).
 api.get("/search", async (c) => {
-  return c.json(await searchTmdb(c.req.query("q") ?? ""));
+  const q = c.req.query("q") ?? "";
+  const type = c.req.query("type") ?? "film";
+  return c.json(type === "book" ? await searchBooks(q) : await searchTmdb(q));
 });
 
-// Dodaj film z TMDB do katalogu. Body: { externalId }.
+// Dodaj tytuł do katalogu. Body: { externalId, type? }. type=book → Open Library.
 api.post("/media", async (c) => {
   const body = await c.req.json();
-  const media = await addMediaFromTmdb(String(body.externalId ?? ""));
+  const externalId = String(body.externalId ?? "");
+  const media =
+    body.type === "book"
+      ? await addBookFromOpenLibrary(externalId)
+      : await addMediaFromTmdb(externalId);
   return c.json(media, 201);
 });
 

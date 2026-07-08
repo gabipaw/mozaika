@@ -4,8 +4,8 @@
  */
 import { MediaType } from "@prisma/client";
 
-import { prisma } from "../db.js";
 import { NotFoundError, ValidationError } from "../errors.js";
+import { type ExternalMedia, upsertExternalMedia } from "./media.js";
 
 const TMDB = "https://api.themoviedb.org/3";
 const IMG = "https://image.tmdb.org/t/p/w500";
@@ -18,13 +18,6 @@ function apiKey(): string {
   return key;
 }
 
-export interface TmdbFilm {
-  externalId: string;
-  title: string;
-  year: number | null;
-  posterUrl: string | null;
-}
-
 interface TmdbMovie {
   id: number;
   title: string;
@@ -32,7 +25,7 @@ interface TmdbMovie {
   poster_path?: string | null;
 }
 
-function toFilm(m: TmdbMovie): TmdbFilm {
+function toFilm(m: TmdbMovie): ExternalMedia {
   return {
     externalId: String(m.id),
     title: m.title,
@@ -42,7 +35,7 @@ function toFilm(m: TmdbMovie): TmdbFilm {
 }
 
 /** Szuka filmów w TMDB. Zwraca do 18 wyników (bez zapisywania w bazie). */
-export async function searchTmdb(query: string): Promise<TmdbFilm[]> {
+export async function searchTmdb(query: string): Promise<ExternalMedia[]> {
   const q = query.trim();
   if (!q) throw new ValidationError("Podaj frazę do wyszukania.");
 
@@ -70,16 +63,5 @@ export async function addMediaFromTmdb(externalId: string) {
   if (res.status === 404) throw new NotFoundError(`Film TMDB #${id} nie istnieje.`);
   if (!res.ok) throw new Error(`TMDB error ${res.status}`);
 
-  const film = toFilm((await res.json()) as TmdbMovie);
-  return prisma.media.upsert({
-    where: { type_externalId: { type: MediaType.FILM, externalId: film.externalId } },
-    update: { posterUrl: film.posterUrl },
-    create: {
-      type: MediaType.FILM,
-      title: film.title,
-      externalId: film.externalId,
-      year: film.year,
-      posterUrl: film.posterUrl,
-    },
-  });
+  return upsertExternalMedia(MediaType.FILM, toFilm((await res.json()) as TmdbMovie));
 }

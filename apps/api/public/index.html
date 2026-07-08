@@ -77,10 +77,14 @@
       <!-- Aplikacja (po zalogowaniu) -->
       <div id="appView" class="hidden">
         <div class="searchwrap">
+          <div class="type-toggle">
+            <button id="typeFilm" class="type active" type="button">🎬 Filmy</button>
+            <button id="typeBook" class="type" type="button">📚 Książki</button>
+          </div>
           <input
             id="search"
             type="search"
-            placeholder="Szukaj dowolnego filmu (TMDB)…"
+            placeholder="Szukaj filmu (TMDB)…"
             autocomplete="off"
           />
         </div>
