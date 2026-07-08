@@ -15,6 +15,7 @@ import { prisma } from "./db.js";
 import { NotFoundError, ValidationError } from "./errors.js";
 import { login, register } from "./logic/auth.js";
 import { addBookFromOpenLibrary, searchBooks } from "./logic/books.js";
+import { getDescription } from "./logic/details.js";
 import { addFromAniList, searchAniList } from "./logic/anilist.js";
 import { addMusicFromItunes, searchMusic } from "./logic/music.js";
 import { addReview } from "./logic/reviews.js";
@@ -83,7 +84,16 @@ api.get("/me", requireAuth, async (c) => {
     select: {
       rating: true,
       text: true,
-      media: { select: { id: true, title: true, year: true, posterUrl: true } },
+      media: {
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          externalId: true,
+          year: true,
+          posterUrl: true,
+        },
+      },
     },
   });
   const avg = reviews.length
@@ -139,6 +149,29 @@ api.post("/media", async (c) => {
   const body = await c.req.json();
   const media = await addByType(String(body.type ?? ""), String(body.externalId ?? ""));
   return c.json(media, 201);
+});
+
+// Opis tytułu (do widoku szczegółów). ?type=&externalId=
+api.get("/details", async (c) => {
+  const type = c.req.query("type") ?? "film";
+  const externalId = c.req.query("externalId") ?? "";
+  return c.json({ description: await getDescription(type, externalId) });
+});
+
+// Komentarze/oceny danego tytułu (do widoku szczegółów).
+api.get("/media/:id/reviews", async (c) => {
+  const id = intParam(c.req.param("id"), "id");
+  const reviews = await prisma.review.findMany({
+    where: { mediaId: id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      rating: true,
+      text: true,
+      createdAt: true,
+      user: { select: { displayName: true } },
+    },
+  });
+  return c.json(reviews);
 });
 
 // Dodaj/aktualizuj recenzję (jako zalogowany użytkownik). Body: { mediaId, rating, text? }.

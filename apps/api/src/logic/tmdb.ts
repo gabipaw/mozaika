@@ -75,3 +75,13 @@ export async function addMediaFromTmdb(externalId: string) {
 
   return upsertExternalMedia(MediaType.FILM, toFilm((await res.json()) as TmdbMovie));
 }
+
+/** Opis filmu (streszczenie TMDB) — do widoku szczegółów. Pusty, gdy brak. */
+export async function tmdbDescription(externalId: string): Promise<string> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id)) return "";
+  const res = await fetch(`${TMDB}/movie/${id}?api_key=${apiKey()}&language=pl-PL`);
+  if (!res.ok) return "";
+  const m = (await res.json()) as { overview?: string };
+  return (m.overview ?? "").trim();
+}

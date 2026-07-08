@@ -121,6 +121,42 @@
       <p id="reviewMsg" class="toast"></p>
     </main>
 
+    <!-- Szczegóły tytułu: opis + ocena + komentarz -->
+    <div id="detailOverlay" class="overlay hidden">
+      <div class="modal" role="dialog" aria-modal="true">
+        <button id="detailClose" class="modal-close" type="button" aria-label="Zamknij">
+          ✕
+        </button>
+        <div class="modal-head">
+          <div id="detailPoster" class="modal-poster"></div>
+          <div class="modal-info">
+            <h2 id="detailTitle"></h2>
+            <div id="detailYear" class="modal-year"></div>
+            <p id="detailDesc" class="modal-desc"></p>
+          </div>
+        </div>
+
+        <div class="modal-form">
+          <div class="modal-rateline">
+            <label for="detailRating">Twoja ocena</label>
+            <select id="detailRating" aria-label="Ocena"></select>
+          </div>
+          <textarea
+            id="detailComment"
+            rows="3"
+            placeholder="Napisz komentarz (opcjonalnie)…"
+          ></textarea>
+          <button id="detailSave" type="button">Zapisz ocenę</button>
+          <p id="detailMsg" class="err"></p>
+        </div>
+
+        <div class="modal-reviews">
+          <h3>Komentarze</h3>
+          <div id="detailReviews"></div>
+        </div>
+      </div>
+    </div>
+
     <script src="/app.js"></script>
   </body>
 </html>

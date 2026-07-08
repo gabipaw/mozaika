@@ -93,31 +93,29 @@ function posterCard(m, opts = {}) {
   return { card, meta };
 }
 
-// Siatka kart z kontrolką oceny. onRate(item, rating) decyduje co się dzieje.
-function renderGrid(container, list, onRate, addLabel) {
+// Buduje obiekt szczegółów z rekordu (media z bazy / wynik wyszukiwania).
+function toDetail(m, type, mediaId, myRating) {
+  return {
+    type: type ?? m.type,
+    externalId: m.externalId ?? null,
+    title: m.title,
+    year: m.year ?? null,
+    posterUrl: m.posterUrl ?? null,
+    mediaId: mediaId ?? m.id ?? null,
+    myRating,
+  };
+}
+
+// Siatka klikalnych kart — klik otwiera szczegóły (opis + ocena + komentarz).
+function renderGrid(container, list, onClick) {
   container.innerHTML = "";
   if (list.length === 0) {
     container.innerHTML = '<p class="muted">Nic nie znaleziono.</p>';
     return;
   }
   for (const m of list) {
-    const { card, meta } = posterCard(m, { score: m.myRating });
-    const rate = document.createElement("div");
-    rate.className = "rate";
-    const sel = document.createElement("select");
-    for (let n = 1; n <= 10; n += 1) {
-      const o = document.createElement("option");
-      o.value = String(n);
-      o.textContent = String(n);
-      if (n === 8) o.selected = true;
-      sel.append(o);
-    }
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = addLabel;
-    btn.addEventListener("click", () => onRate(m, Number(sel.value)));
-    rate.append(sel, btn);
-    meta.append(rate);
+    const { card } = posterCard(m, { score: m.myRating });
+    card.addEventListener("click", () => onClick(m));
     container.append(card);
   }
 }
@@ -125,7 +123,7 @@ function renderGrid(container, list, onRate, addLabel) {
 async function loadCatalog() {
   allMedia = await api("/media");
   $("catalogTitle").textContent = "Katalog";
-  renderGrid($("catalog"), allMedia, (m, rating) => rateMedia(m.id, rating), "Oceń");
+  renderGrid($("catalog"), allMedia, (m) => openDetail(toDetail(m, m.type, m.id)));
 }
 
 const SEARCH_SRC = {
@@ -150,12 +148,7 @@ async function runSearch(q) {
   grid.innerHTML = '<p class="muted">Szukam…</p>';
   try {
     const results = await api(`/search?q=${encodeURIComponent(q)}&type=${searchType}`);
-    renderGrid(
-      grid,
-      results,
-      (m, rating) => addAndRate(m.externalId, rating),
-      "Dodaj i oceń",
-    );
+    renderGrid(grid, results, (m) => openDetail(toDetail(m, searchType, null)));
   } catch (e) {
     grid.innerHTML = `<p class="muted">${e.message}</p>`;
   }
@@ -197,10 +190,12 @@ async function loadRecommendations() {
     }
     row.innerHTML = "";
     for (const r of recs) {
-      row.append(
-        posterCard(r, { score: r.score, recby: `poleca ${r.recommenders.length} os.` })
-          .card,
-      );
+      const { card } = posterCard(r, {
+        score: r.score,
+        recby: `poleca ${r.recommenders.length} os.`,
+      });
+      card.addEventListener("click", () => openDetail(toDetail(r, r.type, r.id)));
+      row.append(card);
     }
   } catch (e) {
     row.innerHTML = `<p class="muted">${e.message}</p>`;
@@ -215,36 +210,144 @@ async function loadProfile() {
     : "Nie masz jeszcze ocen — oceń coś z katalogu poniżej.";
   box.innerHTML = "";
   for (const r of data.reviews) {
-    box.append(posterCard(r.media, { score: r.rating }).card);
+    const { card } = posterCard(r.media, { score: r.rating });
+    card.addEventListener("click", () =>
+      openDetail(toDetail(r.media, r.media.type, r.media.id, r.rating)),
+    );
+    box.append(card);
   }
 }
 
-async function rateMedia(mediaId, rating) {
+// --- Szczegóły tytułu (opis + ocena + komentarz) ---
+let detailCtx = null;
+
+async function openDetail(item) {
+  detailCtx = item;
+  $("detailMsg").textContent = "";
+  $("detailTitle").textContent = item.title;
+  $("detailYear").textContent = item.year ? String(item.year) : "";
+
+  const poster = $("detailPoster");
+  poster.innerHTML = "";
+  if (item.posterUrl) {
+    const img = document.createElement("img");
+    img.src = item.posterUrl;
+    img.alt = item.title;
+    poster.append(img);
+  }
+
+  const sel = $("detailRating");
+  sel.innerHTML = "";
+  for (let n = 1; n <= 10; n += 1) {
+    const o = document.createElement("option");
+    o.value = String(n);
+    o.textContent = String(n);
+    sel.append(o);
+  }
+  sel.value = String(item.myRating ?? 8);
+  $("detailComment").value = "";
+  $("detailDesc").textContent = "Ładowanie opisu…";
+  $("detailReviews").innerHTML = "";
+  $("detailOverlay").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+
+  if (item.type && item.externalId) {
+    api(
+      `/details?type=${encodeURIComponent(item.type)}&externalId=${encodeURIComponent(item.externalId)}`,
+    )
+      .then((d) => {
+        $("detailDesc").textContent = d.description || "Brak opisu.";
+      })
+      .catch(() => {
+        $("detailDesc").textContent = "Brak opisu.";
+      });
+  } else {
+    $("detailDesc").textContent = "Brak opisu.";
+  }
+
+  // Jeśli tytuł jest już w katalogu, znajdź mediaId, żeby pokazać komentarze.
+  if (!item.mediaId && item.externalId) {
+    const found = allMedia.find(
+      (m) => m.type === item.type && String(m.externalId) === String(item.externalId),
+    );
+    if (found) item.mediaId = found.id;
+  }
+  if (item.mediaId) loadDetailReviews(item.mediaId);
+}
+
+async function loadDetailReviews(mediaId) {
   try {
+    const reviews = await api(`/media/${mediaId}/reviews`);
+    const box = $("detailReviews");
+    box.innerHTML = "";
+    if (reviews.length === 0) {
+      box.innerHTML = '<p class="muted">Brak komentarzy — bądź pierwszy.</p>';
+      return;
+    }
+    for (const r of reviews) {
+      // Wstępnie wypełnij swoją poprzednią ocenę/komentarz.
+      if (me && r.user.displayName === me.displayName) {
+        $("detailRating").value = String(r.rating);
+        if (r.text) $("detailComment").value = r.text;
+      }
+      const el = document.createElement("div");
+      el.className = "review";
+      const who = document.createElement("div");
+      who.className = "who";
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = r.user.displayName;
+      const rating = document.createElement("span");
+      rating.className = "rating";
+      rating.textContent = `★ ${r.rating}`;
+      who.append(name, rating);
+      el.append(who);
+      if (r.text) {
+        const txt = document.createElement("div");
+        txt.className = "text";
+        txt.textContent = r.text;
+        el.append(txt);
+      }
+      box.append(el);
+    }
+  } catch {
+    /* lista komentarzy opcjonalna */
+  }
+}
+
+async function saveDetail() {
+  if (!detailCtx) return;
+  $("detailMsg").textContent = "";
+  const rating = Number($("detailRating").value);
+  const text = $("detailComment").value;
+  try {
+    let mediaId = detailCtx.mediaId;
+    if (!mediaId) {
+      const media = await api("/media", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ externalId: detailCtx.externalId, type: detailCtx.type }),
+      });
+      mediaId = media.id;
+      detailCtx.mediaId = mediaId;
+    }
     await api("/reviews", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ mediaId, rating }),
+      body: JSON.stringify({ mediaId, rating, text }),
     });
-    toast("✅ Zapisano ocenę");
-    loadProfile();
-    loadRecommendations();
+    toast("✅ Zapisano");
+    await Promise.all([loadProfile(), loadRecommendations()]);
+    loadDetailReviews(mediaId);
   } catch (e) {
-    toast(`⚠️ ${e.message}`);
+    $("detailMsg").textContent = e.message;
   }
 }
 
-async function addAndRate(externalId, rating) {
-  try {
-    const media = await api("/media", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ externalId, type: searchType }),
-    });
-    await rateMedia(media.id, rating);
-  } catch (e) {
-    toast(`⚠️ ${e.message}`);
-  }
+function closeDetail() {
+  $("detailOverlay").classList.add("hidden");
+  document.body.style.overflow = "";
+  detailCtx = null;
 }
 
 async function loadOthers() {
@@ -342,6 +445,14 @@ async function init() {
   $("typeManga").addEventListener("click", () => setSearchType("manga"));
   $("typeAnime").addEventListener("click", () => setSearchType("anime"));
   $("typeMusic").addEventListener("click", () => setSearchType("music"));
+  $("detailClose").addEventListener("click", closeDetail);
+  $("detailSave").addEventListener("click", saveDetail);
+  $("detailOverlay").addEventListener("click", (e) => {
+    if (e.target === $("detailOverlay")) closeDetail();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDetail();
+  });
   $("matchBtn").addEventListener("click", showMatch);
   $("pwToggle").innerHTML = pwIcon(false);
   $("pwToggle").addEventListener("click", () => {

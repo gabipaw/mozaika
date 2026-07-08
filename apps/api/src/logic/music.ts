@@ -15,6 +15,9 @@ interface ItunesAlbum {
   artistName?: string;
   artworkUrl100?: string | null;
   releaseDate?: string;
+  primaryGenreName?: string;
+  trackCount?: number;
+  copyright?: string;
 }
 
 /** Podmienia miniaturę 100x100 na większą okładkę. */
@@ -63,4 +66,20 @@ export async function addMusicFromItunes(externalId: string) {
   const album = (data.results ?? []).find((a) => String(a.collectionId) === id);
   if (!album) throw new NotFoundError(`Album iTunes #${id} nie istnieje.`);
   return upsertExternalMedia(MediaType.MUZYKA, toAlbum(album));
+}
+
+/** „Opis" albumu (gatunek · liczba utworów · prawa) — albumy nie mają streszczeń. */
+export async function musicDescription(externalId: string): Promise<string> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id)) return "";
+  const res = await fetch(`${ITUNES}/lookup?id=${id}`);
+  if (!res.ok) return "";
+  const data = (await res.json()) as { results?: ItunesAlbum[] };
+  const a = (data.results ?? []).find((x) => String(x.collectionId) === id);
+  if (!a) return "";
+  const parts: string[] = [];
+  if (a.primaryGenreName) parts.push(a.primaryGenreName);
+  if (a.trackCount) parts.push(`${a.trackCount} utworów`);
+  if (a.copyright) parts.push(a.copyright);
+  return parts.join(" · ");
 }

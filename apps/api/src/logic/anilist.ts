@@ -92,6 +92,24 @@ export async function addFromAniList(type: AniType, externalId: string) {
   return upsertExternalMedia(mediaType, toMedia(data.Media));
 }
 
+/** Opis mangi/anime (AniList, bez HTML) — do widoku szczegółów. Pusty, gdy brak. */
+export async function aniListDescription(
+  type: AniType,
+  externalId: string,
+): Promise<string> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id)) return "";
+  try {
+    const data = await gql<{ Media: { description?: string | null } | null }>(
+      `query ($id: Int) { Media(id: $id, type: ${type}) { description(asHtml: false) } }`,
+      { id: Number(id) },
+    );
+    return (data.Media?.description ?? "").replace(/<[^>]+>/g, "").trim();
+  } catch {
+    return "";
+  }
+}
+
 /**
  * Surowe tytuły (romaji + english) dla frazy — do wykluczania mangi/anime z innych
  * zakładek (np. mangi z Książek). Gdy AniList niedostępny, zwraca [] (nie blokuje).

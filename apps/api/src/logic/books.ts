@@ -156,6 +156,18 @@ export async function addBookFromOpenLibrary(externalId: string) {
   });
 }
 
+/** Opis książki (Open Library) — do widoku szczegółów. Pusty, gdy brak. */
+export async function bookDescription(externalId: string): Promise<string> {
+  const id = externalId.trim();
+  if (!/^OL[0-9]+[A-Z]$/.test(id)) return "";
+  const res = await fetch(`${OL}/works/${id}.json`);
+  if (!res.ok) return "";
+  const w = (await res.json()) as { description?: string | { value?: string } };
+  const d =
+    typeof w.description === "string" ? w.description : (w.description?.value ?? "");
+  return d.trim();
+}
+
 /** Pobiera imię i nazwisko autora z Open Library (puste, gdy się nie uda — autor opcjonalny). */
 async function authorName(key: string | undefined): Promise<string> {
   if (!key) return "";

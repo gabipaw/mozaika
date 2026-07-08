@@ -80,6 +80,7 @@ export function computeRecommendations(
 export interface RecommendationWithMedia extends Recommendation {
   title: string;
   type: string;
+  externalId: string | null;
   year: number | null;
   posterUrl: string | null;
 }
@@ -112,7 +113,14 @@ export async function recommendations(
 
   const media = await prisma.media.findMany({
     where: { id: { in: recs.map((r) => r.mediaId) } },
-    select: { id: true, title: true, type: true, year: true, posterUrl: true },
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      externalId: true,
+      year: true,
+      posterUrl: true,
+    },
   });
   const mediaById = new Map(media.map((m) => [m.id, m]));
 
@@ -122,6 +130,7 @@ export async function recommendations(
       ...r,
       title: m?.title ?? "?",
       type: m?.type ?? "?",
+      externalId: m?.externalId ?? null,
       year: m?.year ?? null,
       posterUrl: m?.posterUrl ?? null,
     };
