@@ -254,10 +254,12 @@ function logout() {
 
 function setAuthMode(mode) {
   authMode = mode;
-  $("tabLogin").classList.toggle("active", mode === "login");
-  $("tabRegister").classList.toggle("active", mode === "register");
-  $("displayName").classList.toggle("hidden", mode !== "register");
-  $("authSubmit").textContent = mode === "login" ? "Zaloguj" : "Załóż konto";
+  const login = mode === "login";
+  $("displayName").classList.toggle("hidden", login);
+  $("authSubmit").textContent = login ? "Zaloguj się" : "Załóż konto";
+  $("switchText").textContent = login ? "Nie masz jeszcze konta?" : "Masz już konto?";
+  $("switchBtn").textContent = login ? "Załóż konto" : "Zaloguj się";
+  $("password").setAttribute("autocomplete", login ? "current-password" : "new-password");
   $("authMsg").textContent = "";
 }
 
@@ -285,8 +287,9 @@ async function submitAuth(ev) {
 }
 
 async function init() {
-  $("tabLogin").addEventListener("click", () => setAuthMode("login"));
-  $("tabRegister").addEventListener("click", () => setAuthMode("register"));
+  $("switchBtn").addEventListener("click", () =>
+    setAuthMode(authMode === "login" ? "register" : "login"),
+  );
   $("authForm").addEventListener("submit", submitAuth);
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", () => {
@@ -294,6 +297,7 @@ async function init() {
   });
   $("search").addEventListener("input", onSearchInput);
   $("matchBtn").addEventListener("click", showMatch);
+  setAuthMode("login");
 
   if (getToken()) {
     try {

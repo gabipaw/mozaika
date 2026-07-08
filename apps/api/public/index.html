@@ -25,11 +25,15 @@
     <main>
       <!-- Ekran logowania / rejestracji -->
       <section id="authView" class="auth">
-        <div class="card auth-card">
-          <div class="tabs">
-            <button id="tabLogin" class="tab active" type="button">Zaloguj</button>
-            <button id="tabRegister" class="tab" type="button">Załóż konto</button>
+        <div class="auth-card">
+          <div class="auth-head">
+            <div class="auth-logo">🎨</div>
+            <h1 class="auth-title">Mozaika</h1>
+            <p class="auth-tagline">
+              Oceniaj wszystko, co oglądasz i czytasz — a resztę dobierzemy do Twojego gustu.
+            </p>
           </div>
+
           <form id="authForm" autocomplete="on">
             <input
               id="displayName"
@@ -51,11 +55,12 @@
               autocomplete="current-password"
               required
             />
-            <button id="authSubmit" type="submit">Zaloguj</button>
+            <button id="authSubmit" type="submit">Zaloguj się</button>
           </form>
           <p id="authMsg" class="err"></p>
-          <p class="muted small">
-            Załóż konto i oceniaj filmy — Twój gust dobierze Ci rekomendacje.
+          <p class="auth-switch">
+            <span id="switchText">Nie masz jeszcze konta?</span>
+            <button id="switchBtn" type="button" class="linkbtn">Załóż konto</button>
           </p>
         </div>
       </section>
