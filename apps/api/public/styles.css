@@ -1098,7 +1098,9 @@ h2 {
     padding: 0;
   }
   .profile-cols {
-    grid-template-columns: 1fr;
+    /* minmax(0,1fr) — inaczej poziome paski (Top4/kategorie) rozpychają kolumnę
+       do szerokości swojej zawartości i cała strona wystaje poza ekran. */
+    grid-template-columns: minmax(0, 1fr);
     gap: 22px;
     height: auto;
     min-height: 0;
@@ -1107,6 +1109,7 @@ h2 {
   .profile-right,
   .profile-side {
     width: 100%;
+    min-width: 0;
     height: auto;
     min-height: 0;
   }
