@@ -173,7 +173,12 @@
               </div>
               <h2 class="profile-h">Top 4 ulubione</h2>
               <div id="topMedia" class="poster-grid"></div>
-              <h2 class="profile-h">Do obejrzenia / zagrania</h2>
+              <h2 class="profile-h">
+                Do obejrzenia / zagrania
+                <button id="watchSeeAll" class="seeall hidden" type="button">
+                  Zobacz wszystko
+                </button>
+              </h2>
               <div id="watchlist" class="poster-grid"></div>
             </div>
             <div class="profile-right">
@@ -181,6 +186,17 @@
             </div>
           </div>
         </section>
+      </div>
+
+      <!-- Nakładka „Zobacz wszystko" — pełna siatka danego typu / listy -->
+      <div id="seeAllOverlay" class="overlay hidden">
+        <div class="overlay-card">
+          <div class="overlay-head">
+            <h2 id="seeAllTitle"></h2>
+            <button id="seeAllClose" class="overlay-close" type="button">✕ Zamknij</button>
+          </div>
+          <div id="seeAllGrid" class="poster-grid"></div>
+        </div>
       </div>
 
       <p id="reviewMsg" class="toast"></p>

@@ -249,13 +249,36 @@ const CAT_GROUPS = [
 
 // Dodaje klikalną kartę (otwiera szczegóły) do kontenera.
 // Muzyka = kwadratowa okładka (jak płyta CD), reszta = plakat 2:3.
-function appendCard(container, media, rating) {
+// onClick opcjonalny — nadpisuje domyślne otwarcie szczegółów (np. z nakładki).
+function appendCard(container, media, rating, onClick) {
   const square = media.type === "MUZYKA";
   const { card } = posterCard(media, { score: rating, noMeta: true, square });
-  card.addEventListener("click", () =>
-    openDetail(toDetail(media, media.type, media.id, rating)),
+  card.addEventListener(
+    "click",
+    onClick ?? (() => openDetail(toDetail(media, media.type, media.id, rating))),
   );
   container.append(card);
+}
+
+// Nakładka „Zobacz wszystko" — pełna siatka pozycji danej sekcji/kategorii.
+// items: lista rekordów {media, rating} (recenzje) lub {media} (watchlista).
+function openSeeAll(title, items) {
+  $("seeAllTitle").textContent = title;
+  const grid = $("seeAllGrid");
+  grid.innerHTML = "";
+  for (const it of items) {
+    const media = it.media;
+    const rating = it.rating;
+    appendCard(grid, media, rating, () => {
+      closeSeeAll();
+      openDetail(toDetail(media, media.type, media.id, rating));
+    });
+  }
+  $("seeAllOverlay").classList.remove("hidden");
+}
+
+function closeSeeAll() {
+  $("seeAllOverlay").classList.add("hidden");
 }
 
 function renderRatedByCat(reviews) {
@@ -264,15 +287,25 @@ function renderRatedByCat(reviews) {
   for (const g of CAT_GROUPS) {
     const items = reviews.filter((r) => g.types.includes(r.media.type));
     if (items.length === 0) continue;
-    // Rząd = etykieta kategorii z lewej + siatka plakatów z prawej.
+    // Rząd = etykieta kategorii z lewej + max 4 plakaty (1×4) z prawej.
     const catRow = document.createElement("div");
     catRow.className = "cat-row";
     const label = document.createElement("div");
     label.className = "cat-label";
-    label.textContent = g.label;
+    const name = document.createElement("span");
+    name.textContent = g.label;
+    label.append(name);
+    if (items.length > 4) {
+      const btn = document.createElement("button");
+      btn.className = "seeall";
+      btn.type = "button";
+      btn.textContent = `Zobacz wszystko (${items.length})`;
+      btn.addEventListener("click", () => openSeeAll(g.label, items));
+      label.append(btn);
+    }
     const posters = document.createElement("div");
     posters.className = "cat-posters";
-    for (const r of items) appendCard(posters, r.media, r.rating);
+    for (const r of items.slice(0, 4)) appendCard(posters, r.media, r.rating);
     catRow.append(label, posters);
     box.append(catRow);
   }
@@ -309,13 +342,22 @@ async function loadProfile() {
     for (const r of top) appendCard(topBox, r.media, r.rating);
   }
 
-  // Lista „do obejrzenia/zagrania".
+  // Lista „do obejrzenia/zagrania" — do 4 (2×2), reszta pod „Zobacz wszystko".
+  const watch = data.watchlist;
   const watchBox = $("watchlist");
   watchBox.innerHTML = "";
-  if (data.watchlist.length === 0) {
+  if (watch.length === 0) {
     watchBox.innerHTML = '<p class="muted">Pusto — dodaj coś przyciskiem „Do listy".</p>';
   } else {
-    for (const w of data.watchlist) appendCard(watchBox, w.media, undefined);
+    for (const w of watch.slice(0, 4)) appendCard(watchBox, w.media, undefined);
+  }
+  const watchSeeAll = $("watchSeeAll");
+  if (watch.length > 4) {
+    watchSeeAll.classList.remove("hidden");
+    watchSeeAll.textContent = `Zobacz wszystko (${watch.length})`;
+    watchSeeAll.onclick = () => openSeeAll("Do obejrzenia / zagrania", watch);
+  } else {
+    watchSeeAll.classList.add("hidden");
   }
 
   // Prawa strona: ocenione pogrupowane po kategoriach.
@@ -726,10 +768,14 @@ async function init() {
   $("typeGame").addEventListener("click", () => setSearchType("game"));
   detailStars = buildStars($("detailStars"), $("detailStarVal"));
   $("detailSave").addEventListener("click", saveDetail);
+  $("seeAllClose").addEventListener("click", closeSeeAll);
+  $("seeAllOverlay").addEventListener("click", (e) => {
+    if (e.target === $("seeAllOverlay")) closeSeeAll();
+  });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !$("detailView").classList.contains("hidden")) {
-      closeDetail();
-    }
+    if (e.key !== "Escape") return;
+    if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
+    else if (!$("detailView").classList.contains("hidden")) closeDetail();
   });
   $("pwToggle").innerHTML = pwIcon(false);
   $("pwToggle").addEventListener("click", () => {
