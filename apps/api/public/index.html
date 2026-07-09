@@ -17,11 +17,22 @@
     <header class="topbar">
       <div class="topbar-left">
         <div class="brand">🎨 <span>Mozaika</span></div>
-        <button id="topBack" class="topback hidden" type="button">← Wróć</button>
+        <button id="topBack" class="topback hidden" type="button" data-i18n="back">
+          ← Wróć
+        </button>
       </div>
       <div id="userBox" class="userbox hidden">
         <button id="hello" class="hello-link" type="button" title="Twój profil"></button>
-        <button id="logout" type="button">Wyloguj</button>
+        <button
+          id="settingsBtn"
+          class="icon-btn"
+          type="button"
+          data-i18n-title="settings"
+          title="Ustawienia"
+        >
+          ⚙
+        </button>
+        <button id="logout" type="button" data-i18n="logout">Wyloguj</button>
       </div>
     </header>
 
@@ -32,9 +43,9 @@
           <div class="auth-head">
             <div class="auth-logo">🎨</div>
             <h1 class="auth-title">Mozaika</h1>
-            <p class="auth-tagline">
-              Oceniaj wszystko, co oglądasz i czytasz,<br />
-              a resztę dobierzemy do Twojego gustu.
+            <p class="auth-tagline" data-i18n="tagline">
+              Oceniaj wszystko, co oglądasz i czytasz, a resztę dobierzemy do Twojego
+              gustu.
             </p>
           </div>
 
@@ -43,12 +54,14 @@
               id="displayName"
               class="hidden"
               placeholder="Twoja nazwa"
+              data-i18n-ph="yourName"
               autocomplete="name"
             />
             <input
               id="email"
               type="email"
               placeholder="E-mail"
+              data-i18n-ph="email"
               autocomplete="email"
               required
             />
@@ -81,12 +94,24 @@
       <div id="appView" class="hidden">
         <div id="searchbar" class="searchwrap">
           <div class="type-toggle">
-            <button id="typeFilm" class="type active" type="button">🎬 Filmy</button>
-            <button id="typeBook" class="type" type="button">📚 Książki</button>
-            <button id="typeManga" class="type" type="button">📗 Manga</button>
-            <button id="typeAnime" class="type" type="button">🎞️ Anime</button>
-            <button id="typeMusic" class="type" type="button">🎵 Muzyka</button>
-            <button id="typeGame" class="type" type="button">🎮 Gry</button>
+            <button id="typeFilm" class="type active" type="button" data-i18n="typeFilm">
+              🎬 Filmy
+            </button>
+            <button id="typeBook" class="type" type="button" data-i18n="typeBook">
+              📚 Książki
+            </button>
+            <button id="typeManga" class="type" type="button" data-i18n="typeManga">
+              📗 Manga
+            </button>
+            <button id="typeAnime" class="type" type="button" data-i18n="typeAnime">
+              🎞️ Anime
+            </button>
+            <button id="typeMusic" class="type" type="button" data-i18n="typeMusic">
+              🎵 Muzyka
+            </button>
+            <button id="typeGame" class="type" type="button" data-i18n="typeGame">
+              🎮 Gry
+            </button>
           </div>
           <input
             id="search"
@@ -105,14 +130,16 @@
         <!-- Przeglądanie (chowane podczas wyszukiwania) -->
         <div id="browse">
           <section>
-            <h2>Dla Ciebie</h2>
-            <p class="hint">Polecane przez osoby o podobnym guście.</p>
+            <h2 data-i18n="forYou">Dla Ciebie</h2>
+            <p class="hint" data-i18n="forYouHint">
+              Polecane przez osoby o podobnym guście.
+            </p>
             <div id="recs" class="poster-row"></div>
           </section>
 
           <section>
-            <h2>Twój katalog</h2>
-            <p class="hint">Tytuły, które oceniłeś.</p>
+            <h2 data-i18n="yourCatalog">Twój katalog</h2>
+            <p class="hint" data-i18n="yourCatalogHint">Tytuły, które oceniłeś.</p>
             <div id="catalog" class="poster-grid"></div>
           </section>
         </div>
@@ -127,7 +154,7 @@
               <p id="detailDesc" class="detail-desc"></p>
 
               <div class="detail-rateline">
-                <span class="detail-label">Twoja ocena</span>
+                <span class="detail-label" data-i18n="yourRating">Twoja ocena</span>
                 <div
                   id="detailStars"
                   class="stars"
@@ -147,15 +174,18 @@
                   id="detailComment"
                   rows="3"
                   placeholder="Napisz komentarz (opcjonalnie)…"
+                  data-i18n-ph="commentPh"
                 ></textarea>
-                <button id="detailSave" type="button">Zapisz ocenę i komentarz</button>
+                <button id="detailSave" type="button" data-i18n="saveReview">
+                  Zapisz ocenę i komentarz
+                </button>
                 <p id="detailMsg" class="err"></p>
               </div>
             </div>
           </div>
 
           <div class="detail-comments">
-            <h3>Komentarze</h3>
+            <h3 data-i18n="comments">Komentarze</h3>
             <div id="detailReviews"></div>
           </div>
         </section>
@@ -178,10 +208,10 @@
                   Obserwuj
                 </button>
               </div>
-              <h2 class="profile-h">Top 4 ulubione</h2>
+              <h2 class="profile-h" data-i18n="top4">Top 4 ulubione</h2>
               <div id="topMedia" class="poster-grid"></div>
               <h2 class="profile-h">
-                Do obejrzenia / zagrania
+                <span data-i18n="watchlistTitle">Do obejrzenia / zagrania</span>
                 <button id="watchSeeAll" class="seeall hidden" type="button">
                   Zobacz wszystko
                 </button>
@@ -194,14 +224,16 @@
             <div class="profile-side" id="profileSide">
               <div class="profile-feed" id="profileFeed">
                 <div class="feed-head">
-                  <h2>Znajomi</h2>
-                  <button id="friendsBtn" class="seeall" type="button">＋ Dodaj</button>
+                  <h2 data-i18n="friends">Znajomi</h2>
+                  <button id="friendsBtn" class="seeall" type="button" data-i18n="add">
+                    ＋ Dodaj
+                  </button>
                 </div>
                 <div id="activityFeed" class="feed-list"></div>
               </div>
               <div class="profile-feed hidden" id="comparePanel">
                 <div class="feed-head">
-                  <h2>Wasz gust</h2>
+                  <h2 data-i18n="yourTaste">Wasz gust</h2>
                 </div>
                 <div id="compareBody" class="feed-list"></div>
               </div>
@@ -210,12 +242,38 @@
         </section>
       </div>
 
+      <!-- Nakładka Ustawienia (język) -->
+      <div id="settingsOverlay" class="overlay hidden">
+        <div class="overlay-card settings-card">
+          <div class="overlay-head">
+            <h2 data-i18n="settings">Ustawienia</h2>
+            <button
+              id="settingsClose"
+              class="overlay-close"
+              type="button"
+              data-i18n="close"
+            >
+              ✕ Zamknij
+            </button>
+          </div>
+          <div class="settings-group">
+            <div class="settings-label" data-i18n="language">Język</div>
+            <div id="langList" class="lang-list"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Nakładka „Znajomi" — dodawanie/usuwanie obserwowanych -->
       <div id="friendsOverlay" class="overlay hidden">
         <div class="overlay-card">
           <div class="overlay-head">
-            <h2>Znajomi</h2>
-            <button id="friendsClose" class="overlay-close" type="button">
+            <h2 data-i18n="friends">Znajomi</h2>
+            <button
+              id="friendsClose"
+              class="overlay-close"
+              type="button"
+              data-i18n="done"
+            >
               ✕ Gotowe
             </button>
           </div>
@@ -228,7 +286,12 @@
         <div class="overlay-card">
           <div class="overlay-head">
             <h2 id="seeAllTitle"></h2>
-            <button id="seeAllClose" class="overlay-close" type="button">
+            <button
+              id="seeAllClose"
+              class="overlay-close"
+              type="button"
+              data-i18n="close"
+            >
               ✕ Zamknij
             </button>
           </div>

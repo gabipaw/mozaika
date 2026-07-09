@@ -9,6 +9,286 @@ let searchType = "film"; // "film" (TMDB) | "book" (Open Library)
 let viewingUserId = null; // null = własny profil; inaczej id oglądanego usera
 let viewingName = ""; // imię oglądanego usera (do etykiet porównania)
 
+// --- i18n (tłumaczenia) ---
+const I18N = {
+  pl: {
+    back: "← Wróć",
+    logout: "Wyloguj",
+    settings: "Ustawienia",
+    language: "Język",
+    tagline:
+      "Oceniaj wszystko, co oglądasz i czytasz, a resztę dobierzemy do Twojego gustu.",
+    yourName: "Twoja nazwa",
+    email: "E-mail",
+    login: "Zaloguj się",
+    register: "Załóż konto",
+    noAccount: "Nie masz jeszcze konta?",
+    haveAccount: "Masz już konto?",
+    passwordPh: "Hasło",
+    passwordPhNew: "Hasło (min. 6 znaków)",
+    showPassword: "Pokaż hasło",
+    hidePassword: "Ukryj hasło",
+    yourProfile: "Twój profil",
+    changePhoto: "Zmień zdjęcie",
+    hi: "Cześć, {name}",
+    typeFilm: "🎬 Filmy",
+    typeBook: "📚 Książki",
+    typeManga: "📗 Manga",
+    typeAnime: "🎞️ Anime",
+    typeMusic: "🎵 Muzyka",
+    typeGame: "🎮 Gry",
+    searchFilm: "Szukaj filmu (TMDB)…",
+    searchBook: "Szukaj książki (Open Library)…",
+    searchManga: "Szukaj mangi (AniList)…",
+    searchAnime: "Szukaj anime (AniList)…",
+    searchMusic: "Szukaj albumu (iTunes)…",
+    searchGame: "Szukaj gry (RAWG)…",
+    results: "Wyniki",
+    resultsFrom: "Wyniki z {src}: „{q}”",
+    searching: "Szukam…",
+    nothingFound: "Nic nie znaleziono.",
+    forYou: "Dla Ciebie",
+    forYouHint: "Polecane przez osoby o podobnym guście.",
+    yourCatalog: "Twój katalog",
+    yourCatalogHint: "Tytuły, które oceniłeś.",
+    recBy: "poleca {n} os.",
+    yourRating: "Twoja ocena",
+    fav: "☆ TOP 4",
+    favActive: "★ w TOP 4",
+    watchAdd: "＋ Do listy",
+    watchActive: "✓ Na liście",
+    commentPh: "Napisz komentarz (opcjonalnie)…",
+    saveReview: "Zapisz ocenę i komentarz",
+    comments: "Komentarze",
+    noComments: "Brak komentarzy — bądź pierwszy.",
+    loadingDesc: "Ładowanie opisu…",
+    noDesc: "Brak opisu.",
+    pickRating: "Wybierz ocenę (kliknij gwiazdki).",
+    rateFirst: "Najpierw oceń ten tytuł (gwiazdki), żeby dodać do TOP 4.",
+    addedTop4: "Dodano do TOP 4",
+    removedTop4: "Usunięto z TOP 4",
+    addedList: "Dodano do listy",
+    removedList: "Usunięto z listy",
+    saved: "Zapisano",
+    savedPhoto: "Zapisano zdjęcie",
+    top4: "Top 4 ulubione",
+    top4Empty: "Przypnij ulubione przyciskiem „TOP 4” na stronie tytułu.",
+    top4EmptyRO: "Brak ulubionych.",
+    watchlistTitle: "Do obejrzenia / zagrania",
+    watchEmpty: "Pusto — dodaj coś przyciskiem „Do listy”.",
+    watchEmptyRO: "Pusto.",
+    seeAll: "Zobacz wszystko ({n})",
+    nothingRatedCat: "Nic tu jeszcze",
+    edit: "Zmień",
+    pickN: "Wybierz 6 ({n})",
+    pickCovers: "{label} — wybierz do 6 okładek",
+    maxCovers: "Możesz wybrać maksymalnie 6 okładek.",
+    friends: "Znajomi",
+    add: "＋ Dodaj",
+    counts: "{fo} obserwujących · {fw} obserwowanych",
+    follow: "Obserwuj",
+    following: "Obserwujesz",
+    noFollows: "Nie obserwujesz jeszcze nikogo — dodaj znajomych przyciskiem „＋ Dodaj”.",
+    noActivity: "Twoi znajomi nie ocenili jeszcze nic.",
+    noUsers: "Brak innych użytkowników.",
+    yourTaste: "Wasz gust",
+    matchCap: "dopasowania · {n} wspólnych",
+    notEnough:
+      "Za mało wspólnych ocen ({n}/3), żeby policzyć dopasowanie. Oceńcie więcej tych samych tytułów.",
+    you: "Ty",
+    loading: "Ładowanie…",
+    done: "✕ Gotowe",
+    close: "✕ Zamknij",
+    loginRequired: "Zaloguj się.",
+    apiError: "Błąd API",
+    connectError: "Nie udało się połączyć z API: {msg}",
+    justNow: "przed chwilą",
+    minAgo: "{n} min temu",
+    hAgo: "{n} godz. temu",
+    dAgo: "{n} dni temu",
+  },
+  en: {
+    back: "← Back",
+    logout: "Log out",
+    settings: "Settings",
+    language: "Language",
+    tagline: "Rate everything you watch and read — we'll match the rest to your taste.",
+    yourName: "Your name",
+    email: "Email",
+    login: "Log in",
+    register: "Sign up",
+    noAccount: "Don't have an account?",
+    haveAccount: "Already have an account?",
+    passwordPh: "Password",
+    passwordPhNew: "Password (min. 6 characters)",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    yourProfile: "Your profile",
+    changePhoto: "Change photo",
+    hi: "Hi, {name}",
+    typeFilm: "🎬 Movies",
+    typeBook: "📚 Books",
+    typeManga: "📗 Manga",
+    typeAnime: "🎞️ Anime",
+    typeMusic: "🎵 Music",
+    typeGame: "🎮 Games",
+    searchFilm: "Search movies (TMDB)…",
+    searchBook: "Search books (Open Library)…",
+    searchManga: "Search manga (AniList)…",
+    searchAnime: "Search anime (AniList)…",
+    searchMusic: "Search albums (iTunes)…",
+    searchGame: "Search games (RAWG)…",
+    results: "Results",
+    resultsFrom: "Results from {src}: “{q}”",
+    searching: "Searching…",
+    nothingFound: "Nothing found.",
+    forYou: "For you",
+    forYouHint: "Recommended by people with similar taste.",
+    yourCatalog: "Your catalog",
+    yourCatalogHint: "Titles you've rated.",
+    recBy: "recommended by {n}",
+    yourRating: "Your rating",
+    fav: "☆ TOP 4",
+    favActive: "★ in TOP 4",
+    watchAdd: "＋ To list",
+    watchActive: "✓ On list",
+    commentPh: "Write a comment (optional)…",
+    saveReview: "Save rating and comment",
+    comments: "Comments",
+    noComments: "No comments — be the first.",
+    loadingDesc: "Loading description…",
+    noDesc: "No description.",
+    pickRating: "Pick a rating (click the stars).",
+    rateFirst: "Rate this title first (stars) to add it to TOP 4.",
+    addedTop4: "Added to TOP 4",
+    removedTop4: "Removed from TOP 4",
+    addedList: "Added to list",
+    removedList: "Removed from list",
+    saved: "Saved",
+    savedPhoto: "Photo saved",
+    top4: "Top 4 favorites",
+    top4Empty: "Pin favorites with the “TOP 4” button on a title page.",
+    top4EmptyRO: "No favorites.",
+    watchlistTitle: "To watch / play",
+    watchEmpty: "Empty — add something with the “To list” button.",
+    watchEmptyRO: "Empty.",
+    seeAll: "See all ({n})",
+    nothingRatedCat: "Nothing yet",
+    edit: "Edit",
+    pickN: "Pick 6 ({n})",
+    pickCovers: "{label} — pick up to 6 covers",
+    maxCovers: "You can pick at most 6 covers.",
+    friends: "Friends",
+    add: "＋ Add",
+    counts: "{fo} followers · {fw} following",
+    follow: "Follow",
+    following: "Following",
+    noFollows: "You're not following anyone yet — add friends with the “＋ Add” button.",
+    noActivity: "Your friends haven't rated anything yet.",
+    noUsers: "No other users.",
+    yourTaste: "Your taste",
+    matchCap: "match · {n} in common",
+    notEnough:
+      "Not enough shared ratings ({n}/3) to compute the match. Rate more of the same titles.",
+    you: "You",
+    loading: "Loading…",
+    done: "✕ Done",
+    close: "✕ Close",
+    loginRequired: "Please log in.",
+    apiError: "API error",
+    connectError: "Couldn't connect to the API: {msg}",
+    justNow: "just now",
+    minAgo: "{n} min ago",
+    hAgo: "{n} h ago",
+    dAgo: "{n} d ago",
+  },
+};
+
+const LANGS = [
+  { code: "pl", label: "Polski" },
+  { code: "en", label: "English" },
+];
+const LANG_KEY = "mozaika_lang";
+let lang = localStorage.getItem(LANG_KEY) || (navigator.language || "pl").slice(0, 2);
+if (!I18N[lang]) lang = "pl";
+
+function t(key, params) {
+  let s = (I18N[lang] && I18N[lang][key]) || I18N.pl[key] || key;
+  if (params) for (const k in params) s = s.replaceAll(`{${k}}`, params[k]);
+  return s;
+}
+
+// Podmienia teksty statyczne (atrybuty data-i18n / -ph / -title) na bieżący język.
+function applyStaticI18n() {
+  document.documentElement.lang = lang;
+  for (const el of document.querySelectorAll("[data-i18n]")) {
+    el.textContent = t(el.getAttribute("data-i18n"));
+  }
+  for (const el of document.querySelectorAll("[data-i18n-ph]")) {
+    el.placeholder = t(el.getAttribute("data-i18n-ph"));
+  }
+  for (const el of document.querySelectorAll("[data-i18n-title]")) {
+    el.title = t(el.getAttribute("data-i18n-title"));
+  }
+}
+
+const SEARCH_PH_KEY = {
+  film: "searchFilm",
+  book: "searchBook",
+  manga: "searchManga",
+  anime: "searchAnime",
+  music: "searchMusic",
+  game: "searchGame",
+};
+function applySearchPlaceholder() {
+  $("search").placeholder = t(SEARCH_PH_KEY[searchType] || "searchFilm");
+}
+
+function renderLangList() {
+  const list = $("langList");
+  list.innerHTML = "";
+  for (const L of LANGS) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "lang-btn" + (L.code === lang ? " active" : "");
+    btn.textContent = L.label;
+    btn.addEventListener("click", () => setLang(L.code));
+    list.append(btn);
+  }
+}
+
+function setLang(code) {
+  if (!I18N[code]) return;
+  lang = code;
+  localStorage.setItem(LANG_KEY, code);
+  applyStaticI18n();
+  renderLangList();
+  refreshDynamic();
+}
+
+// Odświeża teksty ustawiane dynamicznie w bieżącym widoku po zmianie języka.
+function refreshDynamic() {
+  setAuthMode(authMode);
+  applySearchPlaceholder();
+  if (!$("profileView").classList.contains("hidden")) {
+    if (viewingUserId) loadUserProfile(viewingUserId);
+    else loadProfile();
+  } else if (!$("detailView").classList.contains("hidden")) {
+    updateDetailButtons();
+  } else if (me) {
+    loadRecommendations();
+    loadCatalog();
+  }
+}
+
+function openSettings() {
+  renderLangList();
+  $("settingsOverlay").classList.remove("hidden");
+}
+function closeSettings() {
+  $("settingsOverlay").classList.add("hidden");
+}
+
 const getToken = () => localStorage.getItem("mozaika_token");
 const setToken = (t) => localStorage.setItem("mozaika_token", t);
 const clearToken = () => localStorage.removeItem("mozaika_token");
@@ -28,10 +308,10 @@ async function api(path, options = {}) {
   const res = await fetch(`/api${path}`, { ...options, headers });
   if (res.status === 401) {
     logout();
-    throw new Error("Zaloguj się.");
+    throw new Error(t("loginRequired"));
   }
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Błąd API");
+  if (!res.ok) throw new Error(data.error || t("apiError"));
   return data;
 }
 
@@ -128,7 +408,7 @@ function toDetail(m, type, mediaId, myRating) {
 function renderGrid(container, list, onClick) {
   container.innerHTML = "";
   if (list.length === 0) {
-    container.innerHTML = '<p class="muted">Nic nie znaleziono.</p>';
+    container.innerHTML = `<p class="muted">${t("nothingFound")}</p>`;
     return;
   }
   for (const m of list) {
@@ -165,20 +445,11 @@ const SEARCH_SRC = {
   music: "iTunes",
   game: "RAWG",
 };
-const SEARCH_PH = {
-  film: "Szukaj filmu (TMDB)…",
-  book: "Szukaj książki (Open Library)…",
-  manga: "Szukaj mangi (AniList)…",
-  anime: "Szukaj anime (AniList)…",
-  music: "Szukaj albumu (iTunes)…",
-  game: "Szukaj gry (RAWG)…",
-};
-
 async function runSearch(q) {
   const src = SEARCH_SRC[searchType] ?? "TMDB";
-  $("searchTitle").textContent = `Wyniki z ${src}: „${q}”`;
+  $("searchTitle").textContent = t("resultsFrom", { src, q });
   const grid = $("searchGrid");
-  grid.innerHTML = '<p class="muted">Szukam…</p>';
+  grid.innerHTML = `<p class="muted">${t("searching")}</p>`;
   showResults();
   try {
     const results = await api(`/search?q=${encodeURIComponent(q)}&type=${searchType}`);
@@ -189,16 +460,16 @@ async function runSearch(q) {
 }
 
 // Przełącznik źródła wyszukiwania: filmy (TMDB) / książki (Open Library).
-function setSearchType(t) {
-  if (searchType === t) return;
-  searchType = t;
-  $("typeFilm").classList.toggle("active", t === "film");
-  $("typeBook").classList.toggle("active", t === "book");
-  $("typeManga").classList.toggle("active", t === "manga");
-  $("typeAnime").classList.toggle("active", t === "anime");
-  $("typeMusic").classList.toggle("active", t === "music");
-  $("typeGame").classList.toggle("active", t === "game");
-  $("search").placeholder = SEARCH_PH[t] ?? SEARCH_PH.film;
+function setSearchType(type) {
+  if (searchType === type) return;
+  searchType = type;
+  $("typeFilm").classList.toggle("active", type === "film");
+  $("typeBook").classList.toggle("active", type === "book");
+  $("typeManga").classList.toggle("active", type === "manga");
+  $("typeAnime").classList.toggle("active", type === "anime");
+  $("typeMusic").classList.toggle("active", type === "music");
+  $("typeGame").classList.toggle("active", type === "game");
+  applySearchPlaceholder();
   const q = $("search").value.trim();
   if (q) runSearch(q);
   else showBrowse();
@@ -216,7 +487,7 @@ function onSearchInput() {
 
 async function loadRecommendations() {
   const row = $("recs");
-  row.innerHTML = '<p class="muted">Ładowanie…</p>';
+  row.innerHTML = `<p class="muted">${t("loading")}</p>`;
   try {
     const recs = await api("/me/recommendations");
     if (recs.length === 0) {
@@ -227,7 +498,7 @@ async function loadRecommendations() {
     for (const r of recs) {
       const { card } = posterCard(r, {
         score: r.score,
-        recby: `poleca ${r.recommenders.length} os.`,
+        recby: t("recBy", { n: r.recommenders.length }),
       });
       card.addEventListener("click", () => openDetail(toDetail(r, r.type, r.id)));
       row.append(card);
@@ -329,7 +600,7 @@ let catPickCtx = null; // { group, items } gdy tryb wyboru okładek
 
 function openCatPicker(group, items) {
   catPickCtx = { group, items };
-  $("seeAllTitle").textContent = `${group.label} — wybierz do 4 okładek`;
+  $("seeAllTitle").textContent = t("pickCovers", { label: group.label });
   renderCatPickGrid();
   $("seeAllOverlay").classList.remove("hidden");
 }
@@ -356,7 +627,7 @@ function renderCatPickGrid() {
         cur = cur.filter((id) => id !== r.media.id);
       } else {
         if (cur.length >= 6) {
-          toast("Możesz wybrać maksymalnie 6 okładek.");
+          toast(t("maxCovers"));
           return;
         }
         cur = [...cur, r.media.id];
@@ -387,7 +658,7 @@ function renderRatedByCat(reviews, readOnly) {
       posters.classList.add("empty");
       const ph = document.createElement("span");
       ph.className = "cat-empty";
-      ph.textContent = "Nic tu jeszcze";
+      ph.textContent = t("nothingRatedCat");
       posters.append(ph);
     } else {
       const shown = readOnly ? items.slice(0, 6) : displayedForCat(g, items);
@@ -399,7 +670,7 @@ function renderRatedByCat(reviews, readOnly) {
       const btn = document.createElement("button");
       btn.className = "seeall cat-seeall";
       btn.type = "button";
-      btn.textContent = items.length > 6 ? `Wybierz 6 (${items.length})` : "Zmień";
+      btn.textContent = items.length > 6 ? t("pickN", { n: items.length }) : t("edit");
       btn.addEventListener("click", () => openCatPicker(g, items));
       catRow.append(btn);
     }
@@ -410,10 +681,10 @@ function renderRatedByCat(reviews, readOnly) {
 // --- Znajomi (follow) + feed aktywności ---
 function timeAgo(iso) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 60) return "przed chwilą";
-  if (s < 3600) return `${Math.floor(s / 60)} min temu`;
-  if (s < 86400) return `${Math.floor(s / 3600)} godz. temu`;
-  return `${Math.floor(s / 86400)} dni temu`;
+  if (s < 60) return t("justNow");
+  if (s < 3600) return t("minAgo", { n: Math.floor(s / 60) });
+  if (s < 86400) return t("hAgo", { n: Math.floor(s / 3600) });
+  return t("dAgo", { n: Math.floor(s / 86400) });
 }
 
 // Kółko z avatarem usera (zdjęcie albo inicjał).
@@ -433,7 +704,7 @@ function avatarEl(user) {
 
 async function loadActivity() {
   const box = $("activityFeed");
-  box.innerHTML = '<p class="muted small">Ładowanie…</p>';
+  box.innerHTML = `<p class="muted small">${t("loading")}</p>`;
   try {
     const [items, following] = await Promise.all([
       api("/me/activity"),
@@ -441,10 +712,9 @@ async function loadActivity() {
     ]);
     box.innerHTML = "";
     if (items.length === 0) {
-      box.innerHTML =
-        following.length === 0
-          ? '<p class="muted small">Nie obserwujesz jeszcze nikogo — dodaj znajomych przyciskiem „＋ Dodaj".</p>'
-          : '<p class="muted small">Twoi znajomi nie ocenili jeszcze nic.</p>';
+      box.innerHTML = `<p class="muted small">${
+        following.length === 0 ? t("noFollows") : t("noActivity")
+      }</p>`;
       return;
     }
     for (const it of items) {
@@ -487,14 +757,14 @@ async function loadActivity() {
 
 async function renderFriendsList() {
   const list = $("friendsList");
-  list.innerHTML = '<p class="muted small">Ładowanie…</p>';
+  list.innerHTML = `<p class="muted small">${t("loading")}</p>`;
   try {
     const [users, following] = await Promise.all([api("/users"), api("/me/following")]);
     const followingIds = new Set(following.map((u) => u.id));
     const others = users.filter((u) => u.id !== me.id);
     list.innerHTML = "";
     if (others.length === 0) {
-      list.innerHTML = '<p class="muted small">Brak innych użytkowników.</p>';
+      list.innerHTML = `<p class="muted small">${t("noUsers")}</p>`;
       return;
     }
     for (const u of others) {
@@ -518,7 +788,7 @@ async function renderFriendsList() {
       btn.type = "button";
       const on = followingIds.has(u.id);
       btn.className = "follow-btn" + (on ? " active" : "");
-      btn.textContent = on ? "Obserwujesz" : "Obserwuj";
+      btn.textContent = on ? t("following") : t("follow");
       btn.addEventListener("click", async () => {
         try {
           if (followingIds.has(u.id)) {
@@ -558,7 +828,7 @@ function renderProfileData(data, readOnly) {
   // Nagłówek: zdjęcie profilowe + imię.
   $("profileName").textContent = readOnly
     ? data.user.displayName
-    : `Cześć, ${data.user.displayName}`;
+    : t("hi", { name: data.user.displayName });
   const img = $("avatarImg");
   const initial = $("avatarInitial");
   if (data.user.avatarUrl) {
@@ -571,12 +841,13 @@ function renderProfileData(data, readOnly) {
     initial.textContent = (data.user.displayName[0] || "?").toUpperCase();
   }
   $("avatarBtn").disabled = readOnly; // cudzego zdjęcia nie zmieniasz
+  $("avatarBtn").title = readOnly ? "" : t("changePhoto");
   $("followProfileBtn").classList.toggle("hidden", !readOnly);
 
   // Liczniki obserwacji pod imieniem.
   const fo = data.followersCount ?? 0;
   const fw = data.followingCount ?? 0;
-  $("profileCounts").textContent = `${fo} obserwujących · ${fw} obserwowanych`;
+  $("profileCounts").textContent = t("counts", { fo, fw });
 
   // 3. kolumna: własny profil = feed znajomych, cudzy = porównanie gustu.
   $("profileFeed").classList.toggle("hidden", readOnly);
@@ -587,11 +858,7 @@ function renderProfileData(data, readOnly) {
   const topBox = $("topMedia");
   topBox.innerHTML = "";
   if (top.length === 0) {
-    topBox.innerHTML = `<p class="muted">${
-      readOnly
-        ? "Brak ulubionych."
-        : 'Przypnij ulubione przyciskiem „TOP 4" na stronie tytułu.'
-    }</p>`;
+    topBox.innerHTML = `<p class="muted">${readOnly ? t("top4EmptyRO") : t("top4Empty")}</p>`;
   } else {
     // Muzyka w Top 4 jako prostokąt 2:3 (rect), nie kwadrat.
     for (const r of top) appendCard(topBox, r.media, r.rating, undefined, true);
@@ -602,17 +869,15 @@ function renderProfileData(data, readOnly) {
   const watchBox = $("watchlist");
   watchBox.innerHTML = "";
   if (watch.length === 0) {
-    watchBox.innerHTML = `<p class="muted">${
-      readOnly ? "Pusto." : 'Pusto — dodaj coś przyciskiem „Do listy".'
-    }</p>`;
+    watchBox.innerHTML = `<p class="muted">${readOnly ? t("watchEmptyRO") : t("watchEmpty")}</p>`;
   } else {
     for (const w of watch.slice(0, 6)) appendCard(watchBox, w.media, undefined);
   }
   const watchSeeAll = $("watchSeeAll");
   if (watch.length > 6) {
     watchSeeAll.classList.remove("hidden");
-    watchSeeAll.textContent = `Zobacz wszystko (${watch.length})`;
-    watchSeeAll.onclick = () => openSeeAll("Do obejrzenia / zagrania", watch);
+    watchSeeAll.textContent = t("seeAll", { n: watch.length });
+    watchSeeAll.onclick = () => openSeeAll(t("watchlistTitle"), watch);
   } else {
     watchSeeAll.classList.add("hidden");
   }
@@ -644,7 +909,7 @@ async function loadUserProfile(id) {
 function setFollowBtn(on) {
   const btn = $("followProfileBtn");
   btn.classList.toggle("active", on);
-  btn.textContent = on ? "Obserwujesz" : "Obserwuj";
+  btn.textContent = on ? t("following") : t("follow");
 }
 
 // Porównanie gustu z oglądanym userem: % dopasowania + wspólnie ocenione tytuły.
@@ -655,7 +920,7 @@ async function loadCompare(id) {
     const data = await api(`/users/${id}/compare`);
     body.innerHTML = "";
     if (data.status !== "OK") {
-      body.innerHTML = `<p class="muted small">Za mało wspólnych ocen (${data.shared}/3), żeby policzyć dopasowanie. Oceńcie więcej tych samych tytułów.</p>`;
+      body.innerHTML = `<p class="muted small">${t("notEnough", { n: data.shared })}</p>`;
       return;
     }
     const score = document.createElement("div");
@@ -665,7 +930,7 @@ async function loadCompare(id) {
     pct.textContent = `${data.score}%`;
     const cap = document.createElement("span");
     cap.className = "match-cap";
-    cap.textContent = `dopasowania · ${data.sharedCount} wspólnych`;
+    cap.textContent = t("matchCap", { n: data.sharedCount });
     score.append(pct, cap);
     body.append(score);
     for (const s of data.shared) {
@@ -679,7 +944,7 @@ async function loadCompare(id) {
       rates.className = "compare-rates";
       const you = document.createElement("span");
       you.className = "cr-you";
-      you.textContent = `Ty ★${s.myRating}`;
+      you.textContent = `${t("you")} ★${s.myRating}`;
       const them = document.createElement("span");
       them.className = "cr-them";
       them.textContent = `${viewingName} ★${s.theirRating}`;
@@ -734,7 +999,7 @@ async function onAvatarPick(ev) {
     $("avatarImg").src = avatarUrl;
     $("avatarImg").classList.remove("hidden");
     $("avatarInitial").classList.add("hidden");
-    toast("Zapisano zdjęcie");
+    toast(t("savedPhoto"));
   } catch (e) {
     toast(e.message);
   } finally {
@@ -801,7 +1066,7 @@ async function openDetail(item) {
 
   detailStars.set(item.myRating ?? 0);
   $("detailComment").value = "";
-  $("detailDesc").textContent = "Ładowanie opisu…";
+  $("detailDesc").textContent = t("loadingDesc");
   $("detailReviews").innerHTML = "";
   detailReturn = !$("profileView").classList.contains("hidden")
     ? "profile"
@@ -821,13 +1086,13 @@ async function openDetail(item) {
       `/details?type=${encodeURIComponent(item.type)}&externalId=${encodeURIComponent(item.externalId)}`,
     )
       .then((d) => {
-        $("detailDesc").textContent = d.description || "Brak opisu.";
+        $("detailDesc").textContent = d.description || t("noDesc");
       })
       .catch(() => {
-        $("detailDesc").textContent = "Brak opisu.";
+        $("detailDesc").textContent = t("noDesc");
       });
   } else {
-    $("detailDesc").textContent = "Brak opisu.";
+    $("detailDesc").textContent = t("noDesc");
   }
 
   // Jeśli tytuł jest już w katalogu, znajdź mediaId, żeby pokazać komentarze.
@@ -851,9 +1116,9 @@ function updateDetailButtons() {
   const onWatch = mid ? myProfile.watchlist.some((w) => w.media.id === mid) : false;
   const isFav = !!rev?.favorite;
   $("favBtn").classList.toggle("active", isFav);
-  $("favBtn").textContent = isFav ? "★ w TOP 4" : "☆ TOP 4";
+  $("favBtn").textContent = isFav ? t("favActive") : t("fav");
   $("watchBtn").classList.toggle("active", onWatch);
-  $("watchBtn").textContent = onWatch ? "✓ Na liście" : "＋ Do listy";
+  $("watchBtn").textContent = onWatch ? t("watchActive") : t("watchAdd");
 }
 
 // Upewnia się, że tytuł jest w bazie (dodaje, jeśli to świeży wynik wyszukiwania).
@@ -873,7 +1138,7 @@ async function toggleFavorite() {
   const mid = detailCtx?.mediaId;
   const rev = mid ? myProfile.reviews.find((r) => r.media.id === mid) : null;
   if (!mid || !rev) {
-    toast("Najpierw oceń ten tytuł (gwiazdki), żeby dodać do TOP 4.");
+    toast(t("rateFirst"));
     return;
   }
   try {
@@ -884,7 +1149,7 @@ async function toggleFavorite() {
     });
     await loadMe();
     updateDetailButtons();
-    toast(rev.favorite ? "Usunięto z TOP 4" : "Dodano do TOP 4");
+    toast(t(rev.favorite ? "removedTop4" : "addedTop4"));
   } catch (e) {
     toast(e.message);
   }
@@ -905,7 +1170,7 @@ async function toggleWatchlist() {
     }
     await loadMe();
     updateDetailButtons();
-    toast(onWatch ? "Usunięto z listy" : "Dodano do listy");
+    toast(t(onWatch ? "removedList" : "addedList"));
   } catch (e) {
     toast(e.message);
   }
@@ -917,7 +1182,7 @@ async function loadDetailReviews(mediaId) {
     const box = $("detailReviews");
     box.innerHTML = "";
     if (reviews.length === 0) {
-      box.innerHTML = '<p class="muted">Brak komentarzy — bądź pierwszy.</p>';
+      box.innerHTML = `<p class="muted">${t("noComments")}</p>`;
       return;
     }
     for (const r of reviews) {
@@ -957,7 +1222,7 @@ async function saveDetail() {
   const rating = detailStars.get();
   const text = $("detailComment").value;
   if (rating < 0.5) {
-    $("detailMsg").textContent = "Wybierz ocenę (kliknij gwiazdki).";
+    $("detailMsg").textContent = t("pickRating");
     return;
   }
   try {
@@ -976,7 +1241,7 @@ async function saveDetail() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ mediaId, rating, text }),
     });
-    toast("Zapisano");
+    toast(t("saved"));
     await loadMe();
     await Promise.all([loadRecommendations(), loadCatalog()]);
     updateDetailButtons();
@@ -1075,10 +1340,10 @@ function setAuthMode(mode) {
   authMode = mode;
   const login = mode === "login";
   $("displayName").classList.toggle("hidden", login);
-  $("authSubmit").textContent = login ? "Zaloguj się" : "Załóż konto";
-  $("switchText").textContent = login ? "Nie masz jeszcze konta?" : "Masz już konto?";
-  $("switchBtn").textContent = login ? "Załóż konto" : "Zaloguj się";
-  $("password").placeholder = login ? "Hasło" : "Hasło (min. 6 znaków)";
+  $("authSubmit").textContent = login ? t("login") : t("register");
+  $("switchText").textContent = login ? t("noAccount") : t("haveAccount");
+  $("switchBtn").textContent = login ? t("register") : t("login");
+  $("password").placeholder = login ? t("passwordPh") : t("passwordPhNew");
   $("password").setAttribute("autocomplete", login ? "current-password" : "new-password");
   $("authMsg").textContent = "";
 }
@@ -1134,6 +1399,11 @@ async function init() {
   $("seeAllOverlay").addEventListener("click", (e) => {
     if (e.target === $("seeAllOverlay")) closeSeeAll();
   });
+  $("settingsBtn").addEventListener("click", openSettings);
+  $("settingsClose").addEventListener("click", closeSettings);
+  $("settingsOverlay").addEventListener("click", (e) => {
+    if (e.target === $("settingsOverlay")) closeSettings();
+  });
   $("friendsBtn").addEventListener("click", openFriends);
   $("friendsClose").addEventListener("click", closeFriends);
   $("followProfileBtn").addEventListener("click", async () => {
@@ -1159,7 +1429,8 @@ async function init() {
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!$("friendsOverlay").classList.contains("hidden")) closeFriends();
+    if (!$("settingsOverlay").classList.contains("hidden")) closeSettings();
+    else if (!$("friendsOverlay").classList.contains("hidden")) closeFriends();
     else if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
     else if (!$("detailView").classList.contains("hidden")) closeDetail();
   });
@@ -1169,8 +1440,13 @@ async function init() {
     const show = pw.type === "password";
     pw.type = show ? "text" : "password";
     $("pwToggle").innerHTML = pwIcon(show);
-    $("pwToggle").setAttribute("aria-label", show ? "Ukryj hasło" : "Pokaż hasło");
+    $("pwToggle").setAttribute(
+      "aria-label",
+      show ? t("hidePassword") : t("showPassword"),
+    );
   });
+  applyStaticI18n();
+  applySearchPlaceholder();
   setAuthMode("login");
 
   if (getToken()) {
@@ -1194,5 +1470,5 @@ if ("serviceWorker" in navigator) {
 
 init().catch((e) => {
   document.querySelector("main").innerHTML =
-    `<p class="muted">Nie udało się połączyć z API: ${e.message}</p>`;
+    `<p class="muted">${t("connectError", { msg: e.message })}</p>`;
 });
