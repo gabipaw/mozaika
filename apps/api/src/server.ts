@@ -87,7 +87,7 @@ api.get("/me", requireAuth, async (c) => {
     year: true,
     posterUrl: true,
   } as const;
-  const [reviews, watchlist] = await Promise.all([
+  const [reviews, watchlist, followersCount, followingCount] = await Promise.all([
     prisma.review.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
@@ -103,11 +103,21 @@ api.get("/me", requireAuth, async (c) => {
       orderBy: { createdAt: "desc" },
       select: { media: { select: mediaSelect } },
     }),
+    prisma.follow.count({ where: { followedId: userId } }).catch(() => 0),
+    prisma.follow.count({ where: { followerId: userId } }).catch(() => 0),
   ]);
   const avg = reviews.length
     ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
     : null;
-  return c.json({ user, count: reviews.length, avg, reviews, watchlist });
+  return c.json({
+    user,
+    count: reviews.length,
+    avg,
+    followersCount,
+    followingCount,
+    reviews,
+    watchlist,
+  });
 });
 
 api.get("/me/recommendations", requireAuth, async (c) => {
@@ -343,7 +353,7 @@ api.get("/users/:id/profile", async (c) => {
     year: true,
     posterUrl: true,
   } as const;
-  const [reviews, watchlist] = await Promise.all([
+  const [reviews, watchlist, followersCount, followingCount] = await Promise.all([
     prisma.review.findMany({
       where: { userId: id },
       orderBy: { createdAt: "desc" },
@@ -354,11 +364,52 @@ api.get("/users/:id/profile", async (c) => {
       orderBy: { createdAt: "desc" },
       select: { media: { select: mediaSelect } },
     }),
+    prisma.follow.count({ where: { followedId: id } }).catch(() => 0),
+    prisma.follow.count({ where: { followerId: id } }).catch(() => 0),
   ]);
   const avg = reviews.length
     ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
     : null;
-  return c.json({ user, count: reviews.length, avg, reviews, watchlist });
+  return c.json({
+    user,
+    count: reviews.length,
+    avg,
+    followersCount,
+    followingCount,
+    reviews,
+    watchlist,
+  });
+});
+
+// Porównanie gustu z zalogowanym userem: % dopasowania + wspólnie ocenione tytuły.
+api.get("/users/:id/compare", requireAuth, async (c) => {
+  const meId = c.get("userId");
+  const other = intParam(c.req.param("id"), "id");
+  if (meId === other) throw new ValidationError("To Twój profil.");
+  const result = await tasteMatch(meId, other);
+  if (result.status !== "OK") {
+    return c.json({ status: result.status, shared: result.shared });
+  }
+  const media = await prisma.media.findMany({
+    where: { id: { in: result.details.map((d) => d.mediaId) } },
+    select: { id: true, title: true, type: true, posterUrl: true, externalId: true },
+  });
+  const byId = new Map(media.map((m) => [m.id, m]));
+  const shared = result.details
+    .map((d) => ({
+      media: byId.get(d.mediaId),
+      myRating: d.ratingA,
+      theirRating: d.ratingB,
+      diff: d.diff,
+    }))
+    .filter((s) => s.media)
+    .sort((a, b) => a.diff - b.diff); // najpierw tam, gdzie się zgadzacie
+  return c.json({
+    status: "OK",
+    score: result.score,
+    sharedCount: result.shared,
+    shared,
+  });
 });
 
 // Błędy domenowe → kody HTTP.

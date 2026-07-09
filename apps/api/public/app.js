@@ -7,6 +7,7 @@ let me = null;
 let authMode = "login";
 let searchType = "film"; // "film" (TMDB) | "book" (Open Library)
 let viewingUserId = null; // null = własny profil; inaczej id oglądanego usera
+let viewingName = ""; // imię oglądanego usera (do etykiet porównania)
 
 const getToken = () => localStorage.getItem("mozaika_token");
 const setToken = (t) => localStorage.setItem("mozaika_token", t);
@@ -567,9 +568,14 @@ function renderProfileData(data, readOnly) {
   $("avatarBtn").disabled = readOnly; // cudzego zdjęcia nie zmieniasz
   $("followProfileBtn").classList.toggle("hidden", !readOnly);
 
-  // Panel znajomych i 3. kolumna tylko na własnym profilu.
+  // Liczniki obserwacji pod imieniem.
+  const fo = data.followersCount ?? 0;
+  const fw = data.followingCount ?? 0;
+  $("profileCounts").textContent = `${fo} obserwujących · ${fw} obserwowanych`;
+
+  // 3. kolumna: własny profil = feed znajomych, cudzy = porównanie gustu.
   $("profileFeed").classList.toggle("hidden", readOnly);
-  document.querySelector(".profile-cols").classList.toggle("no-feed", readOnly);
+  $("comparePanel").classList.toggle("hidden", !readOnly);
 
   // Top 4 = przypięte (favorite).
   const top = data.reviews.filter((r) => r.favorite).slice(0, 4);
@@ -624,14 +630,64 @@ async function loadUserProfile(id) {
     api(`/users/${id}/profile`),
     api("/me/following").catch(() => []),
   ]);
+  viewingName = data.user.displayName;
   renderProfileData(data, true);
   setFollowBtn(following.some((u) => u.id === id));
+  loadCompare(id);
 }
 
 function setFollowBtn(on) {
   const btn = $("followProfileBtn");
   btn.classList.toggle("active", on);
   btn.textContent = on ? "Obserwujesz" : "Obserwuj";
+}
+
+// Porównanie gustu z oglądanym userem: % dopasowania + wspólnie ocenione tytuły.
+async function loadCompare(id) {
+  const body = $("compareBody");
+  body.innerHTML = '<p class="muted small">Liczenie…</p>';
+  try {
+    const data = await api(`/users/${id}/compare`);
+    body.innerHTML = "";
+    if (data.status !== "OK") {
+      body.innerHTML = `<p class="muted small">Za mało wspólnych ocen (${data.shared}/3), żeby policzyć dopasowanie. Oceńcie więcej tych samych tytułów.</p>`;
+      return;
+    }
+    const score = document.createElement("div");
+    score.className = "match-score";
+    const pct = document.createElement("span");
+    pct.className = "match-pct";
+    pct.textContent = `${data.score}%`;
+    const cap = document.createElement("span");
+    cap.className = "match-cap";
+    cap.textContent = `dopasowania · ${data.sharedCount} wspólnych`;
+    score.append(pct, cap);
+    body.append(score);
+    for (const s of data.shared) {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "compare-row";
+      const t = document.createElement("div");
+      t.className = "compare-title";
+      t.textContent = s.media.title;
+      const rates = document.createElement("div");
+      rates.className = "compare-rates";
+      const you = document.createElement("span");
+      you.className = "cr-you";
+      you.textContent = `Ty ★${s.myRating}`;
+      const them = document.createElement("span");
+      them.className = "cr-them";
+      them.textContent = `${viewingName} ★${s.theirRating}`;
+      rates.append(you, them);
+      row.append(t, rates);
+      row.addEventListener("click", () =>
+        openDetail(toDetail(s.media, s.media.type, s.media.id, s.myRating)),
+      );
+      body.append(row);
+    }
+  } catch (e) {
+    body.innerHTML = `<p class="muted small">${e.message}</p>`;
+  }
 }
 
 // Wgranie zdjęcia profilowego: kompresja do 256px (canvas) → data:image → zapis.
@@ -991,6 +1047,15 @@ async function showApp() {
   $("authView").classList.add("hidden");
   $("appView").classList.remove("hidden");
   $("userBox").classList.remove("hidden");
+  // Reset do strony głównej — po (ponownym) logowaniu nie zostawaj na starym
+  // widoku (np. czyimś profilu) z ukrytym „Wróć".
+  viewingUserId = null;
+  $("profileView").classList.add("hidden");
+  $("detailView").classList.add("hidden");
+  $("searchResults").classList.add("hidden");
+  $("topBack").classList.add("hidden");
+  $("searchbar").classList.remove("hidden");
+  $("browse").classList.remove("hidden");
   $("hello").textContent = `Cześć, ${me.displayName}`;
   await loadMe(); // katalog i profil czytają myProfile — najpierw je pobierz
   await Promise.all([loadRecommendations(), loadCatalog()]);

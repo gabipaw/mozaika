@@ -712,15 +712,94 @@ h2 {
   background: transparent;
 }
 
-/* Podgląd cudzego profilu: bez 3. kolumny (panel znajomych ukryty). */
-.profile-cols.no-feed {
-  grid-template-columns: 300px 1fr;
+/* 3. kolumna profilu — kontener na feed (własny) lub porównanie (cudzy). */
+.profile-side {
+  height: 100%;
+  min-height: 0;
+}
+
+/* Imię + liczniki obserwacji w nagłówku. */
+.profile-id {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-counts {
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 /* Przycisk „Obserwuj" w nagłówku profilu (przy oglądaniu cudzego). */
 .profile-head .follow-btn {
   margin-left: auto;
   align-self: center;
+}
+
+/* Panel „Wasz gust" — % dopasowania + wspólne tytuły. */
+.match-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 2px 0 12px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.match-pct {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.match-cap {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.compare-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  text-align: left;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.compare-row:hover {
+  border-color: var(--accent);
+}
+
+.compare-title {
+  max-width: 100%;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compare-rates {
+  display: flex;
+  gap: 10px;
+  font-size: 0.78rem;
+}
+
+.cr-you {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.cr-them {
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .friend-link {

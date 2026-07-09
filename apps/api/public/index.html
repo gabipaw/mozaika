@@ -170,7 +170,10 @@
                   <span id="avatarInitial"></span>
                 </button>
                 <input id="avatarFile" type="file" accept="image/*" class="hidden" />
-                <h1 id="profileName"></h1>
+                <div class="profile-id">
+                  <h1 id="profileName"></h1>
+                  <div id="profileCounts" class="profile-counts"></div>
+                </div>
                 <button id="followProfileBtn" class="follow-btn hidden" type="button">
                   Obserwuj
                 </button>
@@ -188,12 +191,20 @@
             <div class="profile-right">
               <div id="ratedByCat"></div>
             </div>
-            <div class="profile-feed" id="profileFeed">
-              <div class="feed-head">
-                <h2>Znajomi</h2>
-                <button id="friendsBtn" class="seeall" type="button">＋ Dodaj</button>
+            <div class="profile-side" id="profileSide">
+              <div class="profile-feed" id="profileFeed">
+                <div class="feed-head">
+                  <h2>Znajomi</h2>
+                  <button id="friendsBtn" class="seeall" type="button">＋ Dodaj</button>
+                </div>
+                <div id="activityFeed" class="feed-list"></div>
               </div>
-              <div id="activityFeed" class="feed-list"></div>
+              <div class="profile-feed hidden" id="comparePanel">
+                <div class="feed-head">
+                  <h2>Wasz gust</h2>
+                </div>
+                <div id="compareBody" class="feed-list"></div>
+              </div>
             </div>
           </div>
         </section>
