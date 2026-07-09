@@ -43,7 +43,7 @@ function toast(msg) {
 // Wspólna „karta plakatu".
 function posterCard(m, opts = {}) {
   const card = document.createElement("article");
-  card.className = "card";
+  card.className = opts.square ? "card sq" : "card";
 
   const poster = document.createElement("div");
   poster.className = opts.square ? "poster square" : "poster";

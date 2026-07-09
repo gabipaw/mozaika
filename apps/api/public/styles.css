@@ -649,6 +649,11 @@ h2 {
   height: 100%;
 }
 
+/* Muzyka (kwadrat) o tej samej szerokości co plakaty 2:3 = 2/3 wysokości rzędu. */
+.cat-posters .card.sq {
+  height: calc(200% / 3);
+}
+
 .cat-posters .card .poster {
   height: 100%;
 }
