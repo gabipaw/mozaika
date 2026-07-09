@@ -521,7 +521,7 @@ h2 {
    skalują się do wysokości rzędu; plakaty zachowują kształt (2:3, muzyka 1:1). */
 .profile-cols {
   display: grid;
-  grid-template-columns: 336px 1fr;
+  grid-template-columns: 324px 1fr;
   gap: 40px;
   align-items: stretch;
   margin-top: 0;
