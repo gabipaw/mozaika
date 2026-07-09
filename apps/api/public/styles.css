@@ -512,23 +512,27 @@ h2 {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin: 8px 0 6px;
+  margin: 6px 0 6px;
   font-size: 1.05rem;
 }
 
-/* Cały profil dopasowany do wysokości ekranu — bez pionowego scrolla.
-   Karty skalują się do wysokości rzędu; plakaty zachowują kształt (2:3, muzyka 1:1). */
+/* Grid: prawa kolumna dostaje DOKŁADNIE wysokość lewej (naturalną) →
+   dół prawej strony jest w jednej linii z dołem watchlisty. Karty po prawej
+   skalują się do wysokości rzędu; plakaty zachowują kształt (2:3, muzyka 1:1). */
 .profile-cols {
-  display: flex;
+  display: grid;
+  grid-template-columns: 300px 1fr;
   gap: 40px;
   align-items: stretch;
-  margin-top: 8px;
-  height: calc(100dvh - 124px);
-  min-height: 420px;
+  margin-top: 0;
+}
+
+/* Profil trochę wyżej — mniej pustego u góry. */
+#profileView.detail-page {
+  margin-top: 0;
 }
 
 .profile-left {
-  flex: 0 0 300px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -744,13 +748,10 @@ h2 {
 
 @media (max-width: 720px) {
   .profile-cols {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 20px;
-    height: auto;
-    min-height: 0;
   }
   .profile-left {
-    flex-basis: auto;
     width: 100%;
   }
   .profile-left .poster-grid {
