@@ -262,13 +262,17 @@ function renderRatedByCat(reviews) {
   for (const g of CAT_GROUPS) {
     const items = reviews.filter((r) => g.types.includes(r.media.type));
     if (items.length === 0) continue;
-    const h = document.createElement("h3");
-    h.className = "cat-h";
-    h.textContent = g.label;
-    const row = document.createElement("div");
-    row.className = "poster-row";
-    for (const r of items) appendCard(row, r.media, r.rating);
-    box.append(h, row);
+    // Rząd = etykieta kategorii z lewej + siatka plakatów z prawej.
+    const catRow = document.createElement("div");
+    catRow.className = "cat-row";
+    const label = document.createElement("div");
+    label.className = "cat-label";
+    label.textContent = g.label;
+    const posters = document.createElement("div");
+    posters.className = "cat-posters";
+    for (const r of items) appendCard(posters, r.media, r.rating);
+    catRow.append(label, posters);
+    box.append(catRow);
   }
   if (box.children.length === 0) {
     box.innerHTML = '<p class="muted">Nic jeszcze nie ocenione.</p>';
