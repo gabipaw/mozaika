@@ -285,9 +285,10 @@ function closeSeeAll() {
 function renderRatedByCat(reviews) {
   const box = $("ratedByCat");
   box.innerHTML = "";
+  // WSZYSTKIE kategorie zawsze jako stałe kontenery — puste też (żeby układ się
+  // nie rozjeżdżał, gdy jakiejś kategorii brakuje).
   for (const g of CAT_GROUPS) {
     const items = reviews.filter((r) => g.types.includes(r.media.type));
-    if (items.length === 0) continue;
     // Rząd = etykieta kategorii z lewej + max 4 plakaty (1×4) z prawej.
     const catRow = document.createElement("div");
     catRow.className = "cat-row";
@@ -296,7 +297,15 @@ function renderRatedByCat(reviews) {
     label.textContent = g.label;
     const posters = document.createElement("div");
     posters.className = "cat-posters";
-    for (const r of items.slice(0, 4)) appendCard(posters, r.media, r.rating);
+    if (items.length === 0) {
+      posters.classList.add("empty");
+      const ph = document.createElement("span");
+      ph.className = "cat-empty";
+      ph.textContent = "Nic tu jeszcze";
+      posters.append(ph);
+    } else {
+      for (const r of items.slice(0, 4)) appendCard(posters, r.media, r.rating);
+    }
     catRow.append(label, posters);
     // „Zobacz wszystko" w prawym górnym rogu rzędu (gdy >4).
     if (items.length > 4) {
@@ -308,9 +317,6 @@ function renderRatedByCat(reviews) {
       catRow.append(btn);
     }
     box.append(catRow);
-  }
-  if (box.children.length === 0) {
-    box.innerHTML = '<p class="muted">Nic jeszcze nie ocenione.</p>';
   }
 }
 

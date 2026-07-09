@@ -647,6 +647,14 @@ h2 {
   align-self: flex-end;
 }
 
+/* Pusta kategoria — kontener zostaje, delikatny placeholder. */
+.cat-empty {
+  align-self: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  opacity: 0.5;
+}
+
 .cat-posters .card .poster {
   height: 100%;
 }
