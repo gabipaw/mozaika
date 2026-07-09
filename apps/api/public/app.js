@@ -46,7 +46,7 @@ function posterCard(m, opts = {}) {
   card.className = "card";
 
   const poster = document.createElement("div");
-  poster.className = "poster";
+  poster.className = opts.square ? "poster square" : "poster";
   if (m.posterUrl) {
     const img = document.createElement("img");
     img.src = m.posterUrl;
@@ -240,16 +240,18 @@ async function loadMe() {
 
 // Grupy kategorii na prawej stronie profilu.
 const CAT_GROUPS = [
+  { label: "Muzyka", types: ["MUZYKA"] },
   { label: "Filmy / Seriale", types: ["FILM", "SERIAL"] },
   { label: "Anime", types: ["ANIME"] },
   { label: "Książki / Manga", types: ["KSIAZKA", "MANGA"] },
-  { label: "Muzyka", types: ["MUZYKA"] },
   { label: "Gry", types: ["GRA"] },
 ];
 
 // Dodaje klikalną kartę (otwiera szczegóły) do kontenera.
+// Muzyka = kwadratowa okładka (jak płyta CD), reszta = plakat 2:3.
 function appendCard(container, media, rating) {
-  const { card } = posterCard(media, { score: rating, noMeta: true });
+  const square = media.type === "MUZYKA";
+  const { card } = posterCard(media, { score: rating, noMeta: true, square });
   card.addEventListener("click", () =>
     openDetail(toDetail(media, media.type, media.id, rating)),
   );
