@@ -1129,16 +1129,23 @@ h2 {
     flex-basis: auto;
     flex-direction: row;
   }
+  /* Każda kategoria = osobny poziomy pasek (swipe w bok), strona się nie rusza. */
   .cat-posters {
     height: auto;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     align-items: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding-bottom: 6px;
   }
   .cat-posters .card,
   .cat-posters .card.sq {
     height: auto;
-    width: 84px;
+    width: 100px;
+    flex: 0 0 auto;
     align-self: auto;
+    scroll-snap-align: start;
   }
   .cat-posters .card .poster {
     height: auto;
