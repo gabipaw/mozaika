@@ -184,8 +184,28 @@
             <div class="profile-right">
               <div id="ratedByCat"></div>
             </div>
+            <div class="profile-feed">
+              <div class="feed-head">
+                <h2>Znajomi</h2>
+                <button id="friendsBtn" class="seeall" type="button">＋ Dodaj</button>
+              </div>
+              <div id="activityFeed" class="feed-list"></div>
+            </div>
           </div>
         </section>
+      </div>
+
+      <!-- Nakładka „Znajomi" — dodawanie/usuwanie obserwowanych -->
+      <div id="friendsOverlay" class="overlay hidden">
+        <div class="overlay-card">
+          <div class="overlay-head">
+            <h2>Znajomi</h2>
+            <button id="friendsClose" class="overlay-close" type="button">
+              ✕ Gotowe
+            </button>
+          </div>
+          <div id="friendsList" class="friends-list"></div>
+        </div>
       </div>
 
       <!-- Nakładka „Zobacz wszystko" — pełna siatka danego typu / listy -->
@@ -193,7 +213,9 @@
         <div class="overlay-card">
           <div class="overlay-head">
             <h2 id="seeAllTitle"></h2>
-            <button id="seeAllClose" class="overlay-close" type="button">✕ Zamknij</button>
+            <button id="seeAllClose" class="overlay-close" type="button">
+              ✕ Zamknij
+            </button>
           </div>
           <div id="seeAllGrid" class="poster-grid"></div>
         </div>

@@ -400,6 +400,133 @@ function renderRatedByCat(reviews) {
   }
 }
 
+// --- Znajomi (follow) + feed aktywności ---
+function timeAgo(iso) {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 60) return "przed chwilą";
+  if (s < 3600) return `${Math.floor(s / 60)} min temu`;
+  if (s < 86400) return `${Math.floor(s / 3600)} godz. temu`;
+  return `${Math.floor(s / 86400)} dni temu`;
+}
+
+// Kółko z avatarem usera (zdjęcie albo inicjał).
+function avatarEl(user) {
+  const el = document.createElement("div");
+  el.className = "feed-avatar";
+  if (user.avatarUrl) {
+    const img = document.createElement("img");
+    img.src = user.avatarUrl;
+    img.alt = "";
+    el.append(img);
+  } else {
+    el.textContent = (user.displayName[0] || "?").toUpperCase();
+  }
+  return el;
+}
+
+async function loadActivity() {
+  const box = $("activityFeed");
+  box.innerHTML = '<p class="muted small">Ładowanie…</p>';
+  try {
+    const items = await api("/me/activity");
+    box.innerHTML = "";
+    if (items.length === 0) {
+      box.innerHTML =
+        '<p class="muted small">Brak aktywności — dodaj znajomych przyciskiem „＋ Dodaj".</p>';
+      return;
+    }
+    for (const it of items) {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "feed-item";
+      item.append(avatarEl(it.user));
+      const txt = document.createElement("div");
+      txt.className = "feed-text";
+      const line = document.createElement("div");
+      line.className = "feed-line";
+      const name = document.createElement("span");
+      name.className = "feed-name";
+      name.textContent = it.user.displayName;
+      const rate = document.createElement("span");
+      rate.className = "feed-rate";
+      rate.textContent = `★ ${it.rating}`;
+      line.append(name, rate);
+      const title = document.createElement("div");
+      title.className = "feed-title";
+      title.textContent = it.media.title;
+      const time = document.createElement("div");
+      time.className = "feed-time";
+      time.textContent = timeAgo(it.createdAt);
+      txt.append(line, title, time);
+      item.append(txt);
+      item.addEventListener("click", () =>
+        openDetail(toDetail(it.media, it.media.type, it.media.id)),
+      );
+      box.append(item);
+    }
+  } catch (e) {
+    box.innerHTML = `<p class="muted small">${e.message}</p>`;
+  }
+}
+
+async function renderFriendsList() {
+  const list = $("friendsList");
+  list.innerHTML = '<p class="muted small">Ładowanie…</p>';
+  try {
+    const [users, following] = await Promise.all([api("/users"), api("/me/following")]);
+    const followingIds = new Set(following.map((u) => u.id));
+    const others = users.filter((u) => u.id !== me.id);
+    list.innerHTML = "";
+    if (others.length === 0) {
+      list.innerHTML = '<p class="muted small">Brak innych użytkowników.</p>';
+      return;
+    }
+    for (const u of others) {
+      const row = document.createElement("div");
+      row.className = "friend-row";
+      row.append(avatarEl(u));
+      const name = document.createElement("span");
+      name.className = "friend-name";
+      name.textContent = u.displayName;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      const on = followingIds.has(u.id);
+      btn.className = "follow-btn" + (on ? " active" : "");
+      btn.textContent = on ? "Obserwujesz" : "Obserwuj";
+      btn.addEventListener("click", async () => {
+        try {
+          if (followingIds.has(u.id)) {
+            await api(`/me/follow/${u.id}`, { method: "DELETE" });
+          } else {
+            await api("/me/follow", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ userId: u.id }),
+            });
+          }
+          await renderFriendsList();
+          loadActivity();
+        } catch (e) {
+          toast(e.message);
+        }
+      });
+      row.append(name, btn);
+      list.append(row);
+    }
+  } catch (e) {
+    list.innerHTML = `<p class="muted small">${e.message}</p>`;
+  }
+}
+
+async function openFriends() {
+  $("friendsOverlay").classList.remove("hidden");
+  await renderFriendsList();
+}
+
+function closeFriends() {
+  $("friendsOverlay").classList.add("hidden");
+}
+
 async function loadProfile() {
   const data = await loadMe();
 
@@ -449,6 +576,9 @@ async function loadProfile() {
 
   // Prawa strona: ocenione pogrupowane po kategoriach.
   renderRatedByCat(data.reviews);
+
+  // Panel znajomych: feed aktywności obserwowanych.
+  loadActivity();
 }
 
 // Wgranie zdjęcia profilowego: kompresja do 256px (canvas) → data:image → zapis.
@@ -859,9 +989,15 @@ async function init() {
   $("seeAllOverlay").addEventListener("click", (e) => {
     if (e.target === $("seeAllOverlay")) closeSeeAll();
   });
+  $("friendsBtn").addEventListener("click", openFriends);
+  $("friendsClose").addEventListener("click", closeFriends);
+  $("friendsOverlay").addEventListener("click", (e) => {
+    if (e.target === $("friendsOverlay")) closeFriends();
+  });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
+    if (!$("friendsOverlay").classList.contains("hidden")) closeFriends();
+    else if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
     else if (!$("detailView").classList.contains("hidden")) closeDetail();
   });
   $("pwToggle").innerHTML = pwIcon(false);

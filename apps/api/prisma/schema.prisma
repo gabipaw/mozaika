@@ -34,6 +34,22 @@ model User {
 
   reviews   Review[]
   watchlist WatchlistItem[]
+  following Follow[]        @relation("following") // kogo ja obserwuję
+  followers Follow[]        @relation("followers") // kto obserwuje mnie
+}
+
+/// Obserwowanie (znajomi) — kierunkowe: follower obserwuje followed.
+model Follow {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  follower   User @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId Int
+
+  followed   User @relation("followers", fields: [followedId], references: [id], onDelete: Cascade)
+  followedId Int
+
+  @@unique([followerId, followedId])
 }
 
 /// Tytuł do oceniania (film, serial, książka, gra, muzyka).

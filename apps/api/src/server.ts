@@ -173,13 +173,78 @@ api.delete("/me/watchlist/:id", requireAuth, async (c) => {
   return c.json({ ok: true });
 });
 
-// Lista pozostałych użytkowników (do dopasowania gustu).
+// Lista pozostałych użytkowników (do dopasowania gustu / dodania znajomych).
 api.get("/users", async (c) => {
   const users = await prisma.user.findMany({
-    select: { id: true, displayName: true },
+    select: { id: true, displayName: true, avatarUrl: true },
     orderBy: { id: "asc" },
   });
   return c.json(users);
+});
+
+// --- Znajomi (follow) ---
+
+// Kogo obserwuję (lista userów).
+api.get("/me/following", requireAuth, async (c) => {
+  const rows = await prisma.follow.findMany({
+    where: { followerId: c.get("userId") },
+    orderBy: { createdAt: "desc" },
+    select: {
+      followed: { select: { id: true, displayName: true, avatarUrl: true } },
+    },
+  });
+  return c.json(rows.map((r) => r.followed));
+});
+
+// Zacznij obserwować użytkownika.
+api.post("/me/follow", requireAuth, async (c) => {
+  const followerId = c.get("userId");
+  const followedId = Number((await c.req.json()).userId);
+  if (!Number.isInteger(followedId) || followedId <= 0) {
+    throw new ValidationError("Nieprawidłowy userId.");
+  }
+  if (followedId === followerId) {
+    throw new ValidationError("Nie możesz obserwować samego siebie.");
+  }
+  await prisma.follow.upsert({
+    where: { followerId_followedId: { followerId, followedId } },
+    update: {},
+    create: { followerId, followedId },
+  });
+  return c.json({ ok: true });
+});
+
+// Przestań obserwować.
+api.delete("/me/follow/:id", requireAuth, async (c) => {
+  const followerId = c.get("userId");
+  const followedId = intParam(c.req.param("id"), "id");
+  await prisma.follow.deleteMany({ where: { followerId, followedId } });
+  return c.json({ ok: true });
+});
+
+// Feed aktywności obserwowanych — ostatnie oceny (kto, co, ile, kiedy).
+api.get("/me/activity", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const follows = await prisma.follow.findMany({
+    where: { followerId: userId },
+    select: { followedId: true },
+  });
+  const ids = follows.map((f) => f.followedId);
+  if (ids.length === 0) return c.json([]);
+  const activity = await prisma.review.findMany({
+    where: { userId: { in: ids } },
+    orderBy: { createdAt: "desc" },
+    take: 40,
+    select: {
+      rating: true,
+      createdAt: true,
+      user: { select: { id: true, displayName: true, avatarUrl: true } },
+      media: {
+        select: { id: true, title: true, type: true, posterUrl: true, externalId: true },
+      },
+    },
+  });
+  return c.json(activity);
 });
 
 // Katalog wszystkich tytułów.
