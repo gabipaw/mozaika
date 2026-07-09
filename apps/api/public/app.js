@@ -240,13 +240,35 @@ async function loadMe() {
 
 // Grupy kategorii na prawej stronie profilu.
 const CAT_GROUPS = [
-  { label: "Muzyka", types: ["MUZYKA"] },
-  { label: "Filmy / Seriale", types: ["FILM", "SERIAL"] },
-  { label: "Anime", types: ["ANIME"] },
-  { label: "Książki", types: ["KSIAZKA"] },
-  { label: "Manga", types: ["MANGA"] },
-  { label: "Gry", types: ["GRA"] },
+  { key: "music", label: "Muzyka", types: ["MUZYKA"] },
+  { key: "film", label: "Filmy / Seriale", types: ["FILM", "SERIAL"] },
+  { key: "anime", label: "Anime", types: ["ANIME"] },
+  { key: "book", label: "Książki / Manga", types: ["KSIAZKA", "MANGA"] },
+  { key: "game", label: "Gry", types: ["GRA"] },
 ];
+
+// Które 4 kategorie pokazać na profilu — wybór usera, zapis w localStorage.
+const CATS_KEY = "mozaika_profile_cats";
+const DEFAULT_CATS = ["film", "book", "music", "game"];
+
+function getSelectedCats() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CATS_KEY) || "null");
+    if (Array.isArray(saved) && saved.length >= 1 && saved.length <= 4) {
+      const valid = saved.filter((k) => CAT_GROUPS.some((g) => g.key === k));
+      if (valid.length) return valid;
+    }
+  } catch {
+    /* zła wartość w localStorage — użyj domyślnych */
+  }
+  return DEFAULT_CATS.slice();
+}
+
+function setSelectedCats(keys) {
+  // zawsze w kolejności z CAT_GROUPS
+  const ordered = CAT_GROUPS.filter((g) => keys.includes(g.key)).map((g) => g.key);
+  localStorage.setItem(CATS_KEY, JSON.stringify(ordered));
+}
 
 // Dodaje klikalną kartę (otwiera szczegóły) do kontenera.
 // Muzyka = kwadratowa okładka (jak płyta CD), reszta = plakat 2:3.
@@ -283,12 +305,53 @@ function closeSeeAll() {
   $("seeAllOverlay").classList.add("hidden");
 }
 
+// --- Wybór kategorii na profilu (max 4) ---
+function renderCatsPicker() {
+  const list = $("catsList");
+  list.innerHTML = "";
+  const sel = getSelectedCats();
+  for (const g of CAT_GROUPS) {
+    const on = sel.includes(g.key);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cat-toggle" + (on ? " active" : "");
+    btn.textContent = g.label;
+    // Max 4: gdy 4 zaznaczone, reszta zablokowana (odznacz jedną, by dodać inną).
+    btn.disabled = !on && sel.length >= 4;
+    btn.addEventListener("click", () => {
+      let cur = getSelectedCats();
+      if (cur.includes(g.key)) {
+        if (cur.length <= 1) return; // zostaw min. 1
+        cur = cur.filter((k) => k !== g.key);
+      } else {
+        if (cur.length >= 4) return;
+        cur = [...cur, g.key];
+      }
+      setSelectedCats(cur);
+      renderCatsPicker();
+      renderRatedByCat(myProfile.reviews);
+    });
+    list.append(btn);
+  }
+}
+
+function openCats() {
+  renderCatsPicker();
+  $("catsOverlay").classList.remove("hidden");
+}
+
+function closeCats() {
+  $("catsOverlay").classList.add("hidden");
+}
+
 function renderRatedByCat(reviews) {
   const box = $("ratedByCat");
   box.innerHTML = "";
-  // WSZYSTKIE kategorie zawsze jako stałe kontenery — puste też (żeby układ się
-  // nie rozjeżdżał, gdy jakiejś kategorii brakuje).
-  for (const g of CAT_GROUPS) {
+  // Tylko wybrane kategorie — zawsze jako stałe kontenery (puste też), żeby układ
+  // się nie rozjeżdżał, gdy w danej kategorii nic nie ma.
+  const selected = getSelectedCats();
+  const groups = CAT_GROUPS.filter((g) => selected.includes(g.key));
+  for (const g of groups) {
     const items = reviews.filter((r) => g.types.includes(r.media.type));
     // Rząd = etykieta kategorii z lewej + max 4 plakaty (1×4) z prawej.
     const catRow = document.createElement("div");
@@ -780,9 +843,15 @@ async function init() {
   $("seeAllOverlay").addEventListener("click", (e) => {
     if (e.target === $("seeAllOverlay")) closeSeeAll();
   });
+  $("catsBtn").addEventListener("click", openCats);
+  $("catsClose").addEventListener("click", closeCats);
+  $("catsOverlay").addEventListener("click", (e) => {
+    if (e.target === $("catsOverlay")) closeCats();
+  });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
+    if (!$("catsOverlay").classList.contains("hidden")) closeCats();
+    else if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
     else if (!$("detailView").classList.contains("hidden")) closeDetail();
   });
   $("pwToggle").innerHTML = pwIcon(false);

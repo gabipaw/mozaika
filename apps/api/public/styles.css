@@ -655,6 +655,57 @@ h2 {
   opacity: 0.5;
 }
 
+/* Przycisk wyboru kategorii (⚙) w nagłówku profilu. */
+.cats-btn {
+  margin-left: auto;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  background: var(--bg-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.cats-btn:hover {
+  border-color: var(--accent);
+}
+
+/* Modal wyboru kategorii. */
+.cats-card {
+  max-width: 360px;
+}
+
+.cats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cat-toggle {
+  text-align: left;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 600;
+}
+
+.cat-toggle.active {
+  background: var(--accent);
+  color: #05221d;
+  border-color: transparent;
+}
+
+.cat-toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .cat-posters .card .poster {
   height: 100%;
 }
