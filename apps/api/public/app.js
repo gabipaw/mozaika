@@ -243,7 +243,8 @@ const CAT_GROUPS = [
   { label: "Muzyka", types: ["MUZYKA"] },
   { label: "Filmy / Seriale", types: ["FILM", "SERIAL"] },
   { label: "Anime", types: ["ANIME"] },
-  { label: "Książki / Manga", types: ["KSIAZKA", "MANGA"] },
+  { label: "Książki", types: ["KSIAZKA"] },
+  { label: "Manga", types: ["MANGA"] },
   { label: "Gry", types: ["GRA"] },
 ];
 
