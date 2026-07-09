@@ -534,7 +534,7 @@ h2 {
   min-height: 0;
 }
 
-/* Top 4 / watchlist: 2×2, karty na wysokość rzędu (bez przycinania). */
+/* Watchlist: 2×2, karty na wysokość rzędu (bez przycinania). */
 .profile-left .poster-grid {
   flex: 1 1 0;
   min-height: 0;
@@ -551,6 +551,24 @@ h2 {
 
 .profile-left .poster-grid .card .poster {
   height: 100%;
+}
+
+/* Top 4: jeden rząd 1×4 (4 równe kolumny), plakaty 2:3. */
+#topMedia {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+#topMedia .card {
+  flex: 1 1 0;
+  min-width: 0;
+  height: auto;
+}
+
+#topMedia .card .poster {
+  height: auto;
 }
 
 .profile-right {

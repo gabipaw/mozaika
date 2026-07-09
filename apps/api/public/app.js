@@ -250,8 +250,9 @@ const CAT_GROUPS = [
 // Dodaje klikalną kartę (otwiera szczegóły) do kontenera.
 // Muzyka = kwadratowa okładka (jak płyta CD), reszta = plakat 2:3.
 // onClick opcjonalny — nadpisuje domyślne otwarcie szczegółów (np. z nakładki).
-function appendCard(container, media, rating, onClick) {
-  const square = media.type === "MUZYKA";
+// rect=true wymusza plakat 2:3 nawet dla muzyki (używane w Top 4).
+function appendCard(container, media, rating, onClick, rect) {
+  const square = media.type === "MUZYKA" && !rect;
   const { card } = posterCard(media, { score: rating, noMeta: true, square });
   card.addEventListener(
     "click",
@@ -338,7 +339,8 @@ async function loadProfile() {
     topBox.innerHTML =
       '<p class="muted">Przypnij ulubione przyciskiem „TOP 4" na stronie tytułu.</p>';
   } else {
-    for (const r of top) appendCard(topBox, r.media, r.rating);
+    // Top 4 = jeden rząd 1×4; muzyka tu jako prostokąt 2:3 (rect), nie kwadrat.
+    for (const r of top) appendCard(topBox, r.media, r.rating, undefined, true);
   }
 
   // Lista „do obejrzenia/zagrania" — do 4 (2×2), reszta pod „Zobacz wszystko".
