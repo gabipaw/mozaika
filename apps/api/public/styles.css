@@ -655,55 +655,29 @@ h2 {
   opacity: 0.5;
 }
 
-/* Przycisk wyboru kategorii (⚙) w nagłówku profilu. */
-.cats-btn {
-  margin-left: auto;
-  flex: 0 0 auto;
-  align-self: flex-start;
-  background: var(--bg-2);
-  color: var(--text);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-size: 1rem;
-  line-height: 1;
+/* Zaznaczona okładka w pickerze („Wybierz 4") — obwódka + numer kolejności. */
+#seeAllGrid .card.picked {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
 }
 
-.cats-btn:hover {
-  border-color: var(--accent);
+#seeAllGrid .card {
+  position: relative;
 }
 
-/* Modal wyboru kategorii. */
-.cats-card {
-  max-width: 360px;
-}
-
-.cats-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.cat-toggle {
-  text-align: left;
-  background: var(--card);
-  color: var(--text);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-weight: 600;
-}
-
-.cat-toggle.active {
+.pick-num {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
   background: var(--accent);
   color: #05221d;
-  border-color: transparent;
-}
-
-.cat-toggle:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+  font-weight: 800;
+  font-size: 0.8rem;
+  border-radius: 50%;
 }
 
 .cat-posters .card .poster {

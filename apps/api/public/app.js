@@ -247,27 +247,40 @@ const CAT_GROUPS = [
   { key: "game", label: "Gry", types: ["GRA"] },
 ];
 
-// Które 4 kategorie pokazać na profilu — wybór usera, zapis w localStorage.
-const CATS_KEY = "mozaika_profile_cats";
-const DEFAULT_CATS = ["film", "book", "music", "game"];
+// Które 4 okładki pokazać w danej kategorii — wybór usera (mapa key→[mediaId]),
+// zapis w localStorage. Puste = pokaż domyślnie pierwsze 4.
+const FEATURED_KEY = "mozaika_featured";
 
-function getSelectedCats() {
+function getFeaturedMap() {
   try {
-    const saved = JSON.parse(localStorage.getItem(CATS_KEY) || "null");
-    if (Array.isArray(saved) && saved.length >= 1 && saved.length <= 4) {
-      const valid = saved.filter((k) => CAT_GROUPS.some((g) => g.key === k));
-      if (valid.length) return valid;
-    }
+    const m = JSON.parse(localStorage.getItem(FEATURED_KEY) || "{}");
+    return m && typeof m === "object" ? m : {};
   } catch {
-    /* zła wartość w localStorage — użyj domyślnych */
+    return {};
   }
-  return DEFAULT_CATS.slice();
 }
 
-function setSelectedCats(keys) {
-  // zawsze w kolejności z CAT_GROUPS
-  const ordered = CAT_GROUPS.filter((g) => keys.includes(g.key)).map((g) => g.key);
-  localStorage.setItem(CATS_KEY, JSON.stringify(ordered));
+function getFeatured(catKey) {
+  const ids = getFeaturedMap()[catKey];
+  return Array.isArray(ids) ? ids : [];
+}
+
+function setFeatured(catKey, ids) {
+  const m = getFeaturedMap();
+  if (ids.length) m[catKey] = ids;
+  else delete m[catKey];
+  localStorage.setItem(FEATURED_KEY, JSON.stringify(m));
+}
+
+// Które pozycje pokazać w kategorii: wybrane okładki (jeśli są) inaczej pierwsze 4.
+function displayedForCat(g, items) {
+  const feat = getFeatured(g.key);
+  if (feat.length) {
+    const byId = new Map(items.map((r) => [r.media.id, r]));
+    const chosen = feat.map((id) => byId.get(id)).filter(Boolean);
+    if (chosen.length) return chosen.slice(0, 4);
+  }
+  return items.slice(0, 4);
 }
 
 // Dodaje klikalną kartę (otwiera szczegóły) do kontenera.
@@ -305,55 +318,58 @@ function closeSeeAll() {
   $("seeAllOverlay").classList.add("hidden");
 }
 
-// --- Wybór kategorii na profilu (max 4) ---
-function renderCatsPicker() {
-  const list = $("catsList");
-  list.innerHTML = "";
-  const sel = getSelectedCats();
-  for (const g of CAT_GROUPS) {
-    const on = sel.includes(g.key);
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "cat-toggle" + (on ? " active" : "");
-    btn.textContent = g.label;
-    // Max 4: gdy 4 zaznaczone, reszta zablokowana (odznacz jedną, by dodać inną).
-    btn.disabled = !on && sel.length >= 4;
-    btn.addEventListener("click", () => {
-      let cur = getSelectedCats();
-      if (cur.includes(g.key)) {
-        if (cur.length <= 1) return; // zostaw min. 1
-        cur = cur.filter((k) => k !== g.key);
+// --- Wybór okładek w kategorii (max 4) — używa nakładki „Zobacz wszystko" ---
+let catPickCtx = null; // { group, items } gdy tryb wyboru okładek
+
+function openCatPicker(group, items) {
+  catPickCtx = { group, items };
+  $("seeAllTitle").textContent = `${group.label} — wybierz do 4 okładek`;
+  renderCatPickGrid();
+  $("seeAllOverlay").classList.remove("hidden");
+}
+
+function renderCatPickGrid() {
+  const { group, items } = catPickCtx;
+  const grid = $("seeAllGrid");
+  grid.innerHTML = "";
+  const feat = getFeatured(group.key);
+  for (const r of items) {
+    const square = r.media.type === "MUZYKA";
+    const { card } = posterCard(r.media, { score: r.rating, noMeta: true, square });
+    const pos = feat.indexOf(r.media.id);
+    if (pos >= 0) {
+      card.classList.add("picked");
+      const num = document.createElement("span");
+      num.className = "pick-num";
+      num.textContent = String(pos + 1);
+      card.append(num);
+    }
+    card.addEventListener("click", () => {
+      let cur = getFeatured(group.key);
+      if (cur.includes(r.media.id)) {
+        cur = cur.filter((id) => id !== r.media.id);
       } else {
-        if (cur.length >= 4) return;
-        cur = [...cur, g.key];
+        if (cur.length >= 4) {
+          toast("Możesz wybrać maksymalnie 4 okładki.");
+          return;
+        }
+        cur = [...cur, r.media.id];
       }
-      setSelectedCats(cur);
-      renderCatsPicker();
+      setFeatured(group.key, cur);
+      renderCatPickGrid();
       renderRatedByCat(myProfile.reviews);
     });
-    list.append(btn);
+    grid.append(card);
   }
-}
-
-function openCats() {
-  renderCatsPicker();
-  $("catsOverlay").classList.remove("hidden");
-}
-
-function closeCats() {
-  $("catsOverlay").classList.add("hidden");
 }
 
 function renderRatedByCat(reviews) {
   const box = $("ratedByCat");
   box.innerHTML = "";
-  // Tylko wybrane kategorie — zawsze jako stałe kontenery (puste też), żeby układ
-  // się nie rozjeżdżał, gdy w danej kategorii nic nie ma.
-  const selected = getSelectedCats();
-  const groups = CAT_GROUPS.filter((g) => selected.includes(g.key));
-  for (const g of groups) {
+  // WSZYSTKIE 5 kategorii zawsze jako stałe kontenery (puste też), żeby układ się
+  // nie rozjeżdżał. W każdej pokazujemy wybrane 4 okładki (albo pierwsze 4).
+  for (const g of CAT_GROUPS) {
     const items = reviews.filter((r) => g.types.includes(r.media.type));
-    // Rząd = etykieta kategorii z lewej + max 4 plakaty (1×4) z prawej.
     const catRow = document.createElement("div");
     catRow.className = "cat-row";
     const label = document.createElement("div");
@@ -368,16 +384,16 @@ function renderRatedByCat(reviews) {
       ph.textContent = "Nic tu jeszcze";
       posters.append(ph);
     } else {
-      for (const r of items.slice(0, 4)) appendCard(posters, r.media, r.rating);
+      for (const r of displayedForCat(g, items)) appendCard(posters, r.media, r.rating);
     }
     catRow.append(label, posters);
-    // „Zobacz wszystko" w prawym górnym rogu rzędu (gdy >4).
+    // „Wybierz 4" w prawym górnym rogu rzędu (gdy jest z czego wybierać, tj. >4).
     if (items.length > 4) {
       const btn = document.createElement("button");
       btn.className = "seeall cat-seeall";
       btn.type = "button";
-      btn.textContent = `Zobacz wszystko (${items.length})`;
-      btn.addEventListener("click", () => openSeeAll(g.label, items));
+      btn.textContent = `Wybierz 4 (${items.length})`;
+      btn.addEventListener("click", () => openCatPicker(g, items));
       catRow.append(btn);
     }
     box.append(catRow);
@@ -843,15 +859,9 @@ async function init() {
   $("seeAllOverlay").addEventListener("click", (e) => {
     if (e.target === $("seeAllOverlay")) closeSeeAll();
   });
-  $("catsBtn").addEventListener("click", openCats);
-  $("catsClose").addEventListener("click", closeCats);
-  $("catsOverlay").addEventListener("click", (e) => {
-    if (e.target === $("catsOverlay")) closeCats();
-  });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!$("catsOverlay").classList.contains("hidden")) closeCats();
-    else if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
+    if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
     else if (!$("detailView").classList.contains("hidden")) closeDetail();
   });
   $("pwToggle").innerHTML = pwIcon(false);
