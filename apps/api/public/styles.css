@@ -472,22 +472,22 @@ h2 {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 4px;
+  gap: 14px;
+  margin-bottom: 6px;
 }
 
 .avatar {
   flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  width: 80px;
+  height: 80px;
+  border-radius: 18px;
   overflow: hidden;
   padding: 0;
   border: 2px solid var(--line);
   background: linear-gradient(135deg, var(--accent), var(--gold));
   color: #06201c;
   font-weight: 800;
-  font-size: 1.5rem;
+  font-size: 2.1rem;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -501,29 +501,29 @@ h2 {
 
 #profileName {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.55rem;
 }
 
 .profile-h {
-  margin: 14px 0 8px;
-  font-size: 1rem;
+  margin: 20px 0 12px;
+  font-size: 1.15rem;
 }
 
 .profile-cols {
   display: flex;
-  gap: 20px;
+  gap: 32px;
   align-items: flex-start;
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 .profile-left {
-  flex: 0 0 240px;
+  flex: 0 0 360px;
 }
 
-/* Kompaktowe plakaty na profilu (Top 4 / watchlist). */
+/* Plakaty na profilu (Top 4 / watchlist). */
 .profile-left .poster-grid {
-  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
 }
 
 .profile-right {
@@ -535,8 +535,8 @@ h2 {
 .cat-row {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 8px 0;
+  gap: 18px;
+  padding: 16px 0;
   border-top: 1px solid var(--line);
 }
 
@@ -546,29 +546,20 @@ h2 {
 }
 
 .cat-label {
-  flex: 0 0 68px;
-  padding-top: 2px;
+  flex: 0 0 96px;
+  padding-top: 4px;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .cat-posters {
   flex: 1;
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
-  gap: 8px;
-}
-
-/* Mniejsza plakietka oceny na kompaktowych kartach profilu. */
-.profile-left .score,
-.cat-posters .score {
-  font-size: 0.68rem;
-  padding: 1px 6px;
-  top: 4px;
-  left: 4px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
 }
 
 .detail-actions {
