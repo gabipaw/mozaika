@@ -571,6 +571,23 @@ h2 {
   height: auto;
 }
 
+/* Watchlist: kompaktowe 3×2 (3 kolumny, 2 rzędy = do 6, plakaty 2:3). */
+#watchlist {
+  flex: 0 0 auto;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: auto;
+  gap: 8px;
+  max-width: 250px;
+}
+
+#watchlist .card {
+  height: auto;
+}
+
+#watchlist .card .poster {
+  height: auto;
+}
+
 .profile-right {
   flex: 1;
   min-width: 0;

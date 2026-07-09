@@ -350,10 +350,10 @@ async function loadProfile() {
   if (watch.length === 0) {
     watchBox.innerHTML = '<p class="muted">Pusto — dodaj coś przyciskiem „Do listy".</p>';
   } else {
-    for (const w of watch.slice(0, 4)) appendCard(watchBox, w.media, undefined);
+    for (const w of watch.slice(0, 6)) appendCard(watchBox, w.media, undefined);
   }
   const watchSeeAll = $("watchSeeAll");
-  if (watch.length > 4) {
+  if (watch.length > 6) {
     watchSeeAll.classList.remove("hidden");
     watchSeeAll.textContent = `Zobacz wszystko (${watch.length})`;
     watchSeeAll.onclick = () => openSeeAll("Do obejrzenia / zagrania", watch);
