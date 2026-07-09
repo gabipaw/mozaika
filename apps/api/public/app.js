@@ -387,12 +387,12 @@ function renderRatedByCat(reviews) {
       for (const r of displayedForCat(g, items)) appendCard(posters, r.media, r.rating);
     }
     catRow.append(label, posters);
-    // „Wybierz 4" w prawym górnym rogu rzędu (gdy jest z czego wybierać, tj. >4).
-    if (items.length > 4) {
+    // „Wybierz" w prawym górnym rogu każdej niepustej kategorii — wybór/kolejność okładek.
+    if (items.length > 0) {
       const btn = document.createElement("button");
       btn.className = "seeall cat-seeall";
       btn.type = "button";
-      btn.textContent = `Wybierz 4 (${items.length})`;
+      btn.textContent = items.length > 4 ? `Wybierz 4 (${items.length})` : "Zmień";
       btn.addEventListener("click", () => openCatPicker(g, items));
       catRow.append(btn);
     }
