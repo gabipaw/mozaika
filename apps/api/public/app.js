@@ -6,6 +6,7 @@ let searchTimer = null;
 let me = null;
 let authMode = "login";
 let searchType = "film"; // "film" (TMDB) | "book" (Open Library)
+let viewingUserId = null; // null = własny profil; inaczej id oglądanego usera
 
 const getToken = () => localStorage.getItem("mozaika_token");
 const setToken = (t) => localStorage.setItem("mozaika_token", t);
@@ -367,11 +368,11 @@ function renderCatPickGrid() {
   }
 }
 
-function renderRatedByCat(reviews) {
+function renderRatedByCat(reviews, readOnly) {
   const box = $("ratedByCat");
   box.innerHTML = "";
   // WSZYSTKIE 5 kategorii zawsze jako stałe kontenery (puste też), żeby układ się
-  // nie rozjeżdżał. W każdej pokazujemy wybrane 4 okładki (albo pierwsze 4).
+  // nie rozjeżdżał. Na własnym profilu można wybrać 4 okładki; na cudzym — pierwsze 4.
   for (const g of CAT_GROUPS) {
     const items = reviews.filter((r) => g.types.includes(r.media.type));
     const catRow = document.createElement("div");
@@ -388,11 +389,12 @@ function renderRatedByCat(reviews) {
       ph.textContent = "Nic tu jeszcze";
       posters.append(ph);
     } else {
-      for (const r of displayedForCat(g, items)) appendCard(posters, r.media, r.rating);
+      const shown = readOnly ? items.slice(0, 4) : displayedForCat(g, items);
+      for (const r of shown) appendCard(posters, r.media, r.rating);
     }
     catRow.append(label, posters);
-    // „Wybierz" w prawym górnym rogu każdej niepustej kategorii — wybór/kolejność okładek.
-    if (items.length > 0) {
+    // „Wybierz" tylko na WŁASNYM profilu (nie zmieniasz cudzych okładek).
+    if (!readOnly && items.length > 0) {
       const btn = document.createElement("button");
       btn.className = "seeall cat-seeall";
       btn.type = "button";
@@ -458,14 +460,18 @@ async function loadActivity() {
       const title = document.createElement("div");
       title.className = "feed-title";
       title.textContent = it.media.title;
+      // Klik w tytuł → szczegóły tytułu (nie wchodzi na profil osoby).
+      title.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openDetail(toDetail(it.media, it.media.type, it.media.id));
+      });
       const time = document.createElement("div");
       time.className = "feed-time";
       time.textContent = timeAgo(it.createdAt);
       txt.append(line, title, time);
       item.append(txt);
-      item.addEventListener("click", () =>
-        openDetail(toDetail(it.media, it.media.type, it.media.id)),
-      );
+      // Klik w resztę pozycji → profil osoby.
+      item.addEventListener("click", () => openUserProfile(it.user.id));
       box.append(item);
     }
   } catch (e) {
@@ -488,10 +494,20 @@ async function renderFriendsList() {
     for (const u of others) {
       const row = document.createElement("div");
       row.className = "friend-row";
-      row.append(avatarEl(u));
+      const av = avatarEl(u);
+      av.style.cursor = "pointer";
+      av.addEventListener("click", () => {
+        closeFriends();
+        openUserProfile(u.id);
+      });
+      row.append(av);
       const name = document.createElement("span");
-      name.className = "friend-name";
+      name.className = "friend-name friend-link";
       name.textContent = u.displayName;
+      name.addEventListener("click", () => {
+        closeFriends();
+        openUserProfile(u.id);
+      });
       const btn = document.createElement("button");
       btn.type = "button";
       const on = followingIds.has(u.id);
@@ -531,11 +547,12 @@ function closeFriends() {
   $("friendsOverlay").classList.add("hidden");
 }
 
-async function loadProfile() {
-  const data = await loadMe();
-
+// Renderuje dane profilu — własnego (readOnly=false) lub cudzego (readOnly=true).
+function renderProfileData(data, readOnly) {
   // Nagłówek: zdjęcie profilowe + imię.
-  $("profileName").textContent = `Cześć, ${data.user.displayName}`;
+  $("profileName").textContent = readOnly
+    ? data.user.displayName
+    : `Cześć, ${data.user.displayName}`;
   const img = $("avatarImg");
   const initial = $("avatarInitial");
   if (data.user.avatarUrl) {
@@ -547,25 +564,36 @@ async function loadProfile() {
     initial.classList.remove("hidden");
     initial.textContent = (data.user.displayName[0] || "?").toUpperCase();
   }
+  $("avatarBtn").disabled = readOnly; // cudzego zdjęcia nie zmieniasz
+  $("followProfileBtn").classList.toggle("hidden", !readOnly);
 
-  // Top 4 = tytuły przypięte przez usera (favorite).
+  // Panel znajomych i 3. kolumna tylko na własnym profilu.
+  $("profileFeed").classList.toggle("hidden", readOnly);
+  document.querySelector(".profile-cols").classList.toggle("no-feed", readOnly);
+
+  // Top 4 = przypięte (favorite).
   const top = data.reviews.filter((r) => r.favorite).slice(0, 4);
   const topBox = $("topMedia");
   topBox.innerHTML = "";
   if (top.length === 0) {
-    topBox.innerHTML =
-      '<p class="muted">Przypnij ulubione przyciskiem „TOP 4" na stronie tytułu.</p>';
+    topBox.innerHTML = `<p class="muted">${
+      readOnly
+        ? "Brak ulubionych."
+        : 'Przypnij ulubione przyciskiem „TOP 4" na stronie tytułu.'
+    }</p>`;
   } else {
-    // Top 4 = jeden rząd 1×4; muzyka tu jako prostokąt 2:3 (rect), nie kwadrat.
+    // Muzyka w Top 4 jako prostokąt 2:3 (rect), nie kwadrat.
     for (const r of top) appendCard(topBox, r.media, r.rating, undefined, true);
   }
 
-  // Lista „do obejrzenia/zagrania" — do 4 (2×2), reszta pod „Zobacz wszystko".
-  const watch = data.watchlist;
+  // Lista „do obejrzenia/zagrania" — do 6 (3×2), reszta pod „Zobacz wszystko".
+  const watch = data.watchlist || [];
   const watchBox = $("watchlist");
   watchBox.innerHTML = "";
   if (watch.length === 0) {
-    watchBox.innerHTML = '<p class="muted">Pusto — dodaj coś przyciskiem „Do listy".</p>';
+    watchBox.innerHTML = `<p class="muted">${
+      readOnly ? "Pusto." : 'Pusto — dodaj coś przyciskiem „Do listy".'
+    }</p>`;
   } else {
     for (const w of watch.slice(0, 6)) appendCard(watchBox, w.media, undefined);
   }
@@ -579,10 +607,31 @@ async function loadProfile() {
   }
 
   // Prawa strona: ocenione pogrupowane po kategoriach.
-  renderRatedByCat(data.reviews);
+  renderRatedByCat(data.reviews, readOnly);
+}
 
-  // Panel znajomych: feed aktywności obserwowanych.
+async function loadProfile() {
+  const data = await loadMe();
+  renderProfileData(
+    { user: data.user, reviews: data.reviews, watchlist: data.watchlist },
+    false,
+  );
   loadActivity();
+}
+
+async function loadUserProfile(id) {
+  const [data, following] = await Promise.all([
+    api(`/users/${id}/profile`),
+    api("/me/following").catch(() => []),
+  ]);
+  renderProfileData(data, true);
+  setFollowBtn(following.some((u) => u.id === id));
+}
+
+function setFollowBtn(on) {
+  const btn = $("followProfileBtn");
+  btn.classList.toggle("active", on);
+  btn.textContent = on ? "Obserwujesz" : "Obserwuj";
 }
 
 // Wgranie zdjęcia profilowego: kompresja do 256px (canvas) → data:image → zapis.
@@ -880,7 +929,8 @@ function closeDetail() {
   $("detailView").classList.add("hidden");
   detailCtx = null;
   if (detailReturn === "profile") {
-    openProfile();
+    if (viewingUserId) openUserProfile(viewingUserId);
+    else openProfile();
     return;
   }
   $("topBack").classList.add("hidden");
@@ -889,8 +939,10 @@ function closeDetail() {
   $("browse").classList.toggle("hidden", detailReturn === "results");
 }
 
-// --- Twój profil (osobna strona) ---
-async function openProfile() {
+// --- Profil (własny lub cudzy, osobna strona) ---
+function showProfileShell() {
+  closeSeeAll();
+  closeFriends();
   $("searchbar").classList.add("hidden");
   $("searchResults").classList.add("hidden");
   $("browse").classList.add("hidden");
@@ -898,10 +950,27 @@ async function openProfile() {
   $("profileView").classList.remove("hidden");
   $("topBack").classList.remove("hidden");
   window.scrollTo(0, 0);
+}
+
+async function openProfile() {
+  viewingUserId = null;
+  showProfileShell();
   await loadProfile();
 }
 
+async function openUserProfile(id) {
+  if (!id || id === me.id) return openProfile();
+  viewingUserId = id;
+  showProfileShell();
+  try {
+    await loadUserProfile(id);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
 function closeProfile() {
+  viewingUserId = null;
   $("profileView").classList.add("hidden");
   $("topBack").classList.add("hidden");
   $("searchbar").classList.remove("hidden");
@@ -997,6 +1066,24 @@ async function init() {
   });
   $("friendsBtn").addEventListener("click", openFriends);
   $("friendsClose").addEventListener("click", closeFriends);
+  $("followProfileBtn").addEventListener("click", async () => {
+    if (!viewingUserId) return;
+    const on = $("followProfileBtn").classList.contains("active");
+    try {
+      if (on) {
+        await api(`/me/follow/${viewingUserId}`, { method: "DELETE" });
+      } else {
+        await api("/me/follow", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ userId: viewingUserId }),
+        });
+      }
+      setFollowBtn(!on);
+    } catch (e) {
+      toast(e.message);
+    }
+  });
   $("friendsOverlay").addEventListener("click", (e) => {
     if (e.target === $("friendsOverlay")) closeFriends();
   });

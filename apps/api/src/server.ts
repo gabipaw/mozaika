@@ -328,6 +328,39 @@ api.get("/users/:id/recommendations", async (c) => {
   return c.json(await recommendations(id));
 });
 
+// Publiczny profil innego użytkownika (do podglądu): oceny + lista.
+api.get("/users/:id/profile", async (c) => {
+  const id = intParam(c.req.param("id"), "id");
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id },
+    select: { id: true, displayName: true, avatarUrl: true },
+  });
+  const mediaSelect = {
+    id: true,
+    title: true,
+    type: true,
+    externalId: true,
+    year: true,
+    posterUrl: true,
+  } as const;
+  const [reviews, watchlist] = await Promise.all([
+    prisma.review.findMany({
+      where: { userId: id },
+      orderBy: { createdAt: "desc" },
+      select: { rating: true, favorite: true, media: { select: mediaSelect } },
+    }),
+    prisma.watchlistItem.findMany({
+      where: { userId: id },
+      orderBy: { createdAt: "desc" },
+      select: { media: { select: mediaSelect } },
+    }),
+  ]);
+  const avg = reviews.length
+    ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
+    : null;
+  return c.json({ user, count: reviews.length, avg, reviews, watchlist });
+});
+
 // Błędy domenowe → kody HTTP.
 api.onError((err, c) => {
   if (err instanceof ValidationError) return c.json({ error: err.message }, 400);
