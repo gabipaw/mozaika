@@ -1072,6 +1072,18 @@ h2 {
     font-size: 1.1rem;
   }
 
+  /* Zakładki typów mediów: jeden poziomy pasek do przesuwania (bez zawijania). */
+  .type-toggle {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .type-toggle .type {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
   /* Profil: bez full-bleed i bez blokady wysokości — normalny, przewijalny stos. */
   #profileView.detail-page {
     width: auto;

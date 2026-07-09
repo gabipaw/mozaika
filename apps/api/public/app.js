@@ -52,6 +52,7 @@ const I18N = {
     yourCatalog: "Twój katalog",
     yourCatalogHint: "Tytuły, które oceniłeś.",
     recBy: "poleca {n} os.",
+    noRecs: "Brak — oceń kilka tytułów, a coś dobierzemy.",
     yourRating: "Twoja ocena",
     fav: "☆ TOP 4",
     favActive: "★ w TOP 4",
@@ -147,6 +148,7 @@ const I18N = {
     yourCatalog: "Your catalog",
     yourCatalogHint: "Titles you've rated.",
     recBy: "recommended by {n}",
+    noRecs: "Nothing yet — rate a few titles and we'll find some.",
     yourRating: "Your rating",
     fav: "☆ TOP 4",
     favActive: "★ in TOP 4",
@@ -491,7 +493,7 @@ async function loadRecommendations() {
   try {
     const recs = await api("/me/recommendations");
     if (recs.length === 0) {
-      row.innerHTML = '<p class="muted">Brak — oceń kilka tytułów, a coś dobierzemy.</p>';
+      row.innerHTML = `<p class="muted">${t("noRecs")}</p>`;
       return;
     }
     row.innerHTML = "";
