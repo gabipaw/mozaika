@@ -523,13 +523,14 @@ h2 {
 }
 
 .profile-left {
-  flex: 0 0 300px;
+  flex: 0 0 260px;
 }
 
-/* Top 4 / watchlist: siatka 2×2, normalne plakaty 2:3 (nie przycinane). */
+/* Top 4 / watchlist: siatka 2×2, plakaty w naturalnym kształcie (bez rozciągania). */
 .profile-left .poster-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  align-items: start;
   gap: 12px;
 }
 
@@ -570,6 +571,7 @@ h2 {
   min-width: 0;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  align-items: start;
   gap: 14px;
 }
 
