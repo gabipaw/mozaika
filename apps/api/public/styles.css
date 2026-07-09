@@ -1056,44 +1056,117 @@ h2 {
   border-color: transparent;
 }
 
+/* ---------- WIDOK MOBILNY ---------- */
 @media (max-width: 720px) {
+  main {
+    padding: 10px 12px;
+  }
+
+  /* Topbar: zawijaj i zmniejsz. */
+  .topbar {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+  .brand {
+    font-size: 1.1rem;
+  }
+
+  /* Profil: bez full-bleed i bez blokady wysokości — normalny, przewijalny stos. */
+  #profileView.detail-page {
+    width: auto;
+    left: auto;
+    transform: none;
+    padding: 0;
+  }
   .profile-cols {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 22px;
+    height: auto;
+    min-height: 0;
   }
-  .profile-left {
+  .profile-left,
+  .profile-right,
+  .profile-side {
     width: 100%;
+    height: auto;
+    min-height: 0;
   }
+
+  /* Top 4 i watchlista: naturalne siatki. */
+  #topMedia {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  #watchlist {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto;
+    gap: 8px;
+  }
+  #topMedia .card,
+  #topMedia .card .poster,
+  #watchlist .card,
+  #watchlist .card .poster {
+    height: auto;
+  }
+
+  /* Kategorie: etykieta nad rzędem, plakaty zawijają; przycisk „Zmień" w normalnym miejscu. */
+  #ratedByCat {
+    display: block;
+    height: auto;
+  }
+  .cat-row {
+    position: static;
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    gap: 8px;
+    padding: 14px 0;
+  }
+  .cat-label {
+    flex-basis: auto;
+    flex-direction: row;
+  }
+  .cat-posters {
+    height: auto;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .cat-posters .card,
+  .cat-posters .card.sq {
+    height: auto;
+    width: 84px;
+    align-self: auto;
+  }
+  .cat-posters .card .poster {
+    height: auto;
+  }
+  .cat-seeall {
+    position: static;
+    align-self: flex-start;
+    order: -1; /* przycisk nad plakatami */
+  }
+
+  /* Panel znajomych/porównania: pod spodem, bez wewnętrznego scrolla. */
   .profile-feed {
     border-left: none;
     border-top: 1px solid var(--line);
     padding-left: 0;
     padding-top: 16px;
+    height: auto;
   }
   .feed-list {
+    height: auto;
     overflow-y: visible;
   }
-  .profile-left .poster-grid {
-    grid-auto-rows: auto;
+
+  /* Nakładki: pełna szerokość ekranu. */
+  .overlay {
+    padding: 12px;
   }
-  #ratedByCat {
-    height: auto;
-  }
-  .cat-row {
-    flex: 0 0 auto;
-    height: auto;
-  }
-  .cat-posters {
-    height: auto;
-    flex-wrap: wrap;
-  }
-  .cat-posters .card {
-    height: auto;
-    width: 96px;
-  }
-  .cat-posters .card .poster,
-  .profile-left .poster-grid .card .poster {
-    height: auto;
+  .overlay-card {
+    max-height: 88vh;
   }
 }
 

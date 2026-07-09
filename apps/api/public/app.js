@@ -278,15 +278,15 @@ function setFeatured(catKey, ids) {
   localStorage.setItem(FEATURED_KEY, JSON.stringify(m));
 }
 
-// Które pozycje pokazać w kategorii: wybrane okładki (jeśli są) inaczej pierwsze 4.
+// Które pozycje pokazać w kategorii (max 6): wybrane okładki albo pierwsze 6.
 function displayedForCat(g, items) {
   const feat = getFeatured(g.key);
   if (feat.length) {
     const byId = new Map(items.map((r) => [r.media.id, r]));
     const chosen = feat.map((id) => byId.get(id)).filter(Boolean);
-    if (chosen.length) return chosen.slice(0, 4);
+    if (chosen.length) return chosen.slice(0, 6);
   }
-  return items.slice(0, 4);
+  return items.slice(0, 6);
 }
 
 // Dodaje klikalną kartę (otwiera szczegóły) do kontenera.
@@ -355,8 +355,8 @@ function renderCatPickGrid() {
       if (cur.includes(r.media.id)) {
         cur = cur.filter((id) => id !== r.media.id);
       } else {
-        if (cur.length >= 4) {
-          toast("Możesz wybrać maksymalnie 4 okładki.");
+        if (cur.length >= 6) {
+          toast("Możesz wybrać maksymalnie 6 okładek.");
           return;
         }
         cur = [...cur, r.media.id];
@@ -390,7 +390,7 @@ function renderRatedByCat(reviews, readOnly) {
       ph.textContent = "Nic tu jeszcze";
       posters.append(ph);
     } else {
-      const shown = readOnly ? items.slice(0, 4) : displayedForCat(g, items);
+      const shown = readOnly ? items.slice(0, 6) : displayedForCat(g, items);
       for (const r of shown) appendCard(posters, r.media, r.rating);
     }
     catRow.append(label, posters);
@@ -399,7 +399,7 @@ function renderRatedByCat(reviews, readOnly) {
       const btn = document.createElement("button");
       btn.className = "seeall cat-seeall";
       btn.type = "button";
-      btn.textContent = items.length > 4 ? `Wybierz 4 (${items.length})` : "Zmień";
+      btn.textContent = items.length > 6 ? `Wybierz 6 (${items.length})` : "Zmień";
       btn.addEventListener("click", () => openCatPicker(g, items));
       catRow.append(btn);
     }
@@ -435,11 +435,16 @@ async function loadActivity() {
   const box = $("activityFeed");
   box.innerHTML = '<p class="muted small">Ładowanie…</p>';
   try {
-    const items = await api("/me/activity");
+    const [items, following] = await Promise.all([
+      api("/me/activity"),
+      api("/me/following").catch(() => []),
+    ]);
     box.innerHTML = "";
     if (items.length === 0) {
       box.innerHTML =
-        '<p class="muted small">Brak aktywności — dodaj znajomych przyciskiem „＋ Dodaj".</p>';
+        following.length === 0
+          ? '<p class="muted small">Nie obserwujesz jeszcze nikogo — dodaj znajomych przyciskiem „＋ Dodaj".</p>'
+          : '<p class="muted small">Twoi znajomi nie ocenili jeszcze nic.</p>';
       return;
     }
     for (const it of items) {
