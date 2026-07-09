@@ -74,6 +74,9 @@ function posterCard(m, opts = {}) {
   }
   card.append(poster);
 
+  // Na profilu pokazujemy sam plakat (bez nazwy/roku pod spodem).
+  if (opts.noMeta) return { card, meta: null };
+
   const meta = document.createElement("div");
   meta.className = "meta";
   const t = document.createElement("div");
@@ -246,7 +249,7 @@ const CAT_GROUPS = [
 
 // Dodaje klikalną kartę (otwiera szczegóły) do kontenera.
 function appendCard(container, media, rating) {
-  const { card } = posterCard(media, { score: rating });
+  const { card } = posterCard(media, { score: rating, noMeta: true });
   card.addEventListener("click", () =>
     openDetail(toDetail(media, media.type, media.id, rating)),
   );
