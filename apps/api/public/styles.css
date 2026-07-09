@@ -103,7 +103,7 @@ button:active {
 main {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 10px 16px;
 }
 
 .searchwrap {
@@ -519,45 +519,32 @@ h2 {
 /* Grid: prawa kolumna dostaje DOKŁADNIE wysokość lewej (naturalną) →
    dół prawej strony jest w jednej linii z dołem watchlisty. Karty po prawej
    skalują się do wysokości rzędu; plakaty zachowują kształt (2:3, muzyka 1:1). */
+/* Profil dopasowany do RZECZYWISTEJ wysokości okna (dvh) — mieści się bez
+   scrolla na każdym ekranie. Grid: obie kolumny tej samej wysokości, więc dół
+   watchlisty i dół prawej kolumny są w jednej linii. */
 .profile-cols {
   display: grid;
-  grid-template-columns: 324px 1fr;
-  gap: 40px;
+  grid-template-columns: 320px 1fr;
+  gap: 36px;
   align-items: stretch;
   margin-top: 0;
+  height: calc(100dvh - 84px);
+  min-height: 360px;
 }
 
-/* Profil trochę wyżej — mniej pustego u góry. */
+/* Profil wysoko — zero marginesu góra/dół (sekcyjny 26px psuł dopasowanie). */
 #profileView.detail-page {
-  margin-top: 0;
+  margin: 0;
 }
 
 .profile-left {
   display: flex;
   flex-direction: column;
   min-height: 0;
-}
-
-/* Watchlist: 2×2, karty na wysokość rzędu (bez przycinania). */
-.profile-left .poster-grid {
-  flex: 1 1 0;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  grid-auto-rows: 1fr;
-  justify-content: start;
-  gap: 10px;
-}
-
-.profile-left .poster-grid .card {
   height: 100%;
 }
 
-.profile-left .poster-grid .card .poster {
-  height: 100%;
-}
-
-/* Top 4: jeden rząd 1×4 (4 równe kolumny), plakaty 2:3. */
+/* Top 4: jeden rząd 1×4 (4 równe kolumny), plakaty 2:3, naturalna wysokość. */
 #topMedia {
   flex: 0 0 auto;
   display: flex;
@@ -575,24 +562,28 @@ h2 {
   height: auto;
 }
 
-/* Watchlist: 3×2 (3 kolumny, 2 rzędy = do 6, plakaty 2:3) na całą szerokość kolumny. */
+/* Watchlist: 3×2 wypełnia pozostałą wysokość lewej kolumny (dół w jednej linii
+   z prawą kolumną). Karty skalowane do wysokości rzędu, plakaty 2:3. */
 #watchlist {
-  flex: 0 0 auto;
-  grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  grid-template-rows: repeat(2, 1fr);
+  justify-content: start;
   gap: 10px;
 }
 
 #watchlist .card {
-  height: auto;
+  height: 100%;
+  min-height: 0;
 }
 
 #watchlist .card .poster {
-  height: auto;
+  height: 100%;
 }
 
 .profile-right {
-  flex: 1;
   min-width: 0;
   height: 100%;
 }
