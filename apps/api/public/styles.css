@@ -512,7 +512,7 @@ h2 {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin: 6px 0 6px;
+  margin: 2px 0 4px;
   font-size: 1.05rem;
 }
 
@@ -521,7 +521,7 @@ h2 {
    skalują się do wysokości rzędu; plakaty zachowują kształt (2:3, muzyka 1:1). */
 .profile-cols {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 336px 1fr;
   gap: 40px;
   align-items: stretch;
   margin-top: 0;
@@ -649,10 +649,10 @@ h2 {
   height: 100%;
 }
 
-/* Muzyka (kwadrat) — trochę większa niż szerokość plakatu, dosunięta do dołu
-   rzędu (żeby nie „lewitowała" nad linią, tylko stała w jednej linii z plakatami). */
+/* Muzyka (kwadrat) — ta sama szerokość co plakaty 2:3 (= 2/3 wysokości rzędu),
+   dosunięta do dołu rzędu (nie „lewituje", stoi w linii z plakatami). */
 .cat-posters .card.sq {
-  height: 80%;
+  height: calc(200% / 3);
   align-self: flex-end;
 }
 
