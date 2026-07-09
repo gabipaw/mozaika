@@ -25,6 +25,7 @@ body {
   background: var(--bg);
   color: var(--text);
   overflow-x: hidden; /* nigdy nie przewijaj w prawo */
+  overscroll-behavior-x: none; /* brak poziomego „gumowania" całej strony */
 }
 
 /* Topbar */
@@ -1072,16 +1073,21 @@ h2 {
     font-size: 1.1rem;
   }
 
-  /* Zakładki typów mediów: jeden poziomy pasek do przesuwania (bez zawijania). */
+  /* Zakładki typów mediów: jeden poziomy pasek do przesuwania (bez zawijania).
+     overscroll-behavior-x: contain → swipe nie „przeciska się" na całą stronę. */
   .type-toggle {
     flex-wrap: nowrap;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 4px;
   }
   .type-toggle .type {
     flex: 0 0 auto;
     white-space: nowrap;
+  }
+  .poster-row {
+    overscroll-behavior-x: contain;
   }
 
   /* Profil: bez full-bleed i bez blokady wysokości — normalny, przewijalny stos. */
@@ -1105,21 +1111,24 @@ h2 {
     min-height: 0;
   }
 
-  /* Top 4 i watchlista: naturalne siatki. */
-  #topMedia {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-  }
+  /* Top 4 i watchlista: poziome paski do przesuwania (jak kategorie). */
+  #topMedia,
   #watchlist {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: auto;
-    gap: 8px;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;
+    padding-bottom: 6px;
   }
   #topMedia .card,
+  #watchlist .card {
+    flex: 0 0 auto;
+    width: 108px;
+    height: auto;
+  }
   #topMedia .card .poster,
-  #watchlist .card,
   #watchlist .card .poster {
     height: auto;
   }
@@ -1146,6 +1155,7 @@ h2 {
     height: auto;
     flex-wrap: nowrap;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     align-items: flex-start;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
