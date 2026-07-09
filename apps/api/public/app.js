@@ -137,8 +137,12 @@ function renderGrid(container, list, onClick) {
 }
 
 async function loadCatalog() {
-  allMedia = await api("/media");
-  renderGrid($("catalog"), allMedia, (m) => openDetail(toDetail(m, m.type, m.id)));
+  allMedia = await api("/media"); // pełna lista — potrzebna tylko do znajdowania mediaId
+  // Katalog pokazuje WYŁĄCZNIE Twoje ocenione tytuły (nie cudze).
+  const mine = myProfile.reviews.map((r) => ({ ...r.media, myRating: r.rating }));
+  renderGrid($("catalog"), mine, (m) =>
+    openDetail(toDetail(m, m.type, m.id, m.myRating)),
+  );
 }
 
 // Wyniki wyszukiwania vs przeglądanie (rekomendacje/profil/katalog).
@@ -863,7 +867,8 @@ async function saveDetail() {
       body: JSON.stringify({ mediaId, rating, text }),
     });
     toast("Zapisano");
-    await Promise.all([loadMe(), loadRecommendations(), loadCatalog()]);
+    await loadMe();
+    await Promise.all([loadRecommendations(), loadCatalog()]);
     updateDetailButtons();
     loadDetailReviews(mediaId);
   } catch (e) {
@@ -918,7 +923,8 @@ async function showApp() {
   $("appView").classList.remove("hidden");
   $("userBox").classList.remove("hidden");
   $("hello").textContent = `Cześć, ${me.displayName}`;
-  await Promise.all([loadMe(), loadRecommendations(), loadCatalog()]);
+  await loadMe(); // katalog i profil czytają myProfile — najpierw je pobierz
+  await Promise.all([loadRecommendations(), loadCatalog()]);
 }
 
 function logout() {
