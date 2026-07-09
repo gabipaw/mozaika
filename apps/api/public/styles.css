@@ -508,58 +508,82 @@ h2 {
 }
 
 .profile-h {
+  flex: 0 0 auto;
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin: 18px 0 10px;
-  font-size: 1.1rem;
+  margin: 8px 0 6px;
+  font-size: 1.05rem;
 }
 
+/* Cały profil dopasowany do wysokości ekranu — bez pionowego scrolla.
+   Karty skalują się do wysokości rzędu; plakaty zachowują kształt (2:3, muzyka 1:1). */
 .profile-cols {
   display: flex;
-  gap: 48px;
-  align-items: flex-start;
-  margin-top: 12px;
+  gap: 40px;
+  align-items: stretch;
+  margin-top: 8px;
+  height: calc(100dvh - 124px);
+  min-height: 420px;
 }
 
 .profile-left {
-  flex: 0 0 260px;
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-/* Top 4 / watchlist: siatka 2×2, plakaty w naturalnym kształcie (bez rozciągania). */
+/* Top 4 / watchlist: 2×2, karty na wysokość rzędu (bez przycinania). */
 .profile-left .poster-grid {
+  flex: 1 1 0;
+  min-height: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  align-items: start;
-  gap: 12px;
+  grid-template-columns: repeat(2, auto);
+  grid-auto-rows: 1fr;
+  justify-content: start;
+  gap: 10px;
+}
+
+.profile-left .poster-grid .card {
+  height: 100%;
+}
+
+.profile-left .poster-grid .card .poster {
+  height: 100%;
 }
 
 .profile-right {
   flex: 1;
   min-width: 0;
+  height: 100%;
 }
 
-/* Rząd kategorii: etykieta z lewej, plakaty 1×4 rozciągnięte na szerokość. */
-.cat-row {
+#ratedByCat {
   display: flex;
-  align-items: flex-start;
-  gap: 18px;
-  padding: 14px 0;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Rząd kategorii: etykieta z lewej, do 4 plakatów; równa część wysokości.
+   „Zobacz wszystko" w prawym górnym rogu (pozycja absolutna, nie rozpycha). */
+.cat-row {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
   border-top: 1px solid var(--line);
 }
 
 .cat-row:first-child {
   border-top: none;
-  padding-top: 0;
 }
 
 .cat-label {
-  flex: 0 0 96px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding-top: 4px;
+  flex: 0 0 90px;
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 600;
@@ -569,10 +593,27 @@ h2 {
 .cat-posters {
   flex: 1;
   min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  align-items: start;
-  gap: 14px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.cat-posters .card {
+  flex: 0 0 auto;
+  height: 88%;
+}
+
+.cat-posters .card .poster {
+  height: 100%;
+}
+
+.cat-seeall {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  z-index: 2;
 }
 
 /* Przycisk „Zobacz wszystko". */
@@ -671,13 +712,34 @@ h2 {
   .profile-cols {
     flex-direction: column;
     gap: 20px;
+    height: auto;
+    min-height: 0;
   }
   .profile-left {
     flex-basis: auto;
     width: 100%;
   }
+  .profile-left .poster-grid {
+    grid-auto-rows: auto;
+  }
+  #ratedByCat {
+    height: auto;
+  }
+  .cat-row {
+    flex: 0 0 auto;
+    height: auto;
+  }
   .cat-posters {
-    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    height: auto;
+    flex-wrap: wrap;
+  }
+  .cat-posters .card {
+    height: auto;
+    width: 96px;
+  }
+  .cat-posters .card .poster,
+  .profile-left .poster-grid .card .poster {
+    height: auto;
   }
 }
 

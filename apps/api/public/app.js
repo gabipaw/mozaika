@@ -292,21 +292,20 @@ function renderRatedByCat(reviews) {
     catRow.className = "cat-row";
     const label = document.createElement("div");
     label.className = "cat-label";
-    const name = document.createElement("span");
-    name.textContent = g.label;
-    label.append(name);
-    if (items.length > 4) {
-      const btn = document.createElement("button");
-      btn.className = "seeall";
-      btn.type = "button";
-      btn.textContent = `Zobacz wszystko (${items.length})`;
-      btn.addEventListener("click", () => openSeeAll(g.label, items));
-      label.append(btn);
-    }
+    label.textContent = g.label;
     const posters = document.createElement("div");
     posters.className = "cat-posters";
     for (const r of items.slice(0, 4)) appendCard(posters, r.media, r.rating);
     catRow.append(label, posters);
+    // „Zobacz wszystko" w prawym górnym rogu rzędu (gdy >4).
+    if (items.length > 4) {
+      const btn = document.createElement("button");
+      btn.className = "seeall cat-seeall";
+      btn.type = "button";
+      btn.textContent = `Zobacz wszystko (${items.length})`;
+      btn.addEventListener("click", () => openSeeAll(g.label, items));
+      catRow.append(btn);
+    }
     box.append(catRow);
   }
   if (box.children.length === 0) {
