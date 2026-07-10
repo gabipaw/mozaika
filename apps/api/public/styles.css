@@ -595,6 +595,12 @@ h2 {
   flex-direction: column;
   min-height: 0;
   height: 100%;
+  overflow-y: auto;
+}
+/* Bez tego flex ściska siatki (Top4/watchlista) i ich okładki wychodzą poza box,
+   a kolejne sekcje (komentarze) na nie nachodzą. Naturalna wysokość + scroll. */
+.profile-left > * {
+  flex-shrink: 0;
 }
 
 /* Top 4: jeden rząd 1×4 (4 równe kolumny), plakaty 2:3, naturalna wysokość. */
