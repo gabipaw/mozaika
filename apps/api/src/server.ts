@@ -219,6 +219,19 @@ api.get("/me/following", requireAuth, async (c) => {
   return c.json(rows.map((r) => r.followed));
 });
 
+// Kto mnie obserwuje (do powiadomień) — najnowsi pierwsi, z datą obserwacji.
+api.get("/me/followers", requireAuth, async (c) => {
+  const rows = await prisma.follow.findMany({
+    where: { followedId: c.get("userId") },
+    orderBy: { createdAt: "desc" },
+    select: {
+      createdAt: true,
+      follower: { select: { id: true, displayName: true, avatarUrl: true } },
+    },
+  });
+  return c.json(rows.map((r) => ({ ...r.follower, since: r.createdAt })));
+});
+
 // Zacznij obserwować użytkownika.
 api.post("/me/follow", requireAuth, async (c) => {
   const followerId = c.get("userId");

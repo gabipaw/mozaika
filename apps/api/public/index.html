@@ -24,6 +24,15 @@
       <div id="userBox" class="userbox hidden">
         <button id="hello" class="hello-link" type="button" title="Twój profil"></button>
         <button
+          id="notifBtn"
+          class="icon-btn notif-btn"
+          type="button"
+          data-i18n-title="notifications"
+          title="Powiadomienia"
+        >
+          🔔<span id="notifBadge" class="notif-badge hidden">0</span>
+        </button>
+        <button
           id="settingsBtn"
           class="icon-btn"
           type="button"
@@ -297,7 +306,28 @@
               ✕ Gotowe
             </button>
           </div>
+          <input
+            id="friendsSearch"
+            class="friends-search"
+            type="search"
+            autocomplete="off"
+            data-i18n-ph="searchFriends"
+            placeholder="Szukaj znajomych…"
+          />
           <div id="friendsList" class="friends-list"></div>
+        </div>
+      </div>
+
+      <!-- Nakładka Powiadomienia -->
+      <div id="notifOverlay" class="overlay hidden">
+        <div class="overlay-card">
+          <div class="overlay-head">
+            <h2 data-i18n="notifications">Powiadomienia</h2>
+            <button id="notifClose" class="overlay-close" type="button" data-i18n="done">
+              ✕ Gotowe
+            </button>
+          </div>
+          <div id="notifList" class="friends-list"></div>
         </div>
       </div>
 

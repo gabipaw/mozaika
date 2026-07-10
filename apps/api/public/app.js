@@ -111,6 +111,11 @@ const I18N = {
     maxCovers: "Możesz wybrać maksymalnie 6 okładek.",
     friends: "Znajomi",
     add: "＋ Dodaj",
+    searchFriends: "Szukaj znajomych…",
+    noFriendsFound: "Nikogo nie znaleziono.",
+    notifications: "Powiadomienia",
+    notifFollowed: "zaczął(-ęła) Cię obserwować",
+    noNotif: "Brak powiadomień. Gdy ktoś Cię zaobserwuje, pojawi się tu.",
     counts: "{fo} obserwujących · {fw} obserwowanych",
     follow: "Obserwuj",
     following: "Obserwujesz",
@@ -232,6 +237,11 @@ const I18N = {
     maxCovers: "You can pick at most 6 covers.",
     friends: "Friends",
     add: "＋ Add",
+    searchFriends: "Search friends…",
+    noFriendsFound: "No one found.",
+    notifications: "Notifications",
+    notifFollowed: "started following you",
+    noNotif: "No notifications. When someone follows you, it'll show up here.",
     counts: "{fo} followers · {fw} following",
     follow: "Follow",
     following: "Following",
@@ -902,63 +912,148 @@ async function loadActivity() {
   }
 }
 
+const friendsData = { others: [], followingIds: new Set() };
+
 async function renderFriendsList() {
   const list = $("friendsList");
   list.innerHTML = `<p class="muted small">${t("loading")}</p>`;
   try {
     const [users, following] = await Promise.all([api("/users"), api("/me/following")]);
-    const followingIds = new Set(following.map((u) => u.id));
-    const others = users.filter((u) => u.id !== me.id);
-    list.innerHTML = "";
-    if (others.length === 0) {
-      list.innerHTML = `<p class="muted small">${t("noUsers")}</p>`;
-      return;
-    }
-    for (const u of others) {
-      const row = document.createElement("div");
-      row.className = "friend-row";
-      const av = avatarEl(u);
-      av.style.cursor = "pointer";
-      av.addEventListener("click", () => {
-        closeFriends();
-        openUserProfile(u.id);
-      });
-      row.append(av);
-      const name = document.createElement("span");
-      name.className = "friend-name friend-link";
-      name.textContent = u.displayName;
-      name.addEventListener("click", () => {
-        closeFriends();
-        openUserProfile(u.id);
-      });
-      const btn = document.createElement("button");
-      btn.type = "button";
-      const on = followingIds.has(u.id);
-      btn.className = "follow-btn" + (on ? " active" : "");
-      btn.textContent = on ? t("following") : t("follow");
-      btn.addEventListener("click", async () => {
-        try {
-          if (followingIds.has(u.id)) {
-            await api(`/me/follow/${u.id}`, { method: "DELETE" });
-          } else {
-            await api("/me/follow", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ userId: u.id }),
-            });
-          }
-          await renderFriendsList();
-          loadActivity();
-        } catch (e) {
-          toast(e.message);
-        }
-      });
-      row.append(name, btn);
-      list.append(row);
-    }
+    friendsData.followingIds = new Set(following.map((u) => u.id));
+    friendsData.others = users.filter((u) => u.id !== me.id);
+    drawFriends();
   } catch (e) {
     list.innerHTML = `<p class="muted small">${e.message}</p>`;
   }
+}
+
+// Rysuje listę znajomych z uwzględnieniem wyszukiwarki (filtr po nazwie).
+function drawFriends() {
+  const list = $("friendsList");
+  const q = ($("friendsSearch").value || "").trim().toLowerCase();
+  const items = q
+    ? friendsData.others.filter((u) => u.displayName.toLowerCase().includes(q))
+    : friendsData.others;
+  list.innerHTML = "";
+  if (friendsData.others.length === 0) {
+    list.innerHTML = `<p class="muted small">${t("noUsers")}</p>`;
+    return;
+  }
+  if (items.length === 0) {
+    list.innerHTML = `<p class="muted small">${t("noFriendsFound")}</p>`;
+    return;
+  }
+  for (const u of items) {
+    const row = document.createElement("div");
+    row.className = "friend-row";
+    const av = avatarEl(u);
+    av.style.cursor = "pointer";
+    av.addEventListener("click", () => {
+      closeFriends();
+      openUserProfile(u.id);
+    });
+    row.append(av);
+    const name = document.createElement("span");
+    name.className = "friend-name friend-link";
+    name.textContent = u.displayName;
+    name.addEventListener("click", () => {
+      closeFriends();
+      openUserProfile(u.id);
+    });
+    const btn = document.createElement("button");
+    btn.type = "button";
+    const on = friendsData.followingIds.has(u.id);
+    btn.className = "follow-btn" + (on ? " active" : "");
+    btn.textContent = on ? t("following") : t("follow");
+    btn.addEventListener("click", async () => {
+      try {
+        if (friendsData.followingIds.has(u.id)) {
+          await api(`/me/follow/${u.id}`, { method: "DELETE" });
+        } else {
+          await api("/me/follow", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ userId: u.id }),
+          });
+        }
+        await renderFriendsList();
+        loadActivity();
+      } catch (e) {
+        toast(e.message);
+      }
+    });
+    row.append(name, btn);
+    list.append(row);
+  }
+}
+
+// --- Powiadomienia: nowi obserwujący (znacznik „przeczytane" w localStorage) ---
+const NOTIF_SEEN_KEY = "mozaika_notif_seen";
+let followersCache = [];
+
+const getNotifSeen = () => Number(localStorage.getItem(NOTIF_SEEN_KEY) || 0);
+
+async function loadFollowers() {
+  try {
+    followersCache = await api("/me/followers");
+  } catch {
+    followersCache = [];
+  }
+  updateNotifBadge();
+}
+
+function updateNotifBadge() {
+  const seen = getNotifSeen();
+  const n = followersCache.filter((f) => new Date(f.since).getTime() > seen).length;
+  const badge = $("notifBadge");
+  badge.textContent = n > 9 ? "9+" : String(n);
+  badge.classList.toggle("hidden", n === 0);
+}
+
+function renderNotifList() {
+  const list = $("notifList");
+  const seen = getNotifSeen();
+  list.innerHTML = "";
+  if (followersCache.length === 0) {
+    list.innerHTML = `<p class="muted small">${t("noNotif")}</p>`;
+    return;
+  }
+  for (const f of followersCache) {
+    const row = document.createElement("div");
+    row.className = "friend-row notif-row";
+    if (new Date(f.since).getTime() > seen) row.classList.add("new");
+    const av = avatarEl(f);
+    av.style.cursor = "pointer";
+    const go = () => {
+      closeNotif();
+      openUserProfile(f.id);
+    };
+    av.addEventListener("click", go);
+    const body = document.createElement("div");
+    body.className = "notif-body";
+    const txt = document.createElement("span");
+    txt.className = "friend-link";
+    const b = document.createElement("b");
+    b.textContent = f.displayName;
+    txt.append(b, ` ${t("notifFollowed")}`);
+    txt.addEventListener("click", go);
+    const time = document.createElement("span");
+    time.className = "notif-time muted small";
+    time.textContent = timeAgo(f.since);
+    body.append(txt, time);
+    row.append(av, body);
+    list.append(row);
+  }
+}
+
+function openNotif() {
+  $("notifOverlay").classList.remove("hidden");
+  renderNotifList();
+  localStorage.setItem(NOTIF_SEEN_KEY, String(Date.now())); // oznacz jako przeczytane
+  updateNotifBadge();
+}
+function closeNotif() {
+  $("notifOverlay").classList.add("hidden");
 }
 
 async function openFriends() {
@@ -1624,6 +1719,7 @@ async function showApp() {
   $("browse").classList.remove("hidden");
   $("hello").textContent = `Cześć, ${me.displayName}`;
   await loadMe(); // katalog i profil czytają myProfile — najpierw je pobierz
+  loadFollowers(); // licznik powiadomień (nowi obserwujący)
   await Promise.all([loadTasteRecommendations(), loadRecommendations(), loadCatalog()]);
 }
 
@@ -1702,6 +1798,12 @@ async function init() {
   });
   $("friendsBtn").addEventListener("click", openFriends);
   $("friendsClose").addEventListener("click", closeFriends);
+  $("friendsSearch").addEventListener("input", drawFriends);
+  $("notifBtn").addEventListener("click", openNotif);
+  $("notifClose").addEventListener("click", closeNotif);
+  $("notifOverlay").addEventListener("click", (e) => {
+    if (e.target === $("notifOverlay")) closeNotif();
+  });
   $("followProfileBtn").addEventListener("click", async () => {
     if (!viewingUserId) return;
     const on = $("followProfileBtn").classList.contains("active");
@@ -1726,6 +1828,7 @@ async function init() {
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (!$("settingsOverlay").classList.contains("hidden")) closeSettings();
+    else if (!$("notifOverlay").classList.contains("hidden")) closeNotif();
     else if (!$("friendsOverlay").classList.contains("hidden")) closeFriends();
     else if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
     else if (!$("detailView").classList.contains("hidden")) closeDetail();
