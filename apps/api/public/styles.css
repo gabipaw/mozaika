@@ -730,7 +730,8 @@ h2 {
 /* --- Portret gustu --- */
 #tastePanel {
   flex: 0 0 auto;
-  margin-bottom: 18px;
+  height: auto;
+  margin-top: 18px;
 }
 
 .taste-body {
