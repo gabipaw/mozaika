@@ -460,6 +460,8 @@ function showResults() {
 function showBrowse() {
   $("searchResults").classList.add("hidden");
   $("browse").classList.remove("hidden");
+  // Rotacja „pod Twój gust" przy każdym wejściu na stronę główną (świeży zestaw).
+  if (me) loadTasteRecommendations();
 }
 
 const SEARCH_SRC = {
@@ -1317,7 +1319,9 @@ async function saveDetail() {
     });
     toast(t("saved"));
     await loadMe();
-    await Promise.all([loadTasteRecommendations(), loadRecommendations(), loadCatalog()]);
+    // „Pod Twój gust" odświeży się przy powrocie na główną (closeDetail) — bez
+    // ocenionego tytułu i z rotacją. Tu tylko katalog i polecenia od znajomych.
+    await Promise.all([loadRecommendations(), loadCatalog()]);
     updateDetailButtons();
     loadDetailReviews(mediaId);
   } catch (e) {
@@ -1337,6 +1341,8 @@ function closeDetail() {
   $("searchbar").classList.remove("hidden");
   $("searchResults").classList.toggle("hidden", detailReturn !== "results");
   $("browse").classList.toggle("hidden", detailReturn === "results");
+  // Powrót na stronę główną → rotacja (i usunięcie właśnie ocenionego tytułu).
+  if (me && detailReturn !== "results") loadTasteRecommendations();
 }
 
 // --- Profil (własny lub cudzy, osobna strona) ---

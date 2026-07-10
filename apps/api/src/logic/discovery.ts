@@ -112,6 +112,16 @@ export function pickSeeds(rated: RatedSeed[]): RatedSeed[] {
     .slice(0, MAX_SEEDS);
 }
 
+/** Tasuje KOPIĘ tablicy (Fisher–Yates) — rotacja: inny zestaw przy każdym wejściu. */
+export function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 /** Przeplata listy (round-robin), by wynik był miksem rodzajów, nie blokami. */
 export function interleave<T>(lists: T[][]): T[] {
   const out: T[] = [];
@@ -218,9 +228,10 @@ export async function tasteDiscovery(
     ),
   ]);
 
-  // Przeplot po ZIARNACH/rodzajach (round-robin), by nie zdominował jeden tytuł.
-  const similar = dedupeByKey(interleave(similarRaw).filter(fresh));
-  const popular = dedupeByKey(interleave(popularRaw).filter(fresh));
+  // Rotacja: tasujemy pulę każdego ziarna/rodzaju ORAZ ich kolejność, więc każde
+  // wejście daje inny zestaw (wciąż „podobne do" ulubionych — jakość zachowana).
+  const similar = dedupeByKey(interleave(shuffle(similarRaw.map(shuffle))).filter(fresh));
+  const popular = dedupeByKey(interleave(shuffle(popularRaw.map(shuffle))).filter(fresh));
 
   // Podobne najpierw, popularne dopełniają; dedupe usuwa powtórki między strumieniami.
   return dedupeByKey([...similar, ...popular]).slice(0, limit);

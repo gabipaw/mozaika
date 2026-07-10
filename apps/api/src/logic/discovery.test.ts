@@ -10,6 +10,7 @@ import {
   pickDiscoverTypes,
   pickSeeds,
   pickYearWindow,
+  shuffle,
   type DiscoverItem,
   type RatedSeed,
 } from "./discovery.js";
@@ -79,6 +80,17 @@ test("pickSeeds: ulubione i najwyżej ocenione wpierw, tylko odkrywalne i ≥ pr
     seeds.map((s) => s.title),
     ["B", "A"], // MUZYKA i za niska ocena odpadają; ulubione (B) przed A
   );
+});
+
+test("shuffle zwraca permutację (te same elementy), nie zmienia oryginału", () => {
+  const src = [1, 2, 3, 4, 5, 6, 7, 8];
+  const out = shuffle(src);
+  assert.equal(out.length, src.length);
+  assert.deepEqual(
+    [...out].sort((a, b) => a - b),
+    src,
+  ); // ten sam multizbiór
+  assert.deepEqual(src, [1, 2, 3, 4, 5, 6, 7, 8]); // oryginał nietknięty
 });
 
 test("dedupeByKey usuwa powtórki po (rodzaj + externalId), pierwszy wygrywa", () => {
