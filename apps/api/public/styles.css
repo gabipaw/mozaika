@@ -572,8 +572,10 @@ h2 {
   display: grid;
   grid-template-columns: 300px 1fr 240px;
   gap: 32px;
-  align-items: start;
+  align-items: stretch;
   margin-top: 0;
+  height: calc(100dvh - 84px);
+  min-height: 360px;
 }
 
 /* Profil wysoko — zero marginesu góra/dół (sekcyjny 26px psuł dopasowanie).
@@ -592,6 +594,7 @@ h2 {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: 100%;
 }
 
 /* Top 4: jeden rząd 1×4 (4 równe kolumny), plakaty 2:3, naturalna wysokość. */
@@ -788,11 +791,17 @@ h2 {
   color: var(--text);
 }
 
-/* --- Moje komentarze --- */
+/* --- Moje komentarze (sekcja pod całym profilem, pełna szerokość) --- */
+.profile-comments {
+  margin: 28px 0 40px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
 .my-comments {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
 }
 
 .comment-item {
@@ -867,8 +876,7 @@ h2 {
 }
 
 .feed-list {
-  flex: 0 1 auto;
-  max-height: 460px; /* profil płynie (nie ma sztywnej wysokości) → własny limit + scroll */
+  flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;
   display: flex;
@@ -1369,7 +1377,6 @@ h2 {
   }
   .feed-list {
     height: auto;
-    max-height: none;
     overflow-y: visible;
   }
 
