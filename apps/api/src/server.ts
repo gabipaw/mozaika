@@ -87,6 +87,7 @@ api.get("/me", requireAuth, async (c) => {
     externalId: true,
     year: true,
     posterUrl: true,
+    genres: true,
   } as const;
   const [reviews, watchlist, followersCount, followingCount] = await Promise.all([
     prisma.review.findMany({
@@ -256,7 +257,14 @@ api.get("/me/activity", requireAuth, async (c) => {
       createdAt: true,
       user: { select: { id: true, displayName: true, avatarUrl: true } },
       media: {
-        select: { id: true, title: true, type: true, posterUrl: true, externalId: true },
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          posterUrl: true,
+          externalId: true,
+          genres: true,
+        },
       },
     },
   });
@@ -360,6 +368,7 @@ api.get("/users/:id/profile", async (c) => {
     externalId: true,
     year: true,
     posterUrl: true,
+    genres: true,
   } as const;
   const [reviews, watchlist, followersCount, followingCount] = await Promise.all([
     prisma.review.findMany({
@@ -400,7 +409,14 @@ api.get("/users/:id/compare", requireAuth, async (c) => {
   }
   const media = await prisma.media.findMany({
     where: { id: { in: result.details.map((d) => d.mediaId) } },
-    select: { id: true, title: true, type: true, posterUrl: true, externalId: true },
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      posterUrl: true,
+      externalId: true,
+      genres: true,
+    },
   });
   const byId = new Map(media.map((m) => [m.id, m]));
   const shared = result.details

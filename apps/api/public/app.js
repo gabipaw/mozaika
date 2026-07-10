@@ -426,6 +426,7 @@ function toDetail(m, type, mediaId, myRating) {
     title: m.title,
     year: m.year ?? null,
     posterUrl: m.posterUrl ?? null,
+    genres: m.genres ?? [],
     mediaId: mediaId ?? m.id ?? null,
     myRating,
   };
@@ -1133,6 +1134,15 @@ async function openDetail(item) {
   $("detailMsg").textContent = "";
   $("detailTitle").textContent = item.title;
   $("detailYear").textContent = item.year ? String(item.year) : "";
+
+  const genresBox = $("detailGenres");
+  genresBox.innerHTML = "";
+  for (const g of item.genres ?? []) {
+    const chip = document.createElement("span");
+    chip.className = "genre-chip";
+    chip.textContent = g;
+    genresBox.append(chip);
+  }
 
   const poster = $("detailPoster");
   poster.innerHTML = "";

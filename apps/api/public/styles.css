@@ -370,6 +370,22 @@ h2 {
   margin-bottom: 14px;
 }
 
+.detail-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+
+.genre-chip {
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
 .detail-desc {
   color: var(--text);
   font-size: 0.95rem;
