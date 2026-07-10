@@ -572,10 +572,8 @@ h2 {
   display: grid;
   grid-template-columns: 300px 1fr 240px;
   gap: 32px;
-  align-items: stretch;
+  align-items: start;
   margin-top: 0;
-  height: calc(100dvh - 84px);
-  min-height: 360px;
 }
 
 /* Profil wysoko — zero marginesu góra/dół (sekcyjny 26px psuł dopasowanie).
@@ -594,13 +592,6 @@ h2 {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%;
-  overflow-y: auto;
-}
-/* Bez tego flex ściska siatki (Top4/watchlista) i ich okładki wychodzą poza box,
-   a kolejne sekcje (komentarze) na nie nachodzą. Naturalna wysokość + scroll. */
-.profile-left > * {
-  flex-shrink: 0;
 }
 
 /* Top 4: jeden rząd 1×4 (4 równe kolumny), plakaty 2:3, naturalna wysokość. */
@@ -876,7 +867,8 @@ h2 {
 }
 
 .feed-list {
-  flex: 1 1 0;
+  flex: 0 1 auto;
+  max-height: 460px; /* profil płynie (nie ma sztywnej wysokości) → własny limit + scroll */
   min-height: 0;
   overflow-y: auto;
   display: flex;
@@ -1377,6 +1369,7 @@ h2 {
   }
   .feed-list {
     height: auto;
+    max-height: none;
     overflow-y: visible;
   }
 
