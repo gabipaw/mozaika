@@ -727,6 +727,69 @@ h2 {
   margin-bottom: 12px;
 }
 
+/* --- Portret gustu --- */
+#tastePanel {
+  flex: 0 0 auto;
+  margin-bottom: 18px;
+}
+
+.taste-body {
+  font-size: 0.9rem;
+}
+
+.taste-harsh {
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+.taste-sec-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 12px 0 6px;
+}
+
+.taste-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+.taste-bar-name {
+  flex: 0 0 34%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taste-bar-track {
+  flex: 1 1 auto;
+  height: 8px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.taste-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.taste-bar-val {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.taste-highlight {
+  margin: 14px 0 0;
+  color: var(--text);
+}
+
 .feed-head h2 {
   font-size: 1.05rem;
 }

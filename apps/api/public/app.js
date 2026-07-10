@@ -64,6 +64,16 @@ const I18N = {
     yourCatalog: "Twój katalog",
     yourCatalogHint: "Tytuły, które oceniłeś.",
     allGenres: "Wszystkie",
+    tastePortrait: "Portret gustu",
+    portraitEmpty: "Oceń kilka tytułów, a narysujemy Twój portret gustu.",
+    harshMild: "Oceniasz łagodniej niż średnia.",
+    harshTough: "Oceniasz surowiej niż średnia.",
+    harshBalanced: "Oceniasz mniej więcej jak średnia.",
+    yourAvg: "Twoja średnia",
+    siteAvg: "serwis",
+    topGenres: "Twoje gatunki",
+    topTypes: "Rodzaje mediów",
+    favDecade: "Ulubiona dekada: lata {decade}.",
     recBy: "poleca {n} os.",
     noRecs: "Brak — oceń kilka tytułów, a coś dobierzemy.",
     yourRating: "Twoja ocena",
@@ -173,6 +183,16 @@ const I18N = {
     yourCatalog: "Your catalog",
     yourCatalogHint: "Titles you've rated.",
     allGenres: "All",
+    tastePortrait: "Taste portrait",
+    portraitEmpty: "Rate a few titles and we'll draw your taste portrait.",
+    harshMild: "You rate more generously than average.",
+    harshTough: "You rate more harshly than average.",
+    harshBalanced: "You rate about average.",
+    yourAvg: "Your average",
+    siteAvg: "site",
+    topGenres: "Your genres",
+    topTypes: "Media types",
+    favDecade: "Favourite decade: the {decade}s.",
     recBy: "recommended by {n}",
     noRecs: "Nothing yet — rate a few titles and we'll find some.",
     yourRating: "Your rating",
@@ -972,9 +992,10 @@ function renderProfileData(data, readOnly) {
   const fw = data.followingCount ?? 0;
   $("profileCounts").textContent = t("counts", { fo, fw });
 
-  // 3. kolumna: własny profil = feed znajomych, cudzy = porównanie gustu.
+  // 3. kolumna: własny profil = portret gustu + feed znajomych, cudzy = porównanie.
   $("profileFeed").classList.toggle("hidden", readOnly);
   $("comparePanel").classList.toggle("hidden", !readOnly);
+  $("tastePanel").classList.toggle("hidden", readOnly); // portret tylko na własnym profilu
 
   // Top 4 = przypięte (favorite).
   const top = data.reviews.filter((r) => r.favorite).slice(0, 4);
@@ -1016,6 +1037,88 @@ async function loadProfile() {
     false,
   );
   loadActivity();
+  loadTastePortrait();
+}
+
+// Enum rodzaju mediów → etykieta (z emoji) z i18n.
+const TYPE_I18N = {
+  FILM: "typeFilm",
+  SERIAL: "typeFilm",
+  KSIAZKA: "typeBook",
+  MANGA: "typeManga",
+  ANIME: "typeAnime",
+  MUZYKA: "typeMusic",
+  GRA: "typeGame",
+};
+
+async function loadTastePortrait() {
+  const box = $("tasteBody");
+  box.innerHTML = `<p class="muted">${t("loading")}</p>`;
+  try {
+    renderPortrait(await api("/me/taste-portrait"));
+  } catch (e) {
+    box.innerHTML = `<p class="muted">${e.message}</p>`;
+  }
+}
+
+// Rysuje portret gustu: surowość + paski top gatunków/rodzajów + ulubiona dekada.
+function renderPortrait(p) {
+  const box = $("tasteBody");
+  box.innerHTML = "";
+  if (!p || p.reviewCount < 3) {
+    box.innerHTML = `<p class="muted">${t("portraitEmpty")}</p>`;
+    return;
+  }
+
+  const harsh = document.createElement("p");
+  harsh.className = "taste-harsh";
+  let word = t("harshBalanced");
+  const g = p.globalBaseline;
+  if (g !== null && g !== undefined && p.baseline >= g + 0.5) word = t("harshMild");
+  else if (g !== null && g !== undefined && p.baseline <= g - 0.5) word = t("harshTough");
+  const cmp = g !== null && g !== undefined ? ` · ${t("siteAvg")}: ${g}` : "";
+  harsh.innerHTML = `${word} <span class="muted">(${t("yourAvg")}: ${p.baseline}${cmp})</span>`;
+  box.append(harsh);
+
+  const byCount = (arr) => [...arr].sort((a, b) => b.count - a.count);
+
+  const section = (label, affs, fmt) => {
+    if (!affs.length) return;
+    const head = document.createElement("div");
+    head.className = "taste-sec-label";
+    head.textContent = label;
+    box.append(head);
+    const max = Math.max(...affs.map((a) => a.count));
+    for (const a of affs) {
+      const row = document.createElement("div");
+      row.className = "taste-bar";
+      const name = document.createElement("span");
+      name.className = "taste-bar-name";
+      name.textContent = fmt ? fmt(a.key) : a.key;
+      const track = document.createElement("span");
+      track.className = "taste-bar-track";
+      const fill = document.createElement("span");
+      fill.className = "taste-bar-fill";
+      fill.style.width = `${Math.round((a.count / max) * 100)}%`;
+      track.append(fill);
+      const val = document.createElement("span");
+      val.className = "taste-bar-val";
+      val.textContent = a.count;
+      row.append(name, track, val);
+      box.append(row);
+    }
+  };
+
+  section(t("topGenres"), byCount(p.genres).slice(0, 5));
+  section(t("topTypes"), byCount(p.types).slice(0, 4), (k) => t(TYPE_I18N[k] || "") || k);
+
+  const topDecade = byCount(p.decades)[0];
+  if (topDecade) {
+    const d = document.createElement("p");
+    d.className = "taste-highlight";
+    d.textContent = t("favDecade", { decade: topDecade.key });
+    box.append(d);
+  }
 }
 
 async function loadUserProfile(id) {

@@ -22,6 +22,7 @@ import { addMusicFromItunes, searchMusic } from "./logic/music.js";
 import { addReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
+import { tastePortrait } from "./logic/tasteProfile.js";
 import { invalidateDiscoveryCache, tasteDiscovery } from "./logic/discovery.js";
 import { addMediaFromTmdb, searchTmdb } from "./logic/tmdb.js";
 
@@ -129,6 +130,11 @@ api.get("/me/recommendations", requireAuth, async (c) => {
 // Odkrywanie pod gust — ORYGINALNE, świeże tytuły z zewnątrz (nie z katalogu).
 api.get("/me/discover", requireAuth, async (c) => {
   return c.json(await tasteDiscovery(c.get("userId")));
+});
+
+// Portret gustu — top gatunki/typy/dekady + „surowość" vs średnia serwisu.
+api.get("/me/taste-portrait", requireAuth, async (c) => {
+  return c.json(await tastePortrait(c.get("userId")));
 });
 
 // Ustaw zdjęcie profilowe (data:image, skompresowane po stronie klienta).

@@ -1,13 +1,12 @@
 /**
- * „Portret gustu" — czysta logika (bez bazy).
+ * „Portret gustu" — czysta logika + odczyt z bazy (jak w tasteMatch.ts).
  *
- * Patrzymy na to, CO użytkownik ocenia wysoko: jakie rodzaje mediów i z jakich
- * dekad. Z tego budujemy „profil gustu" (afinność vs własna średnia), a osobny
- * scorer punktuje kandydatów pod ten gust. Kandydaci pochodzą z zewnątrz
- * (discovery.ts) — dzięki temu polecenia to NOWE tytuły, nie katalog innych osób.
- *
- * Sygnały (bez migracji bazy): typ mediów, dekada premiery, ocena.
+ * Patrzymy na to, CO użytkownik ocenia wysoko: jakie rodzaje mediów, dekady i
+ * gatunki. Z tego budujemy „profil gustu" (afinność vs własna średnia), scorer
+ * punktuje kandydatów pod ten gust, a `tastePortrait` składa profil do pokazania.
  */
+import { prisma } from "../db.js";
+import { NotFoundError } from "../errors.js";
 
 /** Ile ocen trzeba mieć, by profil gustu był wiarygodny. */
 export const MIN_TASTE_REVIEWS = 3;
@@ -179,4 +178,41 @@ export function computeTasteRecommendations(
 
   recs.sort((a, b) => b.score - a.score || a.mediaId - b.mediaId);
   return recs.slice(0, limit);
+}
+
+export interface TastePortrait extends TasteProfile {
+  globalBaseline: number | null; // średnia ocen w całym serwisie (do „surowości")
+}
+
+/** Portret gustu użytkownika: profil (typy/dekady/gatunki) + średnia serwisu. */
+export async function tastePortrait(userId: number): Promise<TastePortrait> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new NotFoundError(`Użytkownik #${userId} nie istnieje.`);
+
+  const [reviews, agg] = await Promise.all([
+    prisma.review.findMany({
+      where: { userId },
+      select: {
+        mediaId: true,
+        rating: true,
+        favorite: true,
+        media: { select: { type: true, year: true, genres: true } },
+      },
+    }),
+    prisma.review.aggregate({ _avg: { rating: true } }),
+  ]);
+
+  const profile = computeTasteProfile(
+    reviews.map((r) => ({
+      mediaId: r.mediaId,
+      rating: r.rating,
+      favorite: r.favorite,
+      type: r.media.type,
+      year: r.media.year,
+      genres: r.media.genres,
+    })),
+  );
+  const globalBaseline =
+    agg._avg.rating !== null ? Math.round(agg._avg.rating * 10) / 10 : null;
+  return { ...profile, globalBaseline };
 }
