@@ -1315,9 +1315,9 @@ async function loadCompare(id) {
       const row = document.createElement("button");
       row.type = "button";
       row.className = "compare-row";
-      const t = document.createElement("div");
-      t.className = "compare-title";
-      t.textContent = s.media.title;
+      const titleEl = document.createElement("div");
+      titleEl.className = "compare-title";
+      titleEl.textContent = s.media.title;
       const rates = document.createElement("div");
       rates.className = "compare-rates";
       const you = document.createElement("span");
@@ -1327,7 +1327,7 @@ async function loadCompare(id) {
       them.className = "cr-them";
       them.textContent = `${viewingName} ★${s.theirRating}`;
       rates.append(you, them);
-      row.append(t, rates);
+      row.append(titleEl, rates);
       row.addEventListener("click", () =>
         openDetail(toDetail(s.media, s.media.type, s.media.id, s.myRating)),
       );
