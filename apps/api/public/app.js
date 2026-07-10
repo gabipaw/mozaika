@@ -53,9 +53,13 @@ const I18N = {
     tasteRecsHint: "Nowe tytuły spoza Twojego katalogu, dobrane do Twojego gustu.",
     noTasteRecs: "Oceń kilka tytułów, a odkryjemy coś nowego pod Twój gust.",
     reasonSimilar: "Bo podobne do „{title}”",
-    reasonType: "Bo lubisz ten rodzaj",
+    reasonType: "Bo lubisz {kat}",
     reasonDecade: "Bo lubisz lata {decade}.",
-    reasonGeneral: "W Twoim guście",
+    reasonGeneral: "Popularne — w Twoim guście",
+    catFilm: "filmy",
+    catAnime: "anime",
+    catManga: "mangę",
+    catGame: "gry",
     yourCatalog: "Twój katalog",
     yourCatalogHint: "Tytuły, które oceniłeś.",
     recBy: "poleca {n} os.",
@@ -156,9 +160,13 @@ const I18N = {
     tasteRecsHint: "Fresh titles beyond your catalog, matched to your taste.",
     noTasteRecs: "Rate a few titles and we'll discover something new for you.",
     reasonSimilar: "Because it's like “{title}”",
-    reasonType: "Because you like this kind",
+    reasonType: "Because you like {kat}",
     reasonDecade: "Because you like the {decade}s",
-    reasonGeneral: "In your taste",
+    reasonGeneral: "Popular — in your taste",
+    catFilm: "films",
+    catAnime: "anime",
+    catManga: "manga",
+    catGame: "games",
     yourCatalog: "Your catalog",
     yourCatalogHint: "Titles you've rated.",
     recBy: "recommended by {n}",
@@ -525,11 +533,26 @@ async function loadRecommendations() {
   }
 }
 
-// Zamienia powód rekomendacji z API na czytelny tekst (z tłumaczeniem).
-function tasteReasonLabel(reason) {
+// Nazwa kategorii (do powodu „Bo lubisz …") wg klucza rodzaju z API.
+const CAT_LABEL = {
+  film: "catFilm",
+  anime: "catAnime",
+  manga: "catManga",
+  game: "catGame",
+};
+function catLabel(typeKey) {
+  const key = CAT_LABEL[typeKey];
+  return key ? t(key) : "";
+}
+
+// Zamienia powód rekomendacji z API na czytelny tekst — WYJAŚNIA, czemu w guście.
+function tasteReasonLabel(reason, item) {
   if (!reason) return "";
   if (reason.kind === "similar") return t("reasonSimilar", { title: reason.to });
-  if (reason.kind === "type") return t("reasonType");
+  if (reason.kind === "type") {
+    const kat = catLabel(item?.type);
+    return kat ? t("reasonType", { kat }) : t("reasonGeneral");
+  }
   if (reason.kind === "decade") return t("reasonDecade", { decade: reason.decade });
   return t("reasonGeneral");
 }
@@ -549,7 +572,7 @@ async function loadTasteRecommendations() {
     for (const r of recs) {
       const { card } = posterCard(r, {
         score: r.score,
-        recby: tasteReasonLabel(r.reason),
+        recby: tasteReasonLabel(r.reason, r),
       });
       card.addEventListener("click", () => openDetail(toDetail(r, r.type, null)));
       row.append(card);

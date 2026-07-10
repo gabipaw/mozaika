@@ -19,7 +19,6 @@ import { discoverRawg, similarRawg } from "./games.js";
 import type { ExternalMedia } from "./media.js";
 import {
   computeTasteProfile,
-  DEFAULT_TASTE_LIMIT,
   makeTasteScorer,
   MIN_TASTE_REVIEWS,
   type RecReason,
@@ -34,7 +33,9 @@ export const FALLBACK_YEARS_BACK = 15;
 /** Od jakiej oceny tytuł staje się „ziarnem" do szukania podobnych. */
 export const LIKE_THRESHOLD = 7;
 /** Ile najlepiej ocenionych tytułów bierzemy jako ziarna (limit zapytań do API). */
-export const MAX_SEEDS = 6;
+export const MAX_SEEDS = 8;
+/** Ile pozycji zwraca discovery na stronę główną (więcej „pod Twój gust"). */
+export const DEFAULT_DISCOVER_LIMIT = 24;
 
 /** Enum typu (baza) → źródło front + funkcje „discover” i „similar”. */
 const DISCOVERABLE: Record<
@@ -139,7 +140,7 @@ export function dedupeByKey(items: DiscoverItem[]): DiscoverItem[] {
 /** Rekomendacje odkrywcze: świeże tytuły z zewnątrz, głównie „podobne do” Twoich ocen. */
 export async function tasteDiscovery(
   userId: number,
-  limit: number = DEFAULT_TASTE_LIMIT,
+  limit: number = DEFAULT_DISCOVER_LIMIT,
 ): Promise<DiscoverItem[]> {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError(`Użytkownik #${userId} nie istnieje.`);
@@ -207,13 +208,12 @@ export async function tasteDiscovery(
     Promise.all(
       types.map(async (enumType) => {
         const found = await DISCOVERABLE[enumType].discover(from, to);
-        return found.map((m) =>
-          toItem(
-            m,
-            enumType,
-            scorer({ mediaId: 0, type: enumType, year: m.year }).reason,
-          ),
-        );
+        return found.map((m) => {
+          // Popularne wybieramy z ulubionych rodzajów, więc zawsze umiemy wyjaśnić
+          // powód: dekada (gdy silna) albo sam rodzaj — nigdy gołe „w guście".
+          const r = scorer({ mediaId: 0, type: enumType, year: m.year }).reason;
+          return toItem(m, enumType, r.kind === "general" ? { kind: "type" } : r);
+        });
       }),
     ),
   ]);
