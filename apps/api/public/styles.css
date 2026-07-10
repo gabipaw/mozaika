@@ -581,13 +581,12 @@ h2 {
 /* Profil wysoko — zero marginesu góra/dół (sekcyjny 26px psuł dopasowanie).
    Profil rozciąga się na CAŁĄ szerokość okna (poza max-width main), żeby panel
    Znajomi mógł usiąść przy samej prawej krawędzi ekranu. */
+/* Bez pełnej szerokości (100vw): przy pionowym scrollbarze 100vw > widoczny obszar
+   i prawa krawędź wchodziła pod pasek (brak marginesu z prawej, środkowa kolumna
+   łapała różnicę). Profil wyśrodkowany w kontenerze main → równe marginesy L/R. */
 #profileView.detail-page {
   margin: 0;
-  width: 100vw;
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0 20px;
+  padding: 0;
 }
 
 .profile-left {
