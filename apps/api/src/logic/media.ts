@@ -12,19 +12,22 @@ export interface ExternalMedia {
   title: string;
   year: number | null;
   posterUrl: string | null;
+  genres: string[]; // np. ["Sci-Fi", "Thriller"] — puste, gdy źródło nie poda
 }
 
 /** Dodaje/aktualizuje tytuł w katalogu (upsert po type+externalId). */
 export function upsertExternalMedia(type: MediaType, m: ExternalMedia) {
   return prisma.media.upsert({
     where: { type_externalId: { type, externalId: m.externalId } },
-    update: { posterUrl: m.posterUrl },
+    // Nie nadpisuj gatunków pustą tablicą (np. gdy wynik wyszukiwania ich nie ma).
+    update: { posterUrl: m.posterUrl, ...(m.genres.length ? { genres: m.genres } : {}) },
     create: {
       type,
       title: m.title,
       externalId: m.externalId,
       year: m.year,
       posterUrl: m.posterUrl,
+      genres: m.genres,
     },
   });
 }

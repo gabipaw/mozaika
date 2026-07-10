@@ -78,6 +78,7 @@ function toBook(d: OlDoc): ExternalMedia {
     title: author ? `${title} — ${author}` : title,
     year: d.first_publish_year ?? null,
     posterUrl: coverUrl(d.cover_i),
+    genres: [], // Open Library ma tylko „subjects" (zbyt zaszumione) — pomijamy
   };
 }
 
@@ -153,6 +154,7 @@ export async function addBookFromOpenLibrary(externalId: string) {
     title: author ? `${baseTitle} — ${author}` : baseTitle,
     year,
     posterUrl: coverUrl(work.covers?.[0]),
+    genres: [],
   });
 }
 

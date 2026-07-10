@@ -9,6 +9,7 @@ import {
   interleave,
   pickDiscoverTypes,
   pickSeeds,
+  pickTopGenres,
   pickYearWindow,
   shuffle,
   type DiscoverItem,
@@ -16,11 +17,19 @@ import {
 } from "./discovery.js";
 import { computeTasteProfile, type TasteReview } from "./tasteProfile.js";
 
+const mk = (
+  mediaId: number,
+  rating: number,
+  type: string,
+  year: number,
+  genres: string[],
+): TasteReview => ({ mediaId, rating, favorite: false, type, year, genres });
+
 const reviews: TasteReview[] = [
-  { mediaId: 1, rating: 9, favorite: true, type: "ANIME", year: 2013 },
-  { mediaId: 2, rating: 10, favorite: false, type: "ANIME", year: 2016 },
-  { mediaId: 3, rating: 8, favorite: false, type: "GRA", year: 2015 },
-  { mediaId: 4, rating: 4, favorite: false, type: "FILM", year: 1998 },
+  mk(1, 9, "ANIME", 2013, ["Sci-Fi"]),
+  mk(2, 10, "ANIME", 2016, ["Sci-Fi"]),
+  mk(3, 8, "GRA", 2015, ["Shooter"]),
+  mk(4, 4, "FILM", 1998, ["Drama"]),
 ];
 
 test("pickDiscoverTypes bierze najlubianiejsze, tylko odkrywalne rodzaje", () => {
@@ -33,9 +42,9 @@ test("pickDiscoverTypes bierze najlubianiejsze, tylko odkrywalne rodzaje", () =>
 
 test("pickDiscoverTypes pomija rodzaje bez źródła discover (np. MUZYKA)", () => {
   const music: TasteReview[] = [
-    { mediaId: 1, rating: 9, favorite: false, type: "MUZYKA", year: 2013 },
-    { mediaId: 2, rating: 8, favorite: false, type: "MUZYKA", year: 2016 },
-    { mediaId: 3, rating: 7, favorite: false, type: "MUZYKA", year: 2019 },
+    { mediaId: 1, rating: 9, favorite: false, type: "MUZYKA", year: 2013, genres: [] },
+    { mediaId: 2, rating: 8, favorite: false, type: "MUZYKA", year: 2016, genres: [] },
+    { mediaId: 3, rating: 7, favorite: false, type: "MUZYKA", year: 2019, genres: [] },
   ];
   assert.deepEqual(pickDiscoverTypes(computeTasteProfile(music)), []);
 });
@@ -48,9 +57,9 @@ test("pickYearWindow zwraca ulubioną dekadę, gdy ma poparcie", () => {
 
 test("pickYearWindow spada do ostatnich lat bez wyraźnej dekady", () => {
   const one: TasteReview[] = [
-    { mediaId: 1, rating: 9, favorite: false, type: "ANIME", year: 1990 },
-    { mediaId: 2, rating: 9, favorite: false, type: "ANIME", year: 2005 },
-    { mediaId: 3, rating: 9, favorite: false, type: "ANIME", year: 2020 },
+    { mediaId: 1, rating: 9, favorite: false, type: "ANIME", year: 1990, genres: [] },
+    { mediaId: 2, rating: 9, favorite: false, type: "ANIME", year: 2005, genres: [] },
+    { mediaId: 3, rating: 9, favorite: false, type: "ANIME", year: 2020, genres: [] },
   ];
   const w = pickYearWindow(computeTasteProfile(one), 2026);
   assert.equal(w.to, 2026);
@@ -82,6 +91,13 @@ test("pickSeeds: ulubione i najwyżej ocenione wpierw, tylko odkrywalne i ≥ pr
   );
 });
 
+test("pickTopGenres bierze lubiane, rozpoznawane gatunki (delta>0, poparcie ≥2)", () => {
+  const p = computeTasteProfile(reviews); // Sci-Fi x2 (wysokie), Drama (niskie), Shooter x1
+  const recognizes = (g: string) => g === "Sci-Fi" || g === "Drama";
+  const top = pickTopGenres(p, recognizes);
+  assert.deepEqual(top, ["Sci-Fi"]); // Drama ma delta<0, Shooter nierozpoznawany
+});
+
 test("shuffle zwraca permutację (te same elementy), nie zmienia oryginału", () => {
   const src = [1, 2, 3, 4, 5, 6, 7, 8];
   const out = shuffle(src);
@@ -100,6 +116,7 @@ test("dedupeByKey usuwa powtórki po (rodzaj + externalId), pierwszy wygrywa", (
       title: "X",
       year: 2020,
       posterUrl: null,
+      genres: [],
       type: "film",
       score: 8,
       reason: { kind: "similar", to: "Seed" },
@@ -109,6 +126,7 @@ test("dedupeByKey usuwa powtórki po (rodzaj + externalId), pierwszy wygrywa", (
       title: "X",
       year: 2020,
       posterUrl: null,
+      genres: [],
       type: "film",
       score: 7,
       reason: { kind: "decade", decade: "2020" },
@@ -118,6 +136,7 @@ test("dedupeByKey usuwa powtórki po (rodzaj + externalId), pierwszy wygrywa", (
       title: "X",
       year: 2020,
       posterUrl: null,
+      genres: [],
       type: "game",
       score: 7,
       reason: { kind: "general" },

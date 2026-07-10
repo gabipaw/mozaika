@@ -53,6 +53,7 @@ const I18N = {
     tasteRecsHint: "Nowe tytuły spoza Twojego katalogu, dobrane do Twojego gustu.",
     noTasteRecs: "Oceń kilka tytułów, a odkryjemy coś nowego pod Twój gust.",
     reasonSimilar: "Bo podobne do „{title}”",
+    reasonGenre: "Bo lubisz gatunek {genre}",
     reasonType: "Bo lubisz {kat}",
     reasonDecade: "Bo lubisz lata {decade}.",
     reasonGeneral: "Popularne — w Twoim guście",
@@ -160,6 +161,7 @@ const I18N = {
     tasteRecsHint: "Fresh titles beyond your catalog, matched to your taste.",
     noTasteRecs: "Rate a few titles and we'll discover something new for you.",
     reasonSimilar: "Because it's like “{title}”",
+    reasonGenre: "Because you like {genre}",
     reasonType: "Because you like {kat}",
     reasonDecade: "Because you like the {decade}s",
     reasonGeneral: "Popular — in your taste",
@@ -551,6 +553,7 @@ function catLabel(typeKey) {
 function tasteReasonLabel(reason, item) {
   if (!reason) return "";
   if (reason.kind === "similar") return t("reasonSimilar", { title: reason.to });
+  if (reason.kind === "genre") return t("reasonGenre", { genre: reason.genre });
   if (reason.kind === "type") {
     const kat = catLabel(item?.type);
     return kat ? t("reasonType", { kat }) : t("reasonGeneral");

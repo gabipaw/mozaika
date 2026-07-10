@@ -19,15 +19,39 @@ const MEDIA_FIELDS = `
   title { romaji english }
   startDate { year }
   coverImage { large }
+  genres
   studios(isMain: true) { nodes { name } }
   staff(perPage: 1, sort: RELEVANCE) { nodes { name { full } } }
 `;
+
+// Stały zestaw nazw gatunków AniList (do filtrowania afinności pod discover po gatunku).
+export const ANILIST_GENRES = new Set([
+  "Action",
+  "Adventure",
+  "Comedy",
+  "Drama",
+  "Ecchi",
+  "Fantasy",
+  "Horror",
+  "Mahou Shoujo",
+  "Mecha",
+  "Music",
+  "Mystery",
+  "Psychological",
+  "Romance",
+  "Sci-Fi",
+  "Slice of Life",
+  "Sports",
+  "Supernatural",
+  "Thriller",
+]);
 
 interface AniListMedia {
   id: number;
   title: { romaji?: string | null; english?: string | null };
   startDate?: { year?: number | null };
   coverImage?: { large?: string | null };
+  genres?: string[];
   studios?: { nodes?: { name?: string }[] };
   staff?: { nodes?: { name?: { full?: string | null } }[] };
 }
@@ -56,6 +80,7 @@ function toMedia(m: AniListMedia): ExternalMedia {
     title: byline ? `${title} — ${byline}` : title,
     year: m.startDate?.year ?? null,
     posterUrl: m.coverImage?.large ?? null,
+    genres: m.genres ?? [],
   };
 }
 
@@ -76,26 +101,34 @@ export async function searchAniList(
     .map(toMedia);
 }
 
-/**
- * „Odkrywanie" mangi/anime: najpopularniejsze serie z danego okna lat (bez zapisu).
- * Źródło NOWYCH kandydatów pod gust. Błąd/niedostępność → [] (nie blokuje discovery).
- */
-export async function discoverAniList(
-  type: AniType,
-  yearFrom: number,
-  yearTo: number,
+/** Wspólny bieg discovery: zapytanie Page.media → lista serii; błąd → [] (nie blokuje). */
+async function pageMedia(
+  query: string,
+  vars: Record<string, unknown>,
 ): Promise<ExternalMedia[]> {
   try {
-    const data = await gql<{ Page: { media: AniListMedia[] } }>(
-      `query ($from: FuzzyDateInt, $to: FuzzyDateInt) { Page(perPage: 18) { media(type: ${type}, isAdult: false, sort: POPULARITY_DESC, startDate_greater: $from, startDate_lesser: $to) { ${MEDIA_FIELDS} } } }`,
-      { from: yearFrom * 10000, to: (yearTo + 1) * 10000 }, // FuzzyDateInt = YYYYMMDD
-    );
+    const data = await gql<{ Page: { media: AniListMedia[] } }>(query, vars);
     return (data.Page.media ?? [])
       .filter((m) => m.id && (m.title.english || m.title.romaji))
       .map(toMedia);
   } catch {
     return [];
   }
+}
+
+/**
+ * „Odkrywanie" mangi/anime: najpopularniejsze serie z danego okna lat (bez zapisu).
+ * Źródło NOWYCH kandydatów pod gust. Błąd/niedostępność → [] (nie blokuje discovery).
+ */
+export function discoverAniList(
+  type: AniType,
+  yearFrom: number,
+  yearTo: number,
+): Promise<ExternalMedia[]> {
+  return pageMedia(
+    `query ($from: FuzzyDateInt, $to: FuzzyDateInt) { Page(perPage: 18) { media(type: ${type}, isAdult: false, sort: POPULARITY_DESC, startDate_greater: $from, startDate_lesser: $to) { ${MEDIA_FIELDS} } } }`,
+    { from: yearFrom * 10000, to: (yearTo + 1) * 10000 }, // FuzzyDateInt = YYYYMMDD
+  );
 }
 
 /**
@@ -125,6 +158,19 @@ export async function similarAniList(
   } catch {
     return [];
   }
+}
+
+/** „Odkrywanie" mangi/anime danego GATUNKU w oknie lat — „lubisz sci-fi → oto sci-fi". */
+export function discoverAniListByGenre(
+  type: AniType,
+  genre: string,
+  yearFrom: number,
+  yearTo: number,
+): Promise<ExternalMedia[]> {
+  return pageMedia(
+    `query ($genre: String, $from: FuzzyDateInt, $to: FuzzyDateInt) { Page(perPage: 18) { media(type: ${type}, isAdult: false, sort: POPULARITY_DESC, genre: $genre, startDate_greater: $from, startDate_lesser: $to) { ${MEDIA_FIELDS} } } }`,
+    { genre, from: yearFrom * 10000, to: (yearTo + 1) * 10000 },
+  );
 }
 
 /** Dodaje mangę/anime z AniList do katalogu (upsert po externalId = AniList id). */

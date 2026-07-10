@@ -60,6 +60,7 @@ model Media {
   externalId String? // np. ID z TMDB — żeby nie dublować tego samego tytułu
   year       Int?
   posterUrl  String?
+  genres     String[] @default([]) // gatunki (np. Sci-Fi, Horror) — do afinności gustu
   createdAt  DateTime  @default(now())
 
   reviews   Review[]

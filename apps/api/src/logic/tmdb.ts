@@ -23,9 +23,38 @@ interface TmdbMovie {
   title: string;
   release_date?: string;
   poster_path?: string | null;
-  genre_ids?: number[];
+  genre_ids?: number[]; // wyszukiwanie/discover
+  genres?: { id: number; name: string }[]; // szczegóły filmu
   original_language?: string;
 }
+
+// Stała lista gatunków filmowych TMDB (id → kanoniczna nazwa EN). Trzymamy nazwy EN,
+// niezależnie od języka odpowiedzi, żeby afinność i discover po gatunku były spójne.
+export const TMDB_GENRES: Record<number, string> = {
+  28: "Action",
+  12: "Adventure",
+  16: "Animation",
+  35: "Comedy",
+  80: "Crime",
+  99: "Documentary",
+  18: "Drama",
+  10751: "Family",
+  14: "Fantasy",
+  36: "History",
+  27: "Horror",
+  10402: "Music",
+  9648: "Mystery",
+  10749: "Romance",
+  878: "Sci-Fi",
+  10770: "TV Movie",
+  53: "Thriller",
+  10752: "War",
+  37: "Western",
+};
+// Odwrotnie: nazwa EN → id (do zapytań discover po gatunku).
+export const TMDB_GENRE_IDS: Record<string, number> = Object.fromEntries(
+  Object.entries(TMDB_GENRES).map(([id, name]) => [name, Number(id)]),
+);
 
 // Anime = animacja (gatunek TMDB 16) w języku japońskim → należy do zakładki Anime.
 const ANIMATION_GENRE = 16;
@@ -36,11 +65,13 @@ function isAnime(m: TmdbMovie): boolean {
 }
 
 function toFilm(m: TmdbMovie): ExternalMedia {
+  const ids = m.genres?.map((g) => g.id) ?? m.genre_ids ?? [];
   return {
     externalId: String(m.id),
     title: m.title,
     year: m.release_date ? Number(m.release_date.slice(0, 4)) : null,
     posterUrl: m.poster_path ? `${IMG}${m.poster_path}` : null,
+    genres: ids.map((id) => TMDB_GENRES[id]).filter(Boolean),
   };
 }
 
@@ -86,6 +117,21 @@ export function discoverTmdb(yearFrom: number, yearTo: number): Promise<External
     () =>
       `${TMDB}/discover/movie?api_key=${apiKey()}&language=pl-PL` +
       `&include_adult=false&sort_by=popularity.desc&vote_count.gte=100` +
+      `&primary_release_date.gte=${yearFrom}-01-01&primary_release_date.lte=${yearTo}-12-31`,
+  );
+}
+
+/** „Odkrywanie" filmów danego GATUNKU (id TMDB) w oknie lat — „lubisz sci-fi → oto sci-fi". */
+export function discoverTmdbByGenre(
+  genreId: number,
+  yearFrom: number,
+  yearTo: number,
+): Promise<ExternalMedia[]> {
+  return discoverMovies(
+    () =>
+      `${TMDB}/discover/movie?api_key=${apiKey()}&language=pl-PL` +
+      `&include_adult=false&sort_by=popularity.desc&vote_count.gte=100` +
+      `&with_genres=${genreId}` +
       `&primary_release_date.gte=${yearFrom}-01-01&primary_release_date.lte=${yearTo}-12-31`,
   );
 }

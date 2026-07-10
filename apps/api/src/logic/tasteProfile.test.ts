@@ -15,11 +15,26 @@ import {
 } from "./tasteProfile.js";
 
 // Użytkownik, który wysoko ocenia ANIME i tytuły z lat 2010, a nisko FILM.
+// Wysoko oceniane tytuły mają gatunek "Sci-Fi" → powinien mieć dodatnią afinność.
 const reviews: TasteReview[] = [
-  { mediaId: 1, rating: 9, favorite: true, type: "ANIME", year: 2013 },
-  { mediaId: 2, rating: 10, favorite: false, type: "ANIME", year: 2016 },
-  { mediaId: 3, rating: 4, favorite: false, type: "FILM", year: 1998 },
-  { mediaId: 4, rating: 5, favorite: false, type: "FILM", year: 1995 },
+  {
+    mediaId: 1,
+    rating: 9,
+    favorite: true,
+    type: "ANIME",
+    year: 2013,
+    genres: ["Sci-Fi"],
+  },
+  {
+    mediaId: 2,
+    rating: 10,
+    favorite: false,
+    type: "ANIME",
+    year: 2016,
+    genres: ["Sci-Fi"],
+  },
+  { mediaId: 3, rating: 4, favorite: false, type: "FILM", year: 1998, genres: ["Drama"] },
+  { mediaId: 4, rating: 5, favorite: false, type: "FILM", year: 1995, genres: ["Drama"] },
 ];
 
 test("decadeOf mapuje rok na dekadę i toleruje brak roku", () => {
@@ -42,6 +57,15 @@ test("pusty profil dla użytkownika bez ocen", () => {
   const p = computeTasteProfile([]);
   assert.equal(p.reviewCount, 0);
   assert.equal(p.types.length, 0);
+  assert.equal(p.genres.length, 0);
+});
+
+test("afinność gatunkowa: Sci-Fi (wysokie oceny) nad Drama (niskie)", () => {
+  const p = computeTasteProfile(reviews);
+  assert.equal(p.genres[0].key, "Sci-Fi");
+  assert.ok(p.genres[0].delta > 0);
+  const drama = p.genres.find((g) => g.key === "Drama");
+  assert.ok(drama && drama.delta < 0);
 });
 
 test("poleca kandydata pasującego do gustu wyżej niż niepasującego", () => {

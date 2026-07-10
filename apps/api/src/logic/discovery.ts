@@ -14,7 +14,12 @@
  */
 import { prisma } from "../db.js";
 import { NotFoundError } from "../errors.js";
-import { discoverAniList, similarAniList } from "./anilist.js";
+import {
+  ANILIST_GENRES,
+  discoverAniList,
+  discoverAniListByGenre,
+  similarAniList,
+} from "./anilist.js";
 import { discoverRawg, similarRawg } from "./games.js";
 import type { ExternalMedia } from "./media.js";
 import {
@@ -24,7 +29,12 @@ import {
   type RecReason,
   type TasteProfile,
 } from "./tasteProfile.js";
-import { discoverTmdb, similarTmdb } from "./tmdb.js";
+import {
+  discoverTmdb,
+  discoverTmdbByGenre,
+  similarTmdb,
+  TMDB_GENRE_IDS,
+} from "./tmdb.js";
 
 /** Ile rodzajów mediów (najbardziej lubianych) odkrywamy przez popularność. */
 export const MAX_DISCOVER_TYPES = 3;
@@ -36,30 +46,40 @@ export const LIKE_THRESHOLD = 7;
 export const MAX_SEEDS = 8;
 /** Ile pozycji zwraca discovery na stronę główną (więcej „pod Twój gust"). */
 export const DEFAULT_DISCOVER_LIMIT = 24;
+/** Ile ulubionych gatunków odkrywamy (na źródło). */
+export const MAX_GENRES = 2;
 
-/** Enum typu (baza) → źródło front + funkcje „discover” i „similar”. */
-const DISCOVERABLE: Record<
-  string,
-  {
-    key: string;
-    discover: (from: number, to: number) => Promise<ExternalMedia[]>;
-    similar: (externalId: string) => Promise<ExternalMedia[]>;
-  }
-> = {
+interface Source {
+  key: string;
+  discover: (from: number, to: number) => Promise<ExternalMedia[]>;
+  similar: (externalId: string) => Promise<ExternalMedia[]>;
+  // Odkrywanie po gatunku — tylko źródła, które to wspierają (TMDB, AniList).
+  discoverByGenre?: (genre: string, from: number, to: number) => Promise<ExternalMedia[]>;
+  recognizesGenre?: (genre: string) => boolean; // które nazwy gatunków źródło zna
+}
+
+/** Enum typu (baza) → źródło front + funkcje „discover” / „similar” / „po gatunku”. */
+const DISCOVERABLE: Record<string, Source> = {
   FILM: {
     key: "film",
     discover: (f, t) => discoverTmdb(f, t),
     similar: (id) => similarTmdb(id),
+    discoverByGenre: (g, f, t) => discoverTmdbByGenre(TMDB_GENRE_IDS[g], f, t),
+    recognizesGenre: (g) => g in TMDB_GENRE_IDS,
   },
   ANIME: {
     key: "anime",
     discover: (f, t) => discoverAniList("ANIME", f, t),
     similar: (id) => similarAniList("ANIME", id),
+    discoverByGenre: (g, f, t) => discoverAniListByGenre("ANIME", g, f, t),
+    recognizesGenre: (g) => ANILIST_GENRES.has(g),
   },
   MANGA: {
     key: "manga",
     discover: (f, t) => discoverAniList("MANGA", f, t),
     similar: (id) => similarAniList("MANGA", id),
+    discoverByGenre: (g, f, t) => discoverAniListByGenre("MANGA", g, f, t),
+    recognizesGenre: (g) => ANILIST_GENRES.has(g),
   },
   GRA: {
     key: "game",
@@ -67,6 +87,18 @@ const DISCOVERABLE: Record<
     similar: (id) => similarRawg(id),
   },
 };
+
+/** Ulubione gatunki użytkownika rozpoznawane przez dane źródło (delta>0, poparcie ≥2). */
+export function pickTopGenres(
+  profile: TasteProfile,
+  recognizes: (g: string) => boolean,
+  n: number = MAX_GENRES,
+): string[] {
+  return profile.genres
+    .filter((a) => a.delta > 0 && a.count >= 2 && recognizes(a.key))
+    .slice(0, n)
+    .map((a) => a.key);
+}
 
 export interface DiscoverItem extends ExternalMedia {
   type: string; // klucz źródła na froncie (film / anime / manga / game)
@@ -153,6 +185,7 @@ export const POOL_TTL_MS = 10 * 60 * 1000; // 10 minut
 interface PoolCache {
   at: number;
   similarRaw: DiscoverItem[][];
+  genreRaw: DiscoverItem[][];
   popularRaw: DiscoverItem[][];
 }
 const poolCache = new Map<number, PoolCache>();
@@ -176,7 +209,9 @@ export async function tasteDiscovery(
       mediaId: true,
       rating: true,
       favorite: true,
-      media: { select: { type: true, year: true, externalId: true, title: true } },
+      media: {
+        select: { type: true, year: true, externalId: true, title: true, genres: true },
+      },
     },
   });
   if (reviews.length < MIN_TASTE_REVIEWS) return [];
@@ -188,6 +223,7 @@ export async function tasteDiscovery(
       favorite: r.favorite,
       type: r.media.type,
       year: r.media.year,
+      genres: r.media.genres,
     })),
   );
   const scorer = makeTasteScorer(profile);
@@ -222,17 +258,29 @@ export async function tasteDiscovery(
   const types = pickDiscoverTypes(profile);
   const { from, to } = pickYearWindow(profile, new Date().getFullYear());
 
+  // Zadania „po gatunku": dla każdego odkrywalnego rodzaju bierzemy jego ulubione,
+  // rozpoznawane gatunki i pytamy źródło (TMDB with_genres / AniList genre).
+  const genreTasks = types.flatMap((enumType) => {
+    const src = DISCOVERABLE[enumType];
+    if (!src.discoverByGenre || !src.recognizesGenre) return [];
+    return pickTopGenres(profile, src.recognizesGenre).map(async (genre) => {
+      const found = await src.discoverByGenre!(genre, from, to);
+      return found.map((m) => toItem(m, enumType, { kind: "genre", genre }));
+    });
+  });
+
   // Pula kandydatów z cache: drogie zapytania do API najwyżej raz na POOL_TTL_MS.
   // Tasowanie i wybór 24 robimy PONIŻEJ świeżo, więc rotacja przy każdym wejściu zostaje.
   let pools = poolCache.get(userId);
   if (!pools || Date.now() - pools.at > POOL_TTL_MS) {
-    const [similarRaw, popularRaw] = await Promise.all([
+    const [similarRaw, genreRaw, popularRaw] = await Promise.all([
       Promise.all(
         seeds.map(async (s) => {
           const found = await DISCOVERABLE[s.type].similar(s.externalId);
           return found.map((m) => toItem(m, s.type, { kind: "similar", to: s.title }));
         }),
       ),
+      Promise.all(genreTasks),
       Promise.all(
         types.map(async (enumType) => {
           const found = await DISCOVERABLE[enumType].discover(from, to);
@@ -245,16 +293,17 @@ export async function tasteDiscovery(
         }),
       ),
     ]);
-    pools = { at: Date.now(), similarRaw, popularRaw };
+    pools = { at: Date.now(), similarRaw, genreRaw, popularRaw };
     poolCache.set(userId, pools);
   }
-  const { similarRaw, popularRaw } = pools;
+  const { similarRaw, genreRaw, popularRaw } = pools;
 
-  // Rotacja: tasujemy pulę każdego ziarna/rodzaju ORAZ ich kolejność, więc każde
-  // wejście daje inny zestaw (wciąż „podobne do" ulubionych — jakość zachowana).
+  // Rotacja: tasujemy pulę każdego ziarna/gatunku/rodzaju ORAZ ich kolejność, więc
+  // każde wejście daje inny zestaw (wciąż dobrany pod gust — jakość zachowana).
   const similar = dedupeByKey(interleave(shuffle(similarRaw.map(shuffle))).filter(fresh));
+  const genre = dedupeByKey(interleave(shuffle(genreRaw.map(shuffle))).filter(fresh));
   const popular = dedupeByKey(interleave(shuffle(popularRaw.map(shuffle))).filter(fresh));
 
-  // Podobne najpierw, popularne dopełniają; dedupe usuwa powtórki między strumieniami.
-  return dedupeByKey([...similar, ...popular]).slice(0, limit);
+  // Kolejność: podobne (najbardziej osobiste) → po gatunku → popularne (dopełnienie).
+  return dedupeByKey([...similar, ...genre, ...popular]).slice(0, limit);
 }

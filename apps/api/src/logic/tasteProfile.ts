@@ -25,6 +25,7 @@ export interface TasteReview {
   favorite: boolean;
   type: string;
   year: number | null;
+  genres: string[];
 }
 
 /** Afinność do jednej grupy (typ mediów albo dekada). */
@@ -40,6 +41,7 @@ export interface TasteProfile {
   reviewCount: number;
   types: Affinity[]; // afinność wg typu mediów, malejąco po delcie
   decades: Affinity[]; // afinność wg dekady premiery, malejąco po delcie
+  genres: Affinity[]; // afinność wg gatunku, malejąco po delcie
 }
 
 /** Dekada premiery jako klucz, np. 1995 → "1990". Null gdy brak roku. */
@@ -52,19 +54,20 @@ function mean(nums: number[]): number {
   return nums.reduce((s, n) => s + n, 0) / nums.length;
 }
 
-/** Grupuje oceny po kluczu i liczy afinność (avg, count, delta vs baseline). */
+/** Grupuje oceny po kluczach i liczy afinność (avg, count, delta vs baseline).
+ *  keysOf zwraca 0..N kluczy (dekada = 0/1, gatunki = wiele). */
 function affinities(
   reviews: TasteReview[],
-  keyOf: (r: TasteReview) => string | null,
+  keysOf: (r: TasteReview) => string[],
   baseline: number,
 ): Affinity[] {
   const groups = new Map<string, number[]>();
   for (const r of reviews) {
-    const key = keyOf(r);
-    if (key === null) continue;
-    const bucket = groups.get(key) ?? [];
-    bucket.push(r.rating);
-    groups.set(key, bucket);
+    for (const key of keysOf(r)) {
+      const bucket = groups.get(key) ?? [];
+      bucket.push(r.rating);
+      groups.set(key, bucket);
+    }
   }
 
   const out: Affinity[] = [];
@@ -84,14 +87,19 @@ function affinities(
 /** Czysty profil gustu — z tablicy ocen, bez bazy. */
 export function computeTasteProfile(reviews: TasteReview[]): TasteProfile {
   if (reviews.length === 0) {
-    return { baseline: 0, reviewCount: 0, types: [], decades: [] };
+    return { baseline: 0, reviewCount: 0, types: [], decades: [], genres: [] };
   }
   const baseline = Math.round(mean(reviews.map((r) => r.rating)) * 10) / 10;
+  const decade = (r: TasteReview) => {
+    const d = decadeOf(r.year);
+    return d ? [d] : [];
+  };
   return {
     baseline,
     reviewCount: reviews.length,
-    types: affinities(reviews, (r) => r.type, baseline),
-    decades: affinities(reviews, (r) => decadeOf(r.year), baseline),
+    types: affinities(reviews, (r) => [r.type], baseline),
+    decades: affinities(reviews, decade, baseline),
+    genres: affinities(reviews, (r) => r.genres, baseline),
   };
 }
 
@@ -99,6 +107,7 @@ export function computeTasteProfile(reviews: TasteReview[]): TasteProfile {
 export type RecReason =
   | { kind: "type" } // pasuje do ulubionego rodzaju mediów
   | { kind: "decade"; decade: string } // pasuje do ulubionej dekady
+  | { kind: "genre"; genre: string } // pasuje do ulubionego gatunku
   | { kind: "similar"; to: string } // podobne (gatunek/treść) do tytułu, który oceniłeś
   | { kind: "general" }; // ogólnie w Twoim guście
 

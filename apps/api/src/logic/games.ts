@@ -22,6 +22,7 @@ interface RawgGame {
   name: string;
   released?: string | null;
   background_image?: string | null;
+  genres?: { name: string }[];
 }
 
 function toGame(g: RawgGame): ExternalMedia {
@@ -30,6 +31,7 @@ function toGame(g: RawgGame): ExternalMedia {
     title: g.name,
     year: g.released ? Number(g.released.slice(0, 4)) || null : null,
     posterUrl: g.background_image ?? null,
+    genres: g.genres?.map((x) => x.name).filter(Boolean) ?? [],
   };
 }
 

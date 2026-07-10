@@ -33,6 +33,7 @@ function toAlbum(a: ItunesAlbum): ExternalMedia {
     title: artist ? `${title} — ${artist}` : title,
     year: a.releaseDate ? Number(a.releaseDate.slice(0, 4)) || null : null,
     posterUrl: bigArt(a.artworkUrl100),
+    genres: a.primaryGenreName ? [a.primaryGenreName] : [],
   };
 }
 
