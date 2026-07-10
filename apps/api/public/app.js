@@ -63,6 +63,7 @@ const I18N = {
     catGame: "gry",
     yourCatalog: "Twój katalog",
     yourCatalogHint: "Tytuły, które oceniłeś.",
+    allGenres: "Wszystkie",
     recBy: "poleca {n} os.",
     noRecs: "Brak — oceń kilka tytułów, a coś dobierzemy.",
     yourRating: "Twoja ocena",
@@ -171,6 +172,7 @@ const I18N = {
     catGame: "games",
     yourCatalog: "Your catalog",
     yourCatalogHint: "Titles you've rated.",
+    allGenres: "All",
     recBy: "recommended by {n}",
     noRecs: "Nothing yet — rate a few titles and we'll find some.",
     yourRating: "Your rating",
@@ -446,13 +448,54 @@ function renderGrid(container, list, onClick) {
   }
 }
 
+let catalogItems = []; // Twoje ocenione tytuły (z gatunkami)
+let catalogGenre = null; // wybrany gatunek do filtrowania (null = wszystkie)
+
 async function loadCatalog() {
   allMedia = await api("/media"); // pełna lista — potrzebna tylko do znajdowania mediaId
   // Katalog pokazuje WYŁĄCZNIE Twoje ocenione tytuły (nie cudze).
-  const mine = myProfile.reviews.map((r) => ({ ...r.media, myRating: r.rating }));
-  renderGrid($("catalog"), mine, (m) =>
+  catalogItems = myProfile.reviews.map((r) => ({ ...r.media, myRating: r.rating }));
+  if (
+    catalogGenre &&
+    !catalogItems.some((m) => (m.genres ?? []).includes(catalogGenre))
+  ) {
+    catalogGenre = null; // wybrany gatunek zniknął z katalogu → wróć do „Wszystkie"
+  }
+  renderCatalogFilter();
+  renderCatalog();
+}
+
+// Filtruje katalog po wybranym gatunku i rysuje siatkę.
+function renderCatalog() {
+  const items = catalogGenre
+    ? catalogItems.filter((m) => (m.genres ?? []).includes(catalogGenre))
+    : catalogItems;
+  renderGrid($("catalog"), items, (m) =>
     openDetail(toDetail(m, m.type, m.id, m.myRating)),
   );
+}
+
+// Chipy gatunków nad katalogiem (tylko gdy są min. 2 różne gatunki).
+function renderCatalogFilter() {
+  const box = $("catalogGenres");
+  box.innerHTML = "";
+  const genres = [...new Set(catalogItems.flatMap((m) => m.genres ?? []))].sort();
+  if (genres.length < 2) return;
+
+  const chip = (label, value) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "genre-chip filter" + (catalogGenre === value ? " active" : "");
+    b.textContent = label;
+    b.addEventListener("click", () => {
+      catalogGenre = catalogGenre === value ? null : value;
+      renderCatalogFilter();
+      renderCatalog();
+    });
+    return b;
+  };
+  box.append(chip(t("allGenres"), null));
+  for (const g of genres) box.append(chip(g, g));
 }
 
 // Wyniki wyszukiwania vs przeglądanie (rekomendacje/profil/katalog).
