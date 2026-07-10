@@ -98,6 +98,8 @@ const I18N = {
     top4: "Top 4 ulubione",
     top4Empty: "Przypnij ulubione przyciskiem „TOP 4” na stronie tytułu.",
     top4EmptyRO: "Brak ulubionych.",
+    myComments: "Moje komentarze",
+    myCommentsEmpty: "Nie dodałeś jeszcze żadnego komentarza do ocen.",
     watchlistTitle: "Do obejrzenia / zagrania",
     watchEmpty: "Pusto — dodaj coś przyciskiem „Do listy”.",
     watchEmptyRO: "Pusto.",
@@ -217,6 +219,8 @@ const I18N = {
     top4: "Top 4 favorites",
     top4Empty: "Pin favorites with the “TOP 4” button on a title page.",
     top4EmptyRO: "No favorites.",
+    myComments: "My comments",
+    myCommentsEmpty: "You haven't added any comments to your ratings yet.",
     watchlistTitle: "To watch / play",
     watchEmpty: "Empty — add something with the “To list” button.",
     watchEmptyRO: "Empty.",
@@ -1028,6 +1032,59 @@ function renderProfileData(data, readOnly) {
 
   // Prawa strona: ocenione pogrupowane po kategoriach.
   renderRatedByCat(data.reviews, readOnly);
+
+  // Moje komentarze (recenzje z tekstem) — lewy dół, tylko własny profil.
+  $("myCommentsWrap").classList.toggle("hidden", readOnly);
+  if (!readOnly) renderMyComments(data.reviews);
+}
+
+// Lista Twoich recenzji z komentarzem: plakat + tytuł + ocena + tekst.
+function renderMyComments(reviews) {
+  const box = $("myComments");
+  box.innerHTML = "";
+  const withText = reviews.filter((r) => r.media && (r.text || "").trim());
+  if (withText.length === 0) {
+    box.innerHTML = `<p class="muted">${t("myCommentsEmpty")}</p>`;
+    return;
+  }
+  for (const r of withText) {
+    const item = document.createElement("article");
+    item.className = "comment-item";
+
+    const poster = document.createElement("div");
+    poster.className = "comment-poster";
+    if (r.media.posterUrl) {
+      const img = document.createElement("img");
+      img.src = r.media.posterUrl;
+      img.alt = r.media.title;
+      img.loading = "lazy";
+      poster.append(img);
+    } else {
+      poster.textContent = r.media.title[0] || "?";
+    }
+
+    const body = document.createElement("div");
+    body.className = "comment-body";
+    const head = document.createElement("div");
+    head.className = "comment-head";
+    const title = document.createElement("span");
+    title.className = "comment-title";
+    title.textContent = r.media.title;
+    const rating = document.createElement("span");
+    rating.className = "comment-rating";
+    rating.textContent = `★ ${r.rating}`;
+    head.append(title, rating);
+    const text = document.createElement("p");
+    text.className = "comment-text";
+    text.textContent = r.text;
+    body.append(head, text);
+
+    item.append(poster, body);
+    item.addEventListener("click", () =>
+      openDetail(toDetail(r.media, r.media.type, r.media.id, r.rating)),
+    );
+    box.append(item);
+  }
 }
 
 async function loadProfile() {

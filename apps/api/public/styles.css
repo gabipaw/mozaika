@@ -791,6 +791,80 @@ h2 {
   color: var(--text);
 }
 
+/* --- Moje komentarze --- */
+.my-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comment-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.comment-item:hover {
+  border-color: var(--muted);
+}
+
+.comment-poster {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 62px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.comment-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.comment-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.comment-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.comment-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comment-rating {
+  flex: 0 0 auto;
+  color: var(--gold);
+  font-size: 0.85rem;
+}
+
+.comment-text {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .feed-head h2 {
   font-size: 1.05rem;
 }
