@@ -22,6 +22,7 @@ import { addMusicFromItunes, searchMusic } from "./logic/music.js";
 import { addReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
+import { tasteRecommendations } from "./logic/tasteProfile.js";
 import { addMediaFromTmdb, searchTmdb } from "./logic/tmdb.js";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "mozaika-dev-secret-ustaw-JWT_SECRET";
@@ -122,6 +123,11 @@ api.get("/me", requireAuth, async (c) => {
 
 api.get("/me/recommendations", requireAuth, async (c) => {
   return c.json(await recommendations(c.get("userId")));
+});
+
+// Rekomendacje treściowe (content-based) — dobrane do gustu zalogowanego usera.
+api.get("/me/taste-recommendations", requireAuth, async (c) => {
+  return c.json(await tasteRecommendations(c.get("userId")));
 });
 
 // Ustaw zdjęcie profilowe (data:image, skompresowane po stronie klienta).

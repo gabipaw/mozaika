@@ -49,6 +49,12 @@ const I18N = {
     nothingFound: "Nic nie znaleziono.",
     forYou: "Dla Ciebie",
     forYouHint: "Polecane przez osoby o podobnym guście.",
+    tasteRecs: "Pod Twój gust",
+    tasteRecsHint: "Dobrane do tego, co oceniasz wysoko.",
+    noTasteRecs: "Oceń kilka tytułów, a dobierzemy coś pod Twój gust.",
+    reasonType: "Bo lubisz ten rodzaj",
+    reasonDecade: "Bo lubisz lata {decade}.",
+    reasonGeneral: "W Twoim guście",
     yourCatalog: "Twój katalog",
     yourCatalogHint: "Tytuły, które oceniłeś.",
     recBy: "poleca {n} os.",
@@ -145,6 +151,12 @@ const I18N = {
     nothingFound: "Nothing found.",
     forYou: "For you",
     forYouHint: "Recommended by people with similar taste.",
+    tasteRecs: "For your taste",
+    tasteRecsHint: "Matched to what you rate highly.",
+    noTasteRecs: "Rate a few titles and we'll match your taste.",
+    reasonType: "Because you like this kind",
+    reasonDecade: "Because you like the {decade}s",
+    reasonGeneral: "In your taste",
     yourCatalog: "Your catalog",
     yourCatalogHint: "Titles you've rated.",
     recBy: "recommended by {n}",
@@ -278,6 +290,7 @@ function refreshDynamic() {
   } else if (!$("detailView").classList.contains("hidden")) {
     updateDetailButtons();
   } else if (me) {
+    loadTasteRecommendations();
     loadRecommendations();
     loadCatalog();
   }
@@ -501,6 +514,38 @@ async function loadRecommendations() {
       const { card } = posterCard(r, {
         score: r.score,
         recby: t("recBy", { n: r.recommenders.length }),
+      });
+      card.addEventListener("click", () => openDetail(toDetail(r, r.type, r.id)));
+      row.append(card);
+    }
+  } catch (e) {
+    row.innerHTML = `<p class="muted">${e.message}</p>`;
+  }
+}
+
+// Zamienia powód rekomendacji z API na czytelny tekst (z tłumaczeniem).
+function tasteReasonLabel(reason) {
+  if (!reason) return "";
+  if (reason.kind === "type") return t("reasonType");
+  if (reason.kind === "decade") return t("reasonDecade", { decade: reason.decade });
+  return t("reasonGeneral");
+}
+
+// Rekomendacje treściowe — dobrane do gustu zalogowanego użytkownika.
+async function loadTasteRecommendations() {
+  const row = $("tasteRecs");
+  row.innerHTML = `<p class="muted">${t("loading")}</p>`;
+  try {
+    const recs = await api("/me/taste-recommendations");
+    if (recs.length === 0) {
+      row.innerHTML = `<p class="muted">${t("noTasteRecs")}</p>`;
+      return;
+    }
+    row.innerHTML = "";
+    for (const r of recs) {
+      const { card } = posterCard(r, {
+        score: r.score,
+        recby: tasteReasonLabel(r.reason),
       });
       card.addEventListener("click", () => openDetail(toDetail(r, r.type, r.id)));
       row.append(card);
@@ -1245,7 +1290,7 @@ async function saveDetail() {
     });
     toast(t("saved"));
     await loadMe();
-    await Promise.all([loadRecommendations(), loadCatalog()]);
+    await Promise.all([loadTasteRecommendations(), loadRecommendations(), loadCatalog()]);
     updateDetailButtons();
     loadDetailReviews(mediaId);
   } catch (e) {
@@ -1330,7 +1375,7 @@ async function showApp() {
   $("browse").classList.remove("hidden");
   $("hello").textContent = `Cześć, ${me.displayName}`;
   await loadMe(); // katalog i profil czytają myProfile — najpierw je pobierz
-  await Promise.all([loadRecommendations(), loadCatalog()]);
+  await Promise.all([loadTasteRecommendations(), loadRecommendations(), loadCatalog()]);
 }
 
 function logout() {
