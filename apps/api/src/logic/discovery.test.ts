@@ -4,7 +4,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { interleave, pickDiscoverTypes, pickYearWindow } from "./discovery.js";
+import {
+  dedupeByKey,
+  interleave,
+  pickDiscoverTypes,
+  pickSeeds,
+  pickYearWindow,
+  type DiscoverItem,
+  type RatedSeed,
+} from "./discovery.js";
 import { computeTasteProfile, type TasteReview } from "./tasteProfile.js";
 
 const reviews: TasteReview[] = [
@@ -57,4 +65,53 @@ test("interleave przeplata listy round-robin", () => {
     [1, 2, 3, 4, 5],
   );
   assert.deepEqual(interleave([[], ["a"]]), ["a"]);
+});
+
+test("pickSeeds: ulubione i najwyżej ocenione wpierw, tylko odkrywalne i ≥ progu", () => {
+  const rated: RatedSeed[] = [
+    { type: "FILM", externalId: "1", title: "A", rating: 8, favorite: false },
+    { type: "ANIME", externalId: "2", title: "B", rating: 7.5, favorite: true },
+    { type: "MUZYKA", externalId: "3", title: "C", rating: 10, favorite: false }, // brak discover
+    { type: "GRA", externalId: "4", title: "D", rating: 5, favorite: false }, // < próg
+  ];
+  const seeds = pickSeeds(rated);
+  assert.deepEqual(
+    seeds.map((s) => s.title),
+    ["B", "A"], // MUZYKA i za niska ocena odpadają; ulubione (B) przed A
+  );
+});
+
+test("dedupeByKey usuwa powtórki po (rodzaj + externalId), pierwszy wygrywa", () => {
+  const items: DiscoverItem[] = [
+    {
+      externalId: "9",
+      title: "X",
+      year: 2020,
+      posterUrl: null,
+      type: "film",
+      score: 8,
+      reason: { kind: "similar", to: "Seed" },
+    },
+    {
+      externalId: "9",
+      title: "X",
+      year: 2020,
+      posterUrl: null,
+      type: "film",
+      score: 7,
+      reason: { kind: "decade", decade: "2020" },
+    },
+    {
+      externalId: "9",
+      title: "X",
+      year: 2020,
+      posterUrl: null,
+      type: "game",
+      score: 7,
+      reason: { kind: "general" },
+    },
+  ];
+  const out = dedupeByKey(items);
+  assert.equal(out.length, 2); // film:9 raz + game:9 raz
+  assert.equal(out[0].reason.kind, "similar"); // pierwszy (podobne) wygrywa
 });

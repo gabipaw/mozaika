@@ -99,6 +99,7 @@ export function computeTasteProfile(reviews: TasteReview[]): TasteProfile {
 export type RecReason =
   | { kind: "type" } // pasuje do ulubionego rodzaju mediów
   | { kind: "decade"; decade: string } // pasuje do ulubionej dekady
+  | { kind: "similar"; to: string } // podobne (gatunek/treść) do tytułu, który oceniłeś
   | { kind: "general" }; // ogólnie w Twoim guście
 
 export interface TasteCandidate {

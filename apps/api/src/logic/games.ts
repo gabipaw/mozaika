@@ -50,18 +50,12 @@ export async function searchGames(query: string): Promise<ExternalMedia[]> {
 }
 
 /**
- * „Odkrywanie" gier: najpopularniejsze (wg `added`) premiery z okna lat (bez zapisu).
- * Źródło NOWYCH kandydatów pod gust. Błąd/brak klucza → [] (nie blokuje discovery).
+ * Wspólny pobieracz list gier dla discovery: buduje URL (w try, więc brak klucza
+ * też daje []), pobiera i mapuje wyniki. Jedno źródło nie może wywalić discovery.
  */
-export async function discoverRawg(
-  yearFrom: number,
-  yearTo: number,
-): Promise<ExternalMedia[]> {
+async function discoverGames(buildUrl: () => string): Promise<ExternalMedia[]> {
   try {
-    const url =
-      `${RAWG}/games?key=${apiKey()}&page_size=18&ordering=-added` +
-      `&dates=${yearFrom}-01-01,${yearTo}-12-31`;
-    const res = await fetch(url);
+    const res = await fetch(buildUrl());
     if (!res.ok) return [];
     const data = (await res.json()) as { results?: RawgGame[] };
     return (data.results ?? [])
@@ -71,6 +65,24 @@ export async function discoverRawg(
   } catch {
     return [];
   }
+}
+
+/** „Odkrywanie" gier: najpopularniejsze (wg `added`) z okna lat (NOWE, bez zapisu). */
+export function discoverRawg(yearFrom: number, yearTo: number): Promise<ExternalMedia[]> {
+  return discoverGames(
+    () =>
+      `${RAWG}/games?key=${apiKey()}&page_size=18&ordering=-added` +
+      `&dates=${yearFrom}-01-01,${yearTo}-12-31`,
+  );
+}
+
+/** „Podobne gry" wg RAWG (suggested — dobiera po gatunku/treści). */
+export function similarRawg(externalId: string): Promise<ExternalMedia[]> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id)) return Promise.resolve([]);
+  return discoverGames(
+    () => `${RAWG}/games/${id}/suggested?key=${apiKey()}&page_size=18`,
+  );
 }
 
 /** Dodaje grę z RAWG do katalogu (upsert po externalId) i zwraca rekord Media. */

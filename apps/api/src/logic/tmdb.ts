@@ -63,20 +63,12 @@ export async function searchTmdb(query: string): Promise<ExternalMedia[]> {
 }
 
 /**
- * „Odkrywanie" filmów: najpopularniejsze premiery z danego okna lat (bez zapisu).
- * Źródło kandydatów do rekomendacji pod gust — NOWE tytuły, nie z katalogu.
- * Błąd/brak klucza → [] (discovery nie może się wywalić przez jedno źródło).
+ * Wspólny pobieracz list filmów dla discovery: buduje URL (w try, więc brak klucza
+ * też daje []), pobiera i mapuje wyniki. Jedno źródło nie może wywalić discovery.
  */
-export async function discoverTmdb(
-  yearFrom: number,
-  yearTo: number,
-): Promise<ExternalMedia[]> {
+async function discoverMovies(buildUrl: () => string): Promise<ExternalMedia[]> {
   try {
-    const url =
-      `${TMDB}/discover/movie?api_key=${apiKey()}&language=pl-PL` +
-      `&include_adult=false&sort_by=popularity.desc&vote_count.gte=100` +
-      `&primary_release_date.gte=${yearFrom}-01-01&primary_release_date.lte=${yearTo}-12-31`;
-    const res = await fetch(url);
+    const res = await fetch(buildUrl());
     if (!res.ok) return [];
     const data = (await res.json()) as { results?: TmdbMovie[] };
     return (data.results ?? [])
@@ -86,6 +78,25 @@ export async function discoverTmdb(
   } catch {
     return [];
   }
+}
+
+/** „Odkrywanie" filmów: najpopularniejsze premiery z okna lat (NOWE, bez zapisu). */
+export function discoverTmdb(yearFrom: number, yearTo: number): Promise<ExternalMedia[]> {
+  return discoverMovies(
+    () =>
+      `${TMDB}/discover/movie?api_key=${apiKey()}&language=pl-PL` +
+      `&include_adult=false&sort_by=popularity.desc&vote_count.gte=100` +
+      `&primary_release_date.gte=${yearFrom}-01-01&primary_release_date.lte=${yearTo}-12-31`,
+  );
+}
+
+/** „Podobne filmy" wg TMDB (recommendations — dobiera po gatunku/treści). */
+export function similarTmdb(externalId: string): Promise<ExternalMedia[]> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id)) return Promise.resolve([]);
+  return discoverMovies(
+    () => `${TMDB}/movie/${id}/recommendations?api_key=${apiKey()}&language=pl-PL`,
+  );
 }
 
 /** Dodaje film z TMDB do katalogu (upsert po externalId) i zwraca rekord Media. */

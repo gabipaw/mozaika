@@ -52,6 +52,7 @@ const I18N = {
     tasteRecs: "Pod Twój gust",
     tasteRecsHint: "Nowe tytuły spoza Twojego katalogu, dobrane do Twojego gustu.",
     noTasteRecs: "Oceń kilka tytułów, a odkryjemy coś nowego pod Twój gust.",
+    reasonSimilar: "Bo podobne do „{title}”",
     reasonType: "Bo lubisz ten rodzaj",
     reasonDecade: "Bo lubisz lata {decade}.",
     reasonGeneral: "W Twoim guście",
@@ -154,6 +155,7 @@ const I18N = {
     tasteRecs: "For your taste",
     tasteRecsHint: "Fresh titles beyond your catalog, matched to your taste.",
     noTasteRecs: "Rate a few titles and we'll discover something new for you.",
+    reasonSimilar: "Because it's like “{title}”",
     reasonType: "Because you like this kind",
     reasonDecade: "Because you like the {decade}s",
     reasonGeneral: "In your taste",
@@ -526,6 +528,7 @@ async function loadRecommendations() {
 // Zamienia powód rekomendacji z API na czytelny tekst (z tłumaczeniem).
 function tasteReasonLabel(reason) {
   if (!reason) return "";
+  if (reason.kind === "similar") return t("reasonSimilar", { title: reason.to });
   if (reason.kind === "type") return t("reasonType");
   if (reason.kind === "decade") return t("reasonDecade", { decade: reason.decade });
   return t("reasonGeneral");

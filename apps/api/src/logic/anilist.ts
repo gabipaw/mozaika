@@ -98,6 +98,35 @@ export async function discoverAniList(
   }
 }
 
+/**
+ * „Podobne serie" wg AniList (pole recommendations — dobiera po gatunku/treści).
+ * Zasila rekomendacje „bo podobne do tytułu, który oceniłeś". Błąd → [] (nie blokuje).
+ */
+export async function similarAniList(
+  type: AniType,
+  externalId: string,
+): Promise<ExternalMedia[]> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id)) return [];
+  try {
+    const data = await gql<{
+      Media: {
+        recommendations?: { nodes?: { mediaRecommendation?: AniListMedia | null }[] };
+      } | null;
+    }>(
+      `query ($id: Int) { Media(id: $id, type: ${type}) { recommendations(perPage: 18, sort: RATING_DESC) { nodes { mediaRecommendation { ${MEDIA_FIELDS} } } } } }`,
+      { id: Number(id) },
+    );
+    const nodes = data.Media?.recommendations?.nodes ?? [];
+    return nodes
+      .map((n) => n.mediaRecommendation)
+      .filter((m): m is AniListMedia => !!m?.id && !!(m.title.english || m.title.romaji))
+      .map(toMedia);
+  } catch {
+    return [];
+  }
+}
+
 /** Dodaje mangę/anime z AniList do katalogu (upsert po externalId = AniList id). */
 export async function addFromAniList(type: AniType, externalId: string) {
   const id = externalId.trim();
