@@ -1,16 +1,13 @@
 /**
- * „Portret gustu" i rekomendacje treściowe (content-based).
+ * „Portret gustu" — czysta logika (bez bazy).
  *
- * W odróżnieniu od rekomendacji przez podobnych użytkowników
- * (`recommendations.ts`), tutaj patrzymy na to, CO sam użytkownik ocenia wysoko:
- * jakie rodzaje mediów i z jakich dekad. Z tego budujemy „profil gustu",
- * a potem punktujemy nieocenione tytuły z katalogu tak, by pasowały do gustu.
+ * Patrzymy na to, CO użytkownik ocenia wysoko: jakie rodzaje mediów i z jakich
+ * dekad. Z tego budujemy „profil gustu" (afinność vs własna średnia), a osobny
+ * scorer punktuje kandydatów pod ten gust. Kandydaci pochodzą z zewnątrz
+ * (discovery.ts) — dzięki temu polecenia to NOWE tytuły, nie katalog innych osób.
  *
- * Sygnały (bez migracji bazy): typ mediów, dekada premiery, ocena, ulubione.
- * Czysta logika (compute*) jest oddzielona od bazy — łatwa do testów.
+ * Sygnały (bez migracji bazy): typ mediów, dekada premiery, ocena.
  */
-import { prisma } from "../db.js";
-import { NotFoundError } from "../errors.js";
 
 /** Ile ocen trzeba mieć, by profil gustu był wiarygodny. */
 export const MIN_TASTE_REVIEWS = 3;
@@ -110,10 +107,13 @@ export interface TasteCandidate {
   year: number | null;
 }
 
-export interface TasteRecommendation {
-  mediaId: number;
+export interface ScoredReason {
   score: number; // przewidywana ocena 0,5–10
   reason: RecReason;
+}
+
+export interface TasteRecommendation extends ScoredReason {
+  mediaId: number;
 }
 
 /** Wygładzony wkład afinności: mało próbek → wkład bliżej zera. */
@@ -124,8 +124,34 @@ function weightedDelta(a: Affinity | undefined): number {
 }
 
 /**
- * Czyste rekomendacje treściowe: dla każdego nieocenionego kandydata przewiduje
- * ocenę = baseline + wkład typu + wkład dekady, i sortuje malejąco.
+ * Buduje scorer dla danego profilu: przewiduje ocenę kandydata
+ * = baseline + wkład typu + wkład dekady i dobiera powód (najsilniejszy wkład).
+ * Jeden scorer, wiele kandydatów — używany i przez rekomendacje, i przez discovery.
+ */
+export function makeTasteScorer(
+  profile: TasteProfile,
+): (c: TasteCandidate) => ScoredReason {
+  const typeBy = new Map(profile.types.map((a) => [a.key, a]));
+  const decadeBy = new Map(profile.decades.map((a) => [a.key, a]));
+
+  return (c) => {
+    const typeW = weightedDelta(typeBy.get(c.type));
+    const decadeKey = decadeOf(c.year);
+    const decadeW = weightedDelta(decadeKey ? decadeBy.get(decadeKey) : undefined);
+
+    const raw = profile.baseline + typeW + decadeW;
+    const score = Math.round(Math.min(MAX_RATING, Math.max(MIN_RATING, raw)) * 10) / 10;
+
+    let reason: RecReason = { kind: "general" };
+    if (typeW > 0 && typeW >= decadeW) reason = { kind: "type" };
+    else if (decadeW > 0 && decadeKey) reason = { kind: "decade", decade: decadeKey };
+
+    return { score, reason };
+  };
+}
+
+/**
+ * Czyste rekomendacje: punktuje kandydatów pod gust i sortuje malejąco.
  * Zwraca [], gdy użytkownik ma za mało ocen na wiarygodny profil.
  */
 export function computeTasteRecommendations(
@@ -135,97 +161,12 @@ export function computeTasteRecommendations(
 ): TasteRecommendation[] {
   if (reviews.length < MIN_TASTE_REVIEWS) return [];
 
-  const profile = computeTasteProfile(reviews);
-  const typeBy = new Map(profile.types.map((a) => [a.key, a]));
-  const decadeBy = new Map(profile.decades.map((a) => [a.key, a]));
-
-  const recs: TasteRecommendation[] = candidates.map((c) => {
-    const typeAff = typeBy.get(c.type);
-    const decadeKey = decadeOf(c.year);
-    const decadeAff = decadeKey ? decadeBy.get(decadeKey) : undefined;
-
-    const typeW = weightedDelta(typeAff);
-    const decadeW = weightedDelta(decadeAff);
-    const raw = profile.baseline + typeW + decadeW;
-    const score = Math.round(Math.min(MAX_RATING, Math.max(MIN_RATING, raw)) * 10) / 10;
-
-    // Powód = najsilniejszy dodatni wkład (typ vs dekada); inaczej „ogólnie".
-    let reason: RecReason = { kind: "general" };
-    if (typeW > 0 && typeW >= decadeW) reason = { kind: "type" };
-    else if (decadeW > 0 && decadeKey) reason = { kind: "decade", decade: decadeKey };
-
-    return { mediaId: c.mediaId, score, reason };
-  });
+  const score = makeTasteScorer(computeTasteProfile(reviews));
+  const recs: TasteRecommendation[] = candidates.map((c) => ({
+    mediaId: c.mediaId,
+    ...score(c),
+  }));
 
   recs.sort((a, b) => b.score - a.score || a.mediaId - b.mediaId);
   return recs.slice(0, limit);
-}
-
-export interface TasteRecommendationWithMedia extends TasteRecommendation {
-  id: number;
-  title: string;
-  type: string;
-  externalId: string | null;
-  year: number | null;
-  posterUrl: string | null;
-}
-
-/** Rekomendacje treściowe dla użytkownika — dane z bazy, wzbogacone o tytuły. */
-export async function tasteRecommendations(
-  userId: number,
-  limit: number = DEFAULT_TASTE_LIMIT,
-): Promise<TasteRecommendationWithMedia[]> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) throw new NotFoundError(`Użytkownik #${userId} nie istnieje.`);
-
-  const [reviews, candidates] = await Promise.all([
-    prisma.review.findMany({
-      where: { userId },
-      select: {
-        mediaId: true,
-        rating: true,
-        favorite: true,
-        media: { select: { type: true, year: true } },
-      },
-    }),
-    // Kandydaci = tytuły z katalogu, których użytkownik jeszcze NIE ocenił.
-    prisma.media.findMany({
-      where: { reviews: { none: { userId } } },
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        externalId: true,
-        year: true,
-        posterUrl: true,
-      },
-    }),
-  ]);
-
-  const recs = computeTasteRecommendations(
-    reviews.map((r) => ({
-      mediaId: r.mediaId,
-      rating: r.rating,
-      favorite: r.favorite,
-      type: r.media.type,
-      year: r.media.year,
-    })),
-    candidates.map((m) => ({ mediaId: m.id, type: m.type, year: m.year })),
-    limit,
-  );
-  if (recs.length === 0) return [];
-
-  const mediaById = new Map(candidates.map((m) => [m.id, m]));
-  return recs.map((r) => {
-    const m = mediaById.get(r.mediaId)!;
-    return {
-      ...r,
-      id: m.id,
-      title: m.title,
-      type: m.type,
-      externalId: m.externalId,
-      year: m.year,
-      posterUrl: m.posterUrl,
-    };
-  });
 }

@@ -49,6 +49,30 @@ export async function searchGames(query: string): Promise<ExternalMedia[]> {
     .map(toGame);
 }
 
+/**
+ * „Odkrywanie" gier: najpopularniejsze (wg `added`) premiery z okna lat (bez zapisu).
+ * Źródło NOWYCH kandydatów pod gust. Błąd/brak klucza → [] (nie blokuje discovery).
+ */
+export async function discoverRawg(
+  yearFrom: number,
+  yearTo: number,
+): Promise<ExternalMedia[]> {
+  try {
+    const url =
+      `${RAWG}/games?key=${apiKey()}&page_size=18&ordering=-added` +
+      `&dates=${yearFrom}-01-01,${yearTo}-12-31`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { results?: RawgGame[] };
+    return (data.results ?? [])
+      .filter((g) => g.name)
+      .slice(0, 18)
+      .map(toGame);
+  } catch {
+    return [];
+  }
+}
+
 /** Dodaje grę z RAWG do katalogu (upsert po externalId) i zwraca rekord Media. */
 export async function addGameFromRawg(externalId: string) {
   const id = externalId.trim();

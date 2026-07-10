@@ -8,6 +8,7 @@ import {
   computeTasteProfile,
   computeTasteRecommendations,
   decadeOf,
+  makeTasteScorer,
   MIN_TASTE_REVIEWS,
   type TasteCandidate,
   type TasteReview,
@@ -69,4 +70,12 @@ test("respektuje limit i sortuje malejąco po wyniku", () => {
   const recs = computeTasteRecommendations(reviews, candidates, 2);
   assert.equal(recs.length, 2);
   assert.ok(recs[0].score >= recs[1].score);
+});
+
+test("makeTasteScorer daje wyższy wynik pozycji pasującej do gustu", () => {
+  const score = makeTasteScorer(computeTasteProfile(reviews));
+  const good = score({ mediaId: 0, type: "ANIME", year: 2015 });
+  const bad = score({ mediaId: 0, type: "FILM", year: 1996 });
+  assert.ok(good.score > bad.score);
+  assert.equal(good.reason.kind, "type");
 });

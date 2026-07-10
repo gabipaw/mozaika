@@ -62,6 +62,32 @@ export async function searchTmdb(query: string): Promise<ExternalMedia[]> {
     .map(toFilm);
 }
 
+/**
+ * „Odkrywanie" filmów: najpopularniejsze premiery z danego okna lat (bez zapisu).
+ * Źródło kandydatów do rekomendacji pod gust — NOWE tytuły, nie z katalogu.
+ * Błąd/brak klucza → [] (discovery nie może się wywalić przez jedno źródło).
+ */
+export async function discoverTmdb(
+  yearFrom: number,
+  yearTo: number,
+): Promise<ExternalMedia[]> {
+  try {
+    const url =
+      `${TMDB}/discover/movie?api_key=${apiKey()}&language=pl-PL` +
+      `&include_adult=false&sort_by=popularity.desc&vote_count.gte=100` +
+      `&primary_release_date.gte=${yearFrom}-01-01&primary_release_date.lte=${yearTo}-12-31`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { results?: TmdbMovie[] };
+    return (data.results ?? [])
+      .filter((m) => m.title && !isAnime(m)) // anime → osobna zakładka
+      .slice(0, 18)
+      .map(toFilm);
+  } catch {
+    return [];
+  }
+}
+
 /** Dodaje film z TMDB do katalogu (upsert po externalId) i zwraca rekord Media. */
 export async function addMediaFromTmdb(externalId: string) {
   const id = externalId.trim();

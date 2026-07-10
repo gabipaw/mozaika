@@ -50,8 +50,8 @@ const I18N = {
     forYou: "Dla Ciebie",
     forYouHint: "Polecane przez osoby o podobnym guście.",
     tasteRecs: "Pod Twój gust",
-    tasteRecsHint: "Dobrane do tego, co oceniasz wysoko.",
-    noTasteRecs: "Oceń kilka tytułów, a dobierzemy coś pod Twój gust.",
+    tasteRecsHint: "Nowe tytuły spoza Twojego katalogu, dobrane do Twojego gustu.",
+    noTasteRecs: "Oceń kilka tytułów, a odkryjemy coś nowego pod Twój gust.",
     reasonType: "Bo lubisz ten rodzaj",
     reasonDecade: "Bo lubisz lata {decade}.",
     reasonGeneral: "W Twoim guście",
@@ -152,8 +152,8 @@ const I18N = {
     forYou: "For you",
     forYouHint: "Recommended by people with similar taste.",
     tasteRecs: "For your taste",
-    tasteRecsHint: "Matched to what you rate highly.",
-    noTasteRecs: "Rate a few titles and we'll match your taste.",
+    tasteRecsHint: "Fresh titles beyond your catalog, matched to your taste.",
+    noTasteRecs: "Rate a few titles and we'll discover something new for you.",
     reasonType: "Because you like this kind",
     reasonDecade: "Because you like the {decade}s",
     reasonGeneral: "In your taste",
@@ -531,12 +531,13 @@ function tasteReasonLabel(reason) {
   return t("reasonGeneral");
 }
 
-// Rekomendacje treściowe — dobrane do gustu zalogowanego użytkownika.
+// Odkrywanie pod gust — świeże tytuły z zewnątrz (TMDB/AniList/RAWG), nie z katalogu.
+// Pozycje są zewnętrzne (mają externalId, brak mediaId) — klik otwiera detal i ocenę.
 async function loadTasteRecommendations() {
   const row = $("tasteRecs");
   row.innerHTML = `<p class="muted">${t("loading")}</p>`;
   try {
-    const recs = await api("/me/taste-recommendations");
+    const recs = await api("/me/discover");
     if (recs.length === 0) {
       row.innerHTML = `<p class="muted">${t("noTasteRecs")}</p>`;
       return;
@@ -547,7 +548,7 @@ async function loadTasteRecommendations() {
         score: r.score,
         recby: tasteReasonLabel(r.reason),
       });
-      card.addEventListener("click", () => openDetail(toDetail(r, r.type, r.id)));
+      card.addEventListener("click", () => openDetail(toDetail(r, r.type, null)));
       row.append(card);
     }
   } catch (e) {

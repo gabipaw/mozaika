@@ -76,6 +76,28 @@ export async function searchAniList(
     .map(toMedia);
 }
 
+/**
+ * „Odkrywanie" mangi/anime: najpopularniejsze serie z danego okna lat (bez zapisu).
+ * Źródło NOWYCH kandydatów pod gust. Błąd/niedostępność → [] (nie blokuje discovery).
+ */
+export async function discoverAniList(
+  type: AniType,
+  yearFrom: number,
+  yearTo: number,
+): Promise<ExternalMedia[]> {
+  try {
+    const data = await gql<{ Page: { media: AniListMedia[] } }>(
+      `query ($from: FuzzyDateInt, $to: FuzzyDateInt) { Page(perPage: 18) { media(type: ${type}, isAdult: false, sort: POPULARITY_DESC, startDate_greater: $from, startDate_lesser: $to) { ${MEDIA_FIELDS} } } }`,
+      { from: yearFrom * 10000, to: (yearTo + 1) * 10000 }, // FuzzyDateInt = YYYYMMDD
+    );
+    return (data.Page.media ?? [])
+      .filter((m) => m.id && (m.title.english || m.title.romaji))
+      .map(toMedia);
+  } catch {
+    return [];
+  }
+}
+
 /** Dodaje mangę/anime z AniList do katalogu (upsert po externalId = AniList id). */
 export async function addFromAniList(type: AniType, externalId: string) {
   const id = externalId.trim();
