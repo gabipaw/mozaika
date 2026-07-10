@@ -709,6 +709,7 @@ h2 {
 
 /* Panel „Znajomi" (trzecia kolumna profilu) — feed aktywności ze scrollem. */
 .profile-feed {
+  height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -726,10 +727,14 @@ h2 {
 }
 
 /* --- Portret gustu --- */
-#tastePanel {
-  flex: 0 0 auto;
-  height: auto;
-  margin-top: 18px;
+/* Portret gustu jest teraz sekcją POD dashboardem (nie w kolumnie znajomych). */
+.profile-portrait {
+  margin: 28px 0 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.profile-portrait .taste-body {
+  max-width: 520px;
 }
 
 .taste-body {
@@ -898,18 +903,11 @@ h2 {
   background: transparent;
 }
 
-/* 3. kolumna profilu — kontener na feed (własny) lub porównanie (cudzy). */
+/* 3. kolumna profilu — kontener na feed (własny) lub porównanie (cudzy).
+   Portret gustu został przeniesiony POD dashboard, więc feed znów bierze
+   całą kolumnę i przewija się w środku (jak przed dodaniem portretu). */
 .profile-side {
   height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-/* Feed znajomych/porównania wypełnia dostępną przestrzeń (scrolluje w środku),
-   a portret gustu siedzi POD nim W kolumnie — nie wypycha się na komentarze. */
-#profileFeed,
-#comparePanel {
-  flex: 1 1 0;
   min-height: 0;
 }
 
@@ -1309,15 +1307,6 @@ h2 {
     min-width: 0;
     height: auto;
     min-height: 0;
-  }
-  /* Na telefonie prawa kolumna stackuje się normalnie (bez flex:1 z desktopu,
-     które w niesztywnej wysokości zwinęłoby feed). */
-  .profile-side {
-    display: block;
-  }
-  #profileFeed,
-  #comparePanel {
-    flex: none;
   }
 
   /* Top 4 i watchlista: poziome paski do przesuwania (jak kategorie). */
