@@ -304,6 +304,7 @@ export async function tasteDiscovery(
   const genre = dedupeByKey(interleave(shuffle(genreRaw.map(shuffle))).filter(fresh));
   const popular = dedupeByKey(interleave(shuffle(popularRaw.map(shuffle))).filter(fresh));
 
-  // Kolejność: podobne (najbardziej osobiste) → po gatunku → popularne (dopełnienie).
-  return dedupeByKey([...similar, ...genre, ...popular]).slice(0, limit);
+  // Miks trzech sygnałów round-robin, żeby KAŻDY był widoczny (nie zdominuje „podobne"):
+  // podobne + po gatunku + popularne na przemian. Krótsze strumienie dopełniają dłuższe.
+  return dedupeByKey(interleave([similar, genre, popular])).slice(0, limit);
 }
