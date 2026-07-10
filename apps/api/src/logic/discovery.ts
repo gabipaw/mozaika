@@ -147,6 +147,21 @@ export function dedupeByKey(items: DiscoverItem[]): DiscoverItem[] {
   return out;
 }
 
+/** TTL puli kandydatów (drogie zapytania do API). Rotacja i tak działa — patrz niżej. */
+export const POOL_TTL_MS = 10 * 60 * 1000; // 10 minut
+
+interface PoolCache {
+  at: number;
+  similarRaw: DiscoverItem[][];
+  popularRaw: DiscoverItem[][];
+}
+const poolCache = new Map<number, PoolCache>();
+
+/** Kasuje pulę użytkownika z cache — np. po nowej ocenie (gust się zmienił). */
+export function invalidateDiscoveryCache(userId: number): void {
+  poolCache.delete(userId);
+}
+
 /** Rekomendacje odkrywcze: świeże tytuły z zewnątrz, głównie „podobne do” Twoich ocen. */
 export async function tasteDiscovery(
   userId: number,
@@ -207,26 +222,33 @@ export async function tasteDiscovery(
   const types = pickDiscoverTypes(profile);
   const { from, to } = pickYearWindow(profile, new Date().getFullYear());
 
-  // Oba źródła kandydatów równolegle: podobne (per ziarno) + popularne (per rodzaj).
-  const [similarRaw, popularRaw] = await Promise.all([
-    Promise.all(
-      seeds.map(async (s) => {
-        const found = await DISCOVERABLE[s.type].similar(s.externalId);
-        return found.map((m) => toItem(m, s.type, { kind: "similar", to: s.title }));
-      }),
-    ),
-    Promise.all(
-      types.map(async (enumType) => {
-        const found = await DISCOVERABLE[enumType].discover(from, to);
-        return found.map((m) => {
-          // Popularne wybieramy z ulubionych rodzajów, więc zawsze umiemy wyjaśnić
-          // powód: dekada (gdy silna) albo sam rodzaj — nigdy gołe „w guście".
-          const r = scorer({ mediaId: 0, type: enumType, year: m.year }).reason;
-          return toItem(m, enumType, r.kind === "general" ? { kind: "type" } : r);
-        });
-      }),
-    ),
-  ]);
+  // Pula kandydatów z cache: drogie zapytania do API najwyżej raz na POOL_TTL_MS.
+  // Tasowanie i wybór 24 robimy PONIŻEJ świeżo, więc rotacja przy każdym wejściu zostaje.
+  let pools = poolCache.get(userId);
+  if (!pools || Date.now() - pools.at > POOL_TTL_MS) {
+    const [similarRaw, popularRaw] = await Promise.all([
+      Promise.all(
+        seeds.map(async (s) => {
+          const found = await DISCOVERABLE[s.type].similar(s.externalId);
+          return found.map((m) => toItem(m, s.type, { kind: "similar", to: s.title }));
+        }),
+      ),
+      Promise.all(
+        types.map(async (enumType) => {
+          const found = await DISCOVERABLE[enumType].discover(from, to);
+          return found.map((m) => {
+            // Popularne wybieramy z ulubionych rodzajów, więc zawsze umiemy wyjaśnić
+            // powód: dekada (gdy silna) albo sam rodzaj — nigdy gołe „w guście".
+            const r = scorer({ mediaId: 0, type: enumType, year: m.year }).reason;
+            return toItem(m, enumType, r.kind === "general" ? { kind: "type" } : r);
+          });
+        }),
+      ),
+    ]);
+    pools = { at: Date.now(), similarRaw, popularRaw };
+    poolCache.set(userId, pools);
+  }
+  const { similarRaw, popularRaw } = pools;
 
   // Rotacja: tasujemy pulę każdego ziarna/rodzaju ORAZ ich kolejność, więc każde
   // wejście daje inny zestaw (wciąż „podobne do" ulubionych — jakość zachowana).

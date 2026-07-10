@@ -22,7 +22,7 @@ import { addMusicFromItunes, searchMusic } from "./logic/music.js";
 import { addReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
-import { tasteDiscovery } from "./logic/discovery.js";
+import { invalidateDiscoveryCache, tasteDiscovery } from "./logic/discovery.js";
 import { addMediaFromTmdb, searchTmdb } from "./logic/tmdb.js";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "mozaika-dev-secret-ustaw-JWT_SECRET";
@@ -327,7 +327,9 @@ api.get("/media/:id/reviews", async (c) => {
 // Dodaj/aktualizuj recenzję (jako zalogowany użytkownik). Body: { mediaId, rating, text? }.
 api.post("/reviews", requireAuth, async (c) => {
   const body = await c.req.json();
-  const review = await addReview({ ...body, userId: c.get("userId") });
+  const userId = c.get("userId");
+  const review = await addReview({ ...body, userId });
+  invalidateDiscoveryCache(userId); // nowa ocena zmienia gust → odśwież pulę discovery
   return c.json(review, 201);
 });
 
