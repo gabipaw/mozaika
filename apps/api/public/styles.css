@@ -728,13 +728,19 @@ h2 {
 
 /* --- Portret gustu --- */
 /* Portret gustu jest teraz sekcją POD dashboardem (nie w kolumnie znajomych). */
-.profile-portrait {
-  margin: 28px 0 0;
+/* Sekcja pod dashboardem: komentarze (lewo, wypełniają) + portret (prawo, 340px). */
+.profile-below {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
+  align-items: start;
+  margin: 28px 0 40px;
   padding-top: 22px;
   border-top: 1px solid var(--line);
 }
-.profile-portrait .taste-body {
-  max-width: 520px;
+.profile-comments,
+.profile-portrait {
+  min-width: 0;
 }
 
 .taste-body {
@@ -794,16 +800,11 @@ h2 {
   color: var(--text);
 }
 
-/* --- Moje komentarze (sekcja pod całym profilem, pełna szerokość) --- */
-.profile-comments {
-  margin: 28px 0 40px;
-  padding-top: 22px;
-  border-top: 1px solid var(--line);
-}
-
+/* --- Moje komentarze (lewa część sekcji pod dashboardem) --- */
 .my-comments {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 w rzędzie: 1×3, potem 2×3, 3×3… */
+  /* Karty równej szerokości, dopasowane do dostępnego miejsca obok portretu. */
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 12px;
 }
 
@@ -1296,7 +1297,12 @@ h2 {
     height: auto;
     min-height: 0;
   }
-  /* Na telefonie 3 karty w rzędzie byłyby za wąskie → 1 w rzędzie. */
+  /* Na telefonie: sekcja pod dashboardem stackuje się (komentarze nad portretem),
+     a karty komentarzy 1 w rzędzie (3 byłyby za wąskie). */
+  .profile-below {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
   .my-comments {
     grid-template-columns: 1fr;
   }
