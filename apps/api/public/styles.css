@@ -568,13 +568,18 @@ h2 {
 /* Profil dopasowany do RZECZYWISTEJ wysokości okna (dvh) — mieści się bez
    scrolla na każdym ekranie. Grid: obie kolumny tej samej wysokości, więc dół
    watchlisty i dół prawej kolumny są w jednej linii. */
+/* Wysokość WYNIKA z treści (nie z okna). Wcześniej dashboard miał sztywne
+   calc(100dvh - 84px) i na niższych ekranach (np. 1366x768) zawartość — Top 4,
+   watchlista, 5 kategorii — nie mieściła się w tej wysokości i WYLEWAŁA się poza
+   kolumnę: plakaty lądowały na nagłówku „Moje komentarze", a feed Znajomych na
+   „Portrecie gustu". align-items: stretch nadal wyrównuje dół wszystkich trzech
+   kolumn, a panel Znajomych przewija się w środku (patrz .feed-list). */
 .profile-cols {
   display: grid;
   grid-template-columns: 300px 1fr 240px;
   gap: 32px;
   align-items: stretch;
   margin-top: 0;
-  height: calc(100dvh - 84px);
   min-height: 360px;
 }
 
@@ -616,23 +621,25 @@ h2 {
 
 /* Watchlist: 3×2 wypełnia pozostałą wysokość lewej kolumny (dół w jednej linii
    z prawą kolumną). Karty skalowane do wysokości rzędu, plakaty 2:3. */
+/* Watchlista: 3 kolumny, wysokość z proporcji plakatu. NIE rozciągamy jej na resztę
+   kolumny (dawne flex: 1 1 auto + rows 1fr + card height 100%) — lewa kolumna równa
+   się do najwyższej (środkowej), więc watchlista pochłaniała cały nadmiar i plakaty
+   były rozciągane w pionie. */
 #watchlist {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(3, auto);
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   justify-content: start;
   gap: 10px;
 }
 
 #watchlist .card {
-  height: 100%;
+  height: auto;
   min-height: 0;
 }
 
 #watchlist .card .poster {
-  height: 100%;
+  height: auto; /* wysokość z aspect-ratio 2:3 — bez rozciągania */
 }
 
 .profile-right {
@@ -640,15 +647,12 @@ h2 {
   height: 100%;
 }
 
+/* Rzędy mają naturalną wysokość, a dashboard nie ma już sztywnej wysokości okna,
+   więc kategorie nigdy się nie ucinają — nie trzeba tu wewnętrznego scrolla. */
 #ratedByCat {
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* Rzędy mają naturalną wysokość (patrz .cat-row), więc kolumna może być wyższa
-     niż ekran — wtedy przewija się w środku, zamiast ucinać ostatnią kategorię. */
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
 }
 
 /* Rząd kategorii: etykieta z lewej, do 4 okładek.
