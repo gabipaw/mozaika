@@ -399,13 +399,21 @@ function toast(msg) {
   window.setTimeout(() => t.classList.remove("show"), 2200);
 }
 
+// Muzyka ma okładkę KWADRATOWĄ (jak płyta), nie plakat 2:3. Typ przychodzi raz jako
+// enum bazy („MUZYKA"), raz jako klucz źródła z discovery („music") — łapiemy oba,
+// bo inaczej albumy w „Pod Twój gust" były przycinane do proporcji plakatu.
+const isMusicType = (type) => type === "MUZYKA" || type === "music";
+
 // Wspólna „karta plakatu".
 function posterCard(m, opts = {}) {
+  // opts.square wygrywa (Top 4 wymusza plakat 2:3 nawet dla muzyki).
+  const square = opts.square ?? isMusicType(m.type);
+
   const card = document.createElement("article");
-  card.className = opts.square ? "card sq" : "card";
+  card.className = square ? "card sq" : "card";
 
   const poster = document.createElement("div");
-  poster.className = opts.square ? "poster square" : "poster";
+  poster.className = square ? "poster square" : "poster";
   if (m.posterUrl) {
     const img = document.createElement("img");
     img.src = m.posterUrl;
