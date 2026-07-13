@@ -1,6 +1,7 @@
 /**
- * Błędy domenowe Mozaiki. Rozróżniamy złe dane wejściowe (ValidationError)
- * od braku zasobu w bazie (NotFoundError), żeby logika mogła reagować różnie.
+ * Błędy domenowe Mozaiki. Rozróżniamy złe dane wejściowe (ValidationError),
+ * brak zasobu w bazie (NotFoundError) i cudzy zasób (ForbiddenError), żeby
+ * logika mogła reagować różnie.
  */
 
 export class ValidationError extends Error {
@@ -14,5 +15,13 @@ export class NotFoundError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "NotFoundError";
+  }
+}
+
+/** Zasób istnieje, ale nie należy do tego użytkownika (np. cudza recenzja). */
+export class ForbiddenError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ForbiddenError";
   }
 }

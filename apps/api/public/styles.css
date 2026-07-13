@@ -1262,6 +1262,19 @@ h2 {
   border-radius: 999px;
 }
 
+/* Usuwanie jest nieodwracalne — chip ma to sygnalizować, ale nie krzyczeć:
+   stonowany do momentu najechania/dotknięcia. */
+.chip.danger {
+  color: #ff8f8f;
+  border-color: #5a2b2b;
+}
+
+.chip.danger:hover {
+  background: #ff6b6b;
+  color: #2a0b0b;
+  border-color: transparent;
+}
+
 .chip.active {
   background: var(--accent);
   color: #05221d;

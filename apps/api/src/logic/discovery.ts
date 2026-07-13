@@ -188,18 +188,38 @@ interface PoolCache {
   genreRaw: DiscoverItem[][];
   popularRaw: DiscoverItem[][];
 }
-const poolCache = new Map<number, PoolCache>();
+// Klucz: `userId:typ` — każdy filtr rodzaju ma WŁASNĄ pulę, inaczej wejście na
+// „Gry" nadpisałoby pulę „Filmów" i po powrocie widziałbyś gry w filmach.
+const poolCache = new Map<string, PoolCache>();
 
-/** Kasuje pulę użytkownika z cache — np. po nowej ocenie (gust się zmienił). */
+/** Kasuje pule użytkownika z cache — np. po nowej ocenie (gust się zmienił). */
 export function invalidateDiscoveryCache(userId: number): void {
-  poolCache.delete(userId);
+  for (const key of poolCache.keys()) {
+    if (key.startsWith(`${userId}:`)) poolCache.delete(key);
+  }
 }
 
-/** Rekomendacje odkrywcze: świeże tytuły z zewnątrz, głównie „podobne do” Twoich ocen. */
+/** Rodzaje (enum bazy), które umiemy odkrywać dla danego klucza z frontu. */
+export function typesForKey(typeKey?: string): string[] {
+  const all = Object.keys(DISCOVERABLE);
+  if (!typeKey) return all;
+  return all.filter((enumType) => DISCOVERABLE[enumType].key === typeKey);
+}
+
+/**
+ * Rekomendacje odkrywcze: świeże tytuły z zewnątrz, głównie „podobne do” Twoich ocen.
+ * `typeKey` (film/anime/manga/game) zawęża wynik do jednego rodzaju — wtedy odkrywamy
+ * TEN rodzaj, nawet jeśli nie jest ulubiony (user właśnie o niego poprosił).
+ * Książki i muzyka nie mają API „podobne/discover" → dla nich zwracamy pustą listę.
+ */
 export async function tasteDiscovery(
   userId: number,
   limit: number = DEFAULT_DISCOVER_LIMIT,
+  typeKey?: string,
 ): Promise<DiscoverItem[]> {
+  const allowed = typesForKey(typeKey);
+  if (allowed.length === 0) return []; // np. książki / muzyka
+
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError(`Użytkownik #${userId} nie istnieje.`);
 
@@ -246,16 +266,22 @@ export async function tasteDiscovery(
     reason,
   });
 
+  // Ziarna „podobne do…" bierzemy tylko z wybranego rodzaju — inaczej przy filtrze
+  // „Gry" pytalibyśmy RAWG o gry podobne do filmu, którego RAWG w ogóle nie zna.
   const seeds = pickSeeds(
-    reviews.map((r) => ({
-      type: r.media.type,
-      externalId: r.media.externalId ?? "",
-      title: r.media.title,
-      rating: r.rating,
-      favorite: r.favorite,
-    })),
+    reviews
+      .filter((r) => allowed.includes(r.media.type))
+      .map((r) => ({
+        type: r.media.type,
+        externalId: r.media.externalId ?? "",
+        title: r.media.title,
+        rating: r.rating,
+        favorite: r.favorite,
+      })),
   );
-  const types = pickDiscoverTypes(profile);
+  // Przy wybranym rodzaju odkrywamy WŁAŚNIE jego, nawet gdy nie jest ulubiony:
+  // user kliknął „Gry", więc chce gier, a nie swoich najczęstszych filmów.
+  const types = typeKey ? allowed : pickDiscoverTypes(profile);
   const { from, to } = pickYearWindow(profile, new Date().getFullYear());
 
   // Zadania „po gatunku": dla każdego odkrywalnego rodzaju bierzemy jego ulubione,
@@ -271,7 +297,8 @@ export async function tasteDiscovery(
 
   // Pula kandydatów z cache: drogie zapytania do API najwyżej raz na POOL_TTL_MS.
   // Tasowanie i wybór 24 robimy PONIŻEJ świeżo, więc rotacja przy każdym wejściu zostaje.
-  let pools = poolCache.get(userId);
+  const cacheKey = `${userId}:${typeKey ?? "all"}`;
+  let pools = poolCache.get(cacheKey);
   if (!pools || Date.now() - pools.at > POOL_TTL_MS) {
     const [similarRaw, genreRaw, popularRaw] = await Promise.all([
       Promise.all(
@@ -288,13 +315,20 @@ export async function tasteDiscovery(
             // Popularne wybieramy z ulubionych rodzajów, więc zawsze umiemy wyjaśnić
             // powód: dekada (gdy silna) albo sam rodzaj — nigdy gołe „w guście".
             const r = scorer({ mediaId: 0, type: enumType, year: m.year }).reason;
+            // Gdy rodzaj wybrał SAM (zakładka), „Bo lubisz gry" byłoby kłamstwem —
+            // może nie mieć ani jednej oceny gry. Uczciwy powód to popularność.
+            if (typeKey) {
+              const honest: RecReason =
+                r.kind === "general" || r.kind === "type" ? { kind: "popular" } : r;
+              return toItem(m, enumType, honest);
+            }
             return toItem(m, enumType, r.kind === "general" ? { kind: "type" } : r);
           });
         }),
       ),
     ]);
     pools = { at: Date.now(), similarRaw, genreRaw, popularRaw };
-    poolCache.set(userId, pools);
+    poolCache.set(cacheKey, pools);
   }
   const { similarRaw, genreRaw, popularRaw } = pools;
 

@@ -108,6 +108,7 @@ export type RecReason =
   | { kind: "decade"; decade: string } // pasuje do ulubionej dekady
   | { kind: "genre"; genre: string } // pasuje do ulubionego gatunku
   | { kind: "similar"; to: string } // podobne (gatunek/treść) do tytułu, który oceniłeś
+  | { kind: "popular" } // popularne w kategorii, którą sam wybrałeś zakładką
   | { kind: "general" }; // ogólnie w Twoim guście
 
 export interface TasteCandidate {

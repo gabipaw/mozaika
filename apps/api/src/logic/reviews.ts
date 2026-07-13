@@ -4,7 +4,7 @@
  * Walidacja (czysta funkcja) jest oddzielona od zapisu do bazy.
  */
 import { prisma } from "../db.js";
-import { NotFoundError, ValidationError } from "../errors.js";
+import { ForbiddenError, NotFoundError, ValidationError } from "../errors.js";
 
 export const MIN_RATING = 0.5;
 export const MAX_RATING = 10;
@@ -74,4 +74,23 @@ export async function addReview(input: ReviewInput) {
       text: valid.text,
     },
   });
+}
+
+/**
+ * Usuwa WŁASNĄ recenzję (ocenę + komentarz + przypięcie do TOP 4).
+ * Cudzej nie ruszy — właściciela sprawdzamy przed usunięciem, nie ufamy id z URL.
+ */
+export async function deleteReview(userId: number, reviewId: number) {
+  if (!Number.isInteger(reviewId) || reviewId <= 0) {
+    throw new ValidationError("reviewId musi być dodatnią liczbą całkowitą.");
+  }
+
+  const review = await prisma.review.findUnique({ where: { id: reviewId } });
+  if (!review) throw new NotFoundError(`Recenzja #${reviewId} nie istnieje.`);
+  if (review.userId !== userId) {
+    throw new ForbiddenError("Możesz usuwać tylko własne recenzje.");
+  }
+
+  await prisma.review.delete({ where: { id: reviewId } });
+  return { deleted: true, mediaId: review.mediaId };
 }

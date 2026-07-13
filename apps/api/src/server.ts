@@ -12,14 +12,14 @@ import type { MiddlewareHandler } from "hono";
 import { sign, verify } from "hono/jwt";
 
 import { prisma } from "./db.js";
-import { NotFoundError, ValidationError } from "./errors.js";
+import { ForbiddenError, NotFoundError, ValidationError } from "./errors.js";
 import { login, register } from "./logic/auth.js";
 import { addBookFromOpenLibrary, searchBooks } from "./logic/books.js";
 import { getDescription } from "./logic/details.js";
 import { addGameFromRawg, searchGames } from "./logic/games.js";
 import { addFromAniList, searchAniList } from "./logic/anilist.js";
 import { addMusicFromItunes, searchMusic } from "./logic/music.js";
-import { addReview } from "./logic/reviews.js";
+import { addReview, deleteReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
 import { tastePortrait } from "./logic/tasteProfile.js";
@@ -95,6 +95,7 @@ api.get("/me", requireAuth, async (c) => {
       where: { userId },
       orderBy: { createdAt: "desc" },
       select: {
+        id: true, // potrzebne do usuwania recenzji (DELETE /reviews/:id)
         rating: true,
         text: true,
         favorite: true,
@@ -128,8 +129,10 @@ api.get("/me/recommendations", requireAuth, async (c) => {
 });
 
 // Odkrywanie pod gust — ORYGINALNE, świeże tytuły z zewnątrz (nie z katalogu).
+// ?type=film|anime|manga|game — zawęża do jednego rodzaju (zakładka na froncie).
 api.get("/me/discover", requireAuth, async (c) => {
-  return c.json(await tasteDiscovery(c.get("userId")));
+  const type = c.req.query("type");
+  return c.json(await tasteDiscovery(c.get("userId"), undefined, type));
 });
 
 // Portret gustu — top gatunki/typy/dekady + „surowość" vs średnia serwisu.
@@ -360,6 +363,15 @@ api.post("/reviews", requireAuth, async (c) => {
   return c.json(review, 201);
 });
 
+// Usuń WŁASNĄ recenzję (ocena + komentarz + przypięcie do TOP 4).
+api.delete("/reviews/:id", requireAuth, async (c) => {
+  const id = intParam(c.req.param("id"), "id");
+  const userId = c.get("userId");
+  const result = await deleteReview(userId, id);
+  invalidateDiscoveryCache(userId); // mniej ocen → inny gust → odśwież pulę discovery
+  return c.json(result);
+});
+
 // Dopasowanie gustu między dwoma użytkownikami.
 api.get("/users/:a/taste-match/:b", async (c) => {
   const a = intParam(c.req.param("a"), "a");
@@ -458,6 +470,7 @@ api.get("/users/:id/compare", requireAuth, async (c) => {
 // Błędy domenowe → kody HTTP.
 api.onError((err, c) => {
   if (err instanceof ValidationError) return c.json({ error: err.message }, 400);
+  if (err instanceof ForbiddenError) return c.json({ error: err.message }, 403);
   if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
   console.error(err);
   return c.json({ error: "Wewnętrzny błąd serwera." }, 500);

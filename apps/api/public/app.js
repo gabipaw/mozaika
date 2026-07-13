@@ -52,9 +52,12 @@ const I18N = {
     tasteRecs: "Pod Twój gust",
     tasteRecsHint: "Nowe tytuły spoza Twojego katalogu, dobrane do Twojego gustu.",
     noTasteRecs: "Oceń kilka tytułów, a odkryjemy coś nowego pod Twój gust.",
+    noTasteRecsType: "Oceń kilka tytułów z tej kategorii, a dobierzemy coś nowego.",
+    noDiscoverForType: "Dla tej kategorii nie mamy jeszcze świeżych rekomendacji.",
     reasonSimilar: "Bo podobne do „{title}”",
     reasonGenre: "Bo lubisz gatunek {genre}",
     reasonType: "Bo lubisz {kat}",
+    reasonPopular: "Bo popularne w tej kategorii",
     reasonDecade: "Bo lubisz lata {decade}.",
     reasonGeneral: "Popularne — w Twoim guście",
     catFilm: "filmy",
@@ -83,6 +86,10 @@ const I18N = {
     watchActive: "✓ Na liście",
     commentPh: "Napisz komentarz (opcjonalnie)…",
     saveReview: "Zapisz ocenę i komentarz",
+    deleteReview: "🗑 Usuń ocenę",
+    confirmDeleteReview:
+      "Usunąć Twoją ocenę i komentarz do „{title}”? Tego nie da się cofnąć.",
+    deletedReview: "Usunięto ocenę",
     comments: "Komentarze",
     noComments: "Brak komentarzy — bądź pierwszy.",
     loadingDesc: "Ładowanie opisu…",
@@ -178,9 +185,12 @@ const I18N = {
     tasteRecs: "For your taste",
     tasteRecsHint: "Fresh titles beyond your catalog, matched to your taste.",
     noTasteRecs: "Rate a few titles and we'll discover something new for you.",
+    noTasteRecsType: "Rate a few titles in this category and we'll find something new.",
+    noDiscoverForType: "No fresh recommendations for this category yet.",
     reasonSimilar: "Because it's like “{title}”",
     reasonGenre: "Because you like {genre}",
     reasonType: "Because you like {kat}",
+    reasonPopular: "Popular in this category",
     reasonDecade: "Because you like the {decade}s",
     reasonGeneral: "Popular — in your taste",
     catFilm: "films",
@@ -209,6 +219,10 @@ const I18N = {
     watchActive: "✓ On list",
     commentPh: "Write a comment (optional)…",
     saveReview: "Save rating and comment",
+    deleteReview: "🗑 Delete rating",
+    confirmDeleteReview:
+      "Delete your rating and comment for “{title}”? This can't be undone.",
+    deletedReview: "Rating deleted",
     comments: "Comments",
     noComments: "No comments — be the first.",
     loadingDesc: "Loading description…",
@@ -577,6 +591,8 @@ function setSearchType(type) {
   $("typeMusic").classList.toggle("active", type === "music");
   $("typeGame").classList.toggle("active", type === "game");
   applySearchPlaceholder();
+  // „Pod Twój gust" idzie za zakładką — nowy rodzaj = nowe rekomendacje.
+  loadTasteRecommendations();
   const q = $("search").value.trim();
   if (q) runSearch(q);
   else showBrowse();
@@ -636,19 +652,29 @@ function tasteReasonLabel(reason, item) {
     const kat = catLabel(item?.type);
     return kat ? t("reasonType", { kat }) : t("reasonGeneral");
   }
+  if (reason.kind === "popular") return t("reasonPopular");
   if (reason.kind === "decade") return t("reasonDecade", { decade: reason.decade });
   return t("reasonGeneral");
 }
 
+// Rodzaje, dla których źródła mają API „podobne"/„odkrywaj" (patrz DISCOVERABLE
+// w logic/discovery.ts). Książki (Open Library) i muzyka (iTunes) go nie mają.
+const DISCOVERABLE_KEYS = ["film", "anime", "manga", "game"];
+
 // Odkrywanie pod gust — świeże tytuły z zewnątrz (TMDB/AniList/RAWG), nie z katalogu.
 // Pozycje są zewnętrzne (mają externalId, brak mediaId) — klik otwiera detal i ocenę.
+// Sekcja idzie za aktywną zakładką: klikasz „Gry" → same gry.
 async function loadTasteRecommendations() {
   const row = $("tasteRecs");
+  if (!DISCOVERABLE_KEYS.includes(searchType)) {
+    row.innerHTML = `<p class="muted">${t("noDiscoverForType")}</p>`;
+    return;
+  }
   row.innerHTML = `<p class="muted">${t("loading")}</p>`;
   try {
-    const recs = await api("/me/discover");
+    const recs = await api(`/me/discover?type=${encodeURIComponent(searchType)}`);
     if (recs.length === 0) {
-      row.innerHTML = `<p class="muted">${t("noTasteRecs")}</p>`;
+      row.innerHTML = `<p class="muted">${t("noTasteRecsType")}</p>`;
       return;
     }
     row.innerHTML = "";
@@ -1506,6 +1532,36 @@ function updateDetailButtons() {
   $("favBtn").textContent = isFav ? t("favActive") : t("fav");
   $("watchBtn").classList.toggle("active", onWatch);
   $("watchBtn").textContent = onWatch ? t("watchActive") : t("watchAdd");
+  // „Usuń ocenę" tylko gdy JEST co usuwać — inaczej przycisk myli.
+  $("deleteBtn").classList.toggle("hidden", !rev);
+  $("deleteBtn").textContent = t("deleteReview");
+}
+
+// Usuwa Twoją ocenę + komentarz tego tytułu (po potwierdzeniu). Znika też z TOP 4
+// i z katalogu, bo katalog to właśnie lista Twoich ocen.
+async function deleteDetailReview() {
+  const mid = detailCtx?.mediaId;
+  const rev = mid ? myProfile.reviews.find((r) => r.media.id === mid) : null;
+  if (!rev) return;
+  if (!window.confirm(t("confirmDeleteReview", { title: detailCtx.title }))) return;
+
+  $("detailMsg").textContent = "";
+  try {
+    await api(`/reviews/${rev.id}`, { method: "DELETE" });
+    toast(t("deletedReview"));
+    detailStars.set(0);
+    $("detailComment").value = "";
+    await loadMe();
+    await Promise.all([
+      loadRecommendations(),
+      loadCatalog(),
+      loadTasteRecommendations(), // mniej ocen → inny gust
+    ]);
+    updateDetailButtons();
+    loadDetailReviews(mid);
+  } catch (e) {
+    $("detailMsg").textContent = e.message;
+  }
 }
 
 // Upewnia się, że tytuł jest w bazie (dodaje, jeśli to świeży wynik wyszukiwania).
@@ -1778,6 +1834,7 @@ async function init() {
   $("avatarFile").addEventListener("change", onAvatarPick);
   $("favBtn").addEventListener("click", toggleFavorite);
   $("watchBtn").addEventListener("click", toggleWatchlist);
+  $("deleteBtn").addEventListener("click", deleteDetailReview);
   $("search").addEventListener("input", onSearchInput);
   $("typeFilm").addEventListener("click", () => setSearchType("film"));
   $("typeBook").addEventListener("click", () => setSearchType("book"));
