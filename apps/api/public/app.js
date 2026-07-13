@@ -129,6 +129,7 @@ const I18N = {
     noFollows: "Nie obserwujesz jeszcze nikogo — dodaj znajomych przyciskiem „＋ Dodaj”.",
     noActivity: "Twoi znajomi nie ocenili jeszcze nic.",
     showMore: "Pokaż więcej ({n})",
+    showLess: "Pokaż mniej",
     noUsers: "Brak innych użytkowników.",
     yourTaste: "Wasz gust",
     matchCap: "dopasowania · {n} wspólnych",
@@ -263,6 +264,7 @@ const I18N = {
     noFollows: "You're not following anyone yet — add friends with the “＋ Add” button.",
     noActivity: "Your friends haven't rated anything yet.",
     showMore: "Show more ({n})",
+    showLess: "Show less",
     noUsers: "No other users.",
     yourTaste: "Your taste",
     matchCap: "match · {n} in common",
@@ -975,11 +977,14 @@ async function loadActivity() {
   }
 }
 
-// „Pokaż więcej" — rozwija pełną historię (CSS chowa wpisy powyżej FEED_COLLAPSED
-// tylko na telefonie; na desktopie klasa `expanded` niczego nie zmienia).
-function expandFeed() {
-  $("activityFeed").classList.add("expanded");
-  $("feedMore").classList.add("hidden");
+// Przełącznik „Pokaż więcej" ⇄ „Pokaż mniej" — rozwija i z powrotem zwija historię.
+// (CSS chowa wpisy powyżej FEED_COLLAPSED tylko na telefonie; na desktopie klasa
+// `expanded` niczego nie zmienia, bo panel ma tam własny scroll.)
+function toggleFeed() {
+  const box = $("activityFeed");
+  const rozwiniete = box.classList.toggle("expanded");
+  const ukryte = box.querySelectorAll(".feed-item").length - FEED_COLLAPSED;
+  $("feedMore").textContent = rozwiniete ? t("showLess") : t("showMore", { n: ukryte });
 }
 
 const friendsData = { others: [], followingIds: new Set() };
@@ -1898,7 +1903,7 @@ async function init() {
     if (e.target === $("settingsOverlay")) closeSettings();
   });
   $("friendsBtn").addEventListener("click", openFriends);
-  $("feedMore").addEventListener("click", expandFeed);
+  $("feedMore").addEventListener("click", toggleFeed);
   $("friendsClose").addEventListener("click", closeFriends);
   $("friendsSearch").addEventListener("input", drawFriends);
   $("notifBtn").addEventListener("click", openNotif);
