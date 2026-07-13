@@ -875,6 +875,18 @@ h2 {
   line-height: 1.45;
 }
 
+/* Treść od użytkownika (komentarze, nazwy, tytuły z API) bywa jednym długim
+   ciągiem bez spacji — link albo „absolutnieniewiarygodne…”. Bez łamania taki
+   ciąg rozpychał kartę, a na telefonie całą stronę wywalało w bok. */
+.comment-text,
+.review .text,
+.review .who .name,
+.detail-desc,
+#detailTitle,
+#profileName {
+  overflow-wrap: anywhere;
+}
+
 .feed-head h2 {
   font-size: 1.05rem;
 }
