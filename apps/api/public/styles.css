@@ -687,9 +687,19 @@ h2 {
   overflow: hidden;
 }
 
+/* 4 okładki dzielą szerokość rzędu po równo, więc ZAWSZE się mieszczą. Wcześniej
+   szerokość brała się z wysokości rzędu (proporcja 2:3) i ostatnia okładka wpadała
+   pod `overflow: hidden` — była ucięta. max-width: przy mniej niż 4 pozycjach karty
+   nie rozdmuchują się na całą kolumnę. */
 .cat-posters .card {
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: calc((100% - 3 * 12px) / 4);
   height: 100%;
+}
+
+.cat-posters .card .poster {
+  height: 100%; /* pion zawsze mieści się w rzędzie; obrazek dokadruje (object-fit) */
 }
 
 /* Muzyka (kwadrat) — ta sama szerokość co plakaty 2:3 (= 2/3 wysokości rzędu),
@@ -1169,10 +1179,12 @@ h2 {
   height: 100%;
 }
 
+/* Pod etykietą kategorii, nie nad plakatami: 4 okładki wypełniają teraz całą
+   szerokość rzędu, więc przycisk w prawym rogu leżałby na ostatniej okładce. */
 .cat-seeall {
   position: absolute;
   top: 8px;
-  right: 0;
+  left: 0;
   z-index: 2;
 }
 

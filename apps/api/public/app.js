@@ -113,9 +113,9 @@ const I18N = {
     seeAll: "Zobacz wszystko ({n})",
     nothingRatedCat: "Nic tu jeszcze",
     edit: "Zmień",
-    pickN: "Wybierz 6 ({n})",
-    pickCovers: "{label} — wybierz do 6 okładek",
-    maxCovers: "Możesz wybrać maksymalnie 6 okładek.",
+    pickN: "Wybierz {max} ({n})",
+    pickCovers: "{label} — wybierz do {max} okładek",
+    maxCovers: "Możesz wybrać maksymalnie {max} okładki.",
     friends: "Znajomi",
     add: "＋ Dodaj",
     searchFriends: "Szukaj znajomych…",
@@ -246,9 +246,9 @@ const I18N = {
     seeAll: "See all ({n})",
     nothingRatedCat: "Nothing yet",
     edit: "Edit",
-    pickN: "Pick 6 ({n})",
-    pickCovers: "{label} — pick up to 6 covers",
-    maxCovers: "You can pick at most 6 covers.",
+    pickN: "Pick {max} ({n})",
+    pickCovers: "{label} — pick up to {max} covers",
+    maxCovers: "You can pick at most {max} covers.",
     friends: "Friends",
     add: "＋ Add",
     searchFriends: "Search friends…",
@@ -707,8 +707,12 @@ const CAT_GROUPS = [
   { key: "game", label: "Gry", types: ["GRA"] },
 ];
 
-// Które 4 okładki pokazać w danej kategorii — wybór usera (mapa key→[mediaId]),
-// zapis w localStorage. Puste = pokaż domyślnie pierwsze 4.
+// Ile okładek pokazuje jeden rząd kategorii na profilu. JEDNO miejsce — teksty
+// („wybierz do N") też się z tego biorą, żeby nie rozjechały się z rzeczywistością.
+const MAX_COVERS = 4;
+
+// Które okładki pokazać w danej kategorii — wybór usera (mapa key→[mediaId]),
+// zapis w localStorage. Puste = pokaż domyślnie pierwsze MAX_COVERS.
 const FEATURED_KEY = "mozaika_featured";
 
 function getFeaturedMap() {
@@ -732,15 +736,15 @@ function setFeatured(catKey, ids) {
   localStorage.setItem(FEATURED_KEY, JSON.stringify(m));
 }
 
-// Które pozycje pokazać w kategorii (max 6): wybrane okładki albo pierwsze 6.
+// Które pozycje pokazać w kategorii: wybrane okładki albo pierwsze MAX_COVERS.
 function displayedForCat(g, items) {
   const feat = getFeatured(g.key);
   if (feat.length) {
     const byId = new Map(items.map((r) => [r.media.id, r]));
     const chosen = feat.map((id) => byId.get(id)).filter(Boolean);
-    if (chosen.length) return chosen.slice(0, 6);
+    if (chosen.length) return chosen.slice(0, MAX_COVERS);
   }
-  return items.slice(0, 6);
+  return items.slice(0, MAX_COVERS);
 }
 
 // Dodaje klikalną kartę (otwiera szczegóły) do kontenera.
@@ -783,7 +787,10 @@ let catPickCtx = null; // { group, items } gdy tryb wyboru okładek
 
 function openCatPicker(group, items) {
   catPickCtx = { group, items };
-  $("seeAllTitle").textContent = t("pickCovers", { label: group.label });
+  $("seeAllTitle").textContent = t("pickCovers", {
+    label: group.label,
+    max: MAX_COVERS,
+  });
   renderCatPickGrid();
   $("seeAllOverlay").classList.remove("hidden");
 }
@@ -809,8 +816,8 @@ function renderCatPickGrid() {
       if (cur.includes(r.media.id)) {
         cur = cur.filter((id) => id !== r.media.id);
       } else {
-        if (cur.length >= 6) {
-          toast(t("maxCovers"));
+        if (cur.length >= MAX_COVERS) {
+          toast(t("maxCovers", { max: MAX_COVERS }));
           return;
         }
         cur = [...cur, r.media.id];
@@ -844,7 +851,7 @@ function renderRatedByCat(reviews, readOnly) {
       ph.textContent = t("nothingRatedCat");
       posters.append(ph);
     } else {
-      const shown = readOnly ? items.slice(0, 6) : displayedForCat(g, items);
+      const shown = readOnly ? items.slice(0, MAX_COVERS) : displayedForCat(g, items);
       for (const r of shown) appendCard(posters, r.media, r.rating);
     }
     catRow.append(label, posters);
@@ -853,7 +860,10 @@ function renderRatedByCat(reviews, readOnly) {
       const btn = document.createElement("button");
       btn.className = "seeall cat-seeall";
       btn.type = "button";
-      btn.textContent = items.length > 6 ? t("pickN", { n: items.length }) : t("edit");
+      btn.textContent =
+        items.length > MAX_COVERS
+          ? t("pickN", { n: items.length, max: MAX_COVERS })
+          : t("edit");
       btn.addEventListener("click", () => openCatPicker(g, items));
       catRow.append(btn);
     }
