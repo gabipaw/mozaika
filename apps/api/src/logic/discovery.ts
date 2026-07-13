@@ -9,8 +9,11 @@
  *  2) POPULARNOŚĆ + DEKADA (dopełnienie): najpopularniejsze tytuły w ulubionym
  *     rodzaju i dekadzie — używane tylko do uzupełnienia, nie jako jedyny powód.
  *
- * Na końcu odrzucamy to, co user już ocenił, i deduplikujemy. Muzyka (iTunes) i
- * książki (Open Library) nie mają API „podobne/discover” → na razie film/anime/manga/gry.
+ * Na końcu odrzucamy to, co user już ocenił, i deduplikujemy.
+ *
+ * Wyjątek: KSIĄŻKI (Open Library) i MUZYKA (iTunes) nie mają API „podobne do", więc
+ * dla nich sygnał (1) odpada — jadą na gatunku i popularności. Gatunek książki bierzemy
+ * z gustu nauczonego na filmach, bo książki nie mają gatunków w bazie.
  */
 import { prisma } from "../db.js";
 import { NotFoundError } from "../errors.js";
