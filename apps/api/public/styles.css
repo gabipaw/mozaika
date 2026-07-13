@@ -930,6 +930,27 @@ h2 {
   scrollbar-color: var(--line) transparent;
 }
 
+/* Wspólny wygląd przycisków rozwijających („Pokaż więcej" / „Zobacz wszystkie"). */
+.more-btn {
+  width: 100%;
+  margin-top: 12px;
+  background: var(--bg-2);
+  color: var(--accent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 600;
+}
+
+.more-btn:hover {
+  border-color: var(--accent);
+}
+
+/* Komentarze: zwinięte do COMMENTS_COLLAPSED (9) — tak samo na laptopie i telefonie. */
+.my-comments:not(.expanded) .comment-item:nth-child(n + 10) {
+  display: none;
+}
+
 /* Na desktopie panel Znajomych ma własny scroll, więc historii nie zwijamy i przycisk
    „Pokaż więcej" jest niepotrzebny. Odsłania go dopiero media query dla telefonu. */
 .feed-more {
@@ -1460,15 +1481,7 @@ h2 {
     display: none;
   }
   .feed-more:not(.hidden) {
-    display: block;
-    width: 100%;
-    margin-top: 10px;
-    background: var(--bg-2);
-    color: var(--accent);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 10px 14px;
-    font-weight: 600;
+    display: block; /* wygląd bierze z .more-btn */
   }
 
   /* Panel znajomych/porównania: pod spodem, bez wewnętrznego scrolla. */

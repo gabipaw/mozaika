@@ -130,6 +130,7 @@ const I18N = {
     noActivity: "Twoi znajomi nie ocenili jeszcze nic.",
     showMore: "Pokaż więcej ({n})",
     showLess: "Pokaż mniej",
+    seeAllComments: "Zobacz wszystkie ({n})",
     noUsers: "Brak innych użytkowników.",
     yourTaste: "Wasz gust",
     matchCap: "dopasowania · {n} wspólnych",
@@ -265,6 +266,7 @@ const I18N = {
     noActivity: "Your friends haven't rated anything yet.",
     showMore: "Show more ({n})",
     showLess: "Show less",
+    seeAllComments: "See all ({n})",
     noUsers: "No other users.",
     yourTaste: "Your taste",
     matchCap: "match · {n} in common",
@@ -977,6 +979,16 @@ async function loadActivity() {
   }
 }
 
+// Przełącznik „Zobacz wszystkie" ⇄ „Pokaż mniej" dla sekcji „Moje komentarze".
+function toggleComments() {
+  const box = $("myComments");
+  const rozwiniete = box.classList.toggle("expanded");
+  const ile = box.querySelectorAll(".comment-item").length;
+  $("commentsMore").textContent = rozwiniete
+    ? t("showLess")
+    : t("seeAllComments", { n: ile });
+}
+
 // Przełącznik „Pokaż więcej" ⇄ „Pokaż mniej" — rozwija i z powrotem zwija historię.
 // (CSS chowa wpisy powyżej FEED_COLLAPSED tylko na telefonie; na desktopie klasa
 // `expanded` niczego nie zmienia, bo panel ma tam własny scroll.)
@@ -1209,14 +1221,25 @@ function renderProfileData(data, readOnly) {
 }
 
 // Lista Twoich recenzji z komentarzem: plakat + tytuł + ocena + tekst.
+// Ile komentarzy pokazujemy zanim schowamy resztę pod przyciskiem — na laptopie
+// i na telefonie tak samo (inaczej niż historia znajomych, która zwija się tylko
+// na telefonie, bo na desktopie ma własny scroll).
+const COMMENTS_COLLAPSED = 9;
+
 function renderMyComments(reviews) {
   const box = $("myComments");
+  const more = $("commentsMore");
   box.innerHTML = "";
+  box.classList.remove("expanded"); // po odświeżeniu znów zwinięte
+  more.classList.add("hidden");
   const withText = reviews.filter((r) => r.media && (r.text || "").trim());
   if (withText.length === 0) {
     box.innerHTML = `<p class="muted">${t("myCommentsEmpty")}</p>`;
     return;
   }
+  // Przycisk tylko wtedy, gdy naprawdę jest co rozwijać.
+  more.classList.toggle("hidden", withText.length <= COMMENTS_COLLAPSED);
+  more.textContent = t("seeAllComments", { n: withText.length });
   for (const r of withText) {
     const item = document.createElement("article");
     item.className = "comment-item";
@@ -1904,6 +1927,7 @@ async function init() {
   });
   $("friendsBtn").addEventListener("click", openFriends);
   $("feedMore").addEventListener("click", toggleFeed);
+  $("commentsMore").addEventListener("click", toggleComments);
   $("friendsClose").addEventListener("click", closeFriends);
   $("friendsSearch").addEventListener("input", drawFriends);
   $("notifBtn").addEventListener("click", openNotif);
