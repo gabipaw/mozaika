@@ -1234,10 +1234,10 @@ function renderMyComments(reviews) {
 
 async function loadProfile() {
   const data = await loadMe();
-  renderProfileData(
-    { user: data.user, reviews: data.reviews, watchlist: data.watchlist },
-    false,
-  );
+  // Cały obiekt z /me — wcześniej przepisywaliśmy tylko user/reviews/watchlist,
+  // przez co followersCount i followingCount ginęły i liczniki obserwacji na
+  // WŁASNYM profilu stały na zerze (na cudzym działały, bo tam idzie całe `data`).
+  renderProfileData(data, false);
   loadActivity();
   loadTastePortrait();
 }
