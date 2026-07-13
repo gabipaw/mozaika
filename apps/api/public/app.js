@@ -131,6 +131,15 @@ const I18N = {
     showMore: "Pokaż więcej ({n})",
     showLess: "Pokaż mniej",
     seeAllComments: "Zobacz wszystkie ({n})",
+    together: "🍿 Co obejrzeć razem",
+    togetherTitle: "Co obejrzeć razem z {name}",
+    togBoth: "Oboje macie to na liście",
+    togTheirs: "{name} ma to na liście",
+    togYours: "Masz to na liście",
+    togFresh: "Nowość pod Wasz wspólny gust",
+    togScores: "Ty {you} · {name} {them}",
+    togEmpty:
+      "Za mało ocen, żeby dobrać coś dla Was dwojga. Oceńcie kilka tytułów i wróćcie.",
     pushLabel: "Powiadomienia",
     pushOff: "Włącz powiadomienia na telefon",
     pushOn: "✓ Powiadomienia włączone",
@@ -282,6 +291,15 @@ const I18N = {
     showMore: "Show more ({n})",
     showLess: "Show less",
     seeAllComments: "See all ({n})",
+    together: "🍿 What to watch together",
+    togetherTitle: "What to watch with {name}",
+    togBoth: "You both have it on your list",
+    togTheirs: "{name} has it on their list",
+    togYours: "You have it on your list",
+    togFresh: "New — fits your shared taste",
+    togScores: "You {you} · {name} {them}",
+    togEmpty:
+      "Not enough ratings to pick something for you two. Rate a few titles first.",
     pushLabel: "Notifications",
     pushOff: "Enable phone notifications",
     pushOn: "✓ Notifications enabled",
@@ -929,6 +947,8 @@ function appendCard(container, media, rating, onClick, rect) {
 function openSeeAll(title, items) {
   $("seeAllTitle").textContent = title;
   const grid = $("seeAllGrid");
+  grid.classList.remove("hidden"); // wracamy z trybu „Co obejrzeć razem"
+  $("togetherWrap").classList.add("hidden");
   grid.innerHTML = "";
   for (const it of items) {
     const media = it.media;
@@ -950,6 +970,8 @@ let catPickCtx = null; // { group, items } gdy tryb wyboru okładek
 
 function openCatPicker(group, items) {
   catPickCtx = { group, items };
+  $("seeAllGrid").classList.remove("hidden"); // picker używa siatki plakatów
+  $("togetherWrap").classList.add("hidden");
   $("seeAllTitle").textContent = t("pickCovers", {
     label: group.label,
     max: MAX_COVERS,
@@ -1537,6 +1559,51 @@ function setFollowBtn(on) {
   btn.textContent = on ? t("following") : t("follow");
 }
 
+// „Co obejrzeć razem" — tytuły trafiające w gust WASZEJ DWÓJKI, których żadne
+// z was jeszcze nie oceniło. Otwiera się w nakładce „Zobacz wszystko".
+function togetherReason(reason) {
+  if (reason?.kind === "bothWatchlist") return t("togBoth");
+  if (reason?.kind === "theirWatchlist") return t("togTheirs", { name: viewingName });
+  if (reason?.kind === "yourWatchlist") return t("togYours");
+  return t("togFresh");
+}
+
+async function openTogether() {
+  if (!viewingUserId) return;
+  const grid = $("togetherGrid");
+  $("seeAllGrid").classList.add("hidden"); // ta siatka jest dla samych plakatów
+  $("togetherWrap").classList.remove("hidden");
+  $("seeAllTitle").textContent = t("togetherTitle", { name: viewingName });
+  grid.innerHTML = `<p class="muted">${t("loading")}</p>`;
+  $("seeAllOverlay").classList.remove("hidden");
+  try {
+    const items = await api(`/users/${viewingUserId}/together`);
+    grid.innerHTML = "";
+    if (items.length === 0) {
+      grid.innerHTML = `<p class="muted">${t("togEmpty")}</p>`;
+      return;
+    }
+    for (const it of items) {
+      const { card } = posterCard(it, {
+        score: it.score,
+        // Każda karta mówi, CZEMU tu jest i jak ją oceni każde z was.
+        recby: `${togetherReason(it.reason)} · ${t("togScores", {
+          you: it.scoreYou,
+          them: it.scoreThem,
+          name: viewingName,
+        })}`,
+      });
+      card.addEventListener("click", () => {
+        closeSeeAll();
+        openDetail(toDetail(it, it.type, it.mediaId));
+      });
+      grid.append(card);
+    }
+  } catch (e) {
+    grid.innerHTML = `<p class="muted">${e.message}</p>`;
+  }
+}
+
 // Porównanie gustu z oglądanym userem: % dopasowania + wspólnie ocenione tytuły.
 async function loadCompare(id) {
   const body = $("compareBody");
@@ -1852,8 +1919,9 @@ async function loadDetailReviews(mediaId) {
       return;
     }
     for (const r of reviews) {
-      // Wstępnie wypełnij swoją poprzednią ocenę/komentarz.
-      if (me && r.user.displayName === me.displayName) {
+      // Wstępnie wypełnij swoją poprzednią ocenę/komentarz. Po ID, nie po nazwie —
+      // nazwy nie są unikalne, więc imiennik podstawiał Ci swoją recenzję.
+      if (me && r.user.id === me.id) {
         detailStars.set(r.rating);
         if (r.text) $("detailComment").value = r.text;
       }
@@ -2103,6 +2171,7 @@ async function init() {
   $("friendsBtn").addEventListener("click", openFriends);
   $("feedMore").addEventListener("click", toggleFeed);
   $("commentsMore").addEventListener("click", toggleComments);
+  $("togetherBtn").addEventListener("click", openTogether);
   $("friendsClose").addEventListener("click", closeFriends);
   $("friendsSearch").addEventListener("input", drawFriends);
   $("notifBtn").addEventListener("click", openNotif);

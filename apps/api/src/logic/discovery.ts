@@ -226,6 +226,12 @@ export function invalidateDiscoveryCache(userId: number): void {
   }
 }
 
+/** Klucz źródła z frontu („film") → enum bazy („FILM"). Null, gdy nieznany. */
+export function enumForKey(key: string): string | null {
+  const found = Object.entries(DISCOVERABLE).find(([, src]) => src.key === key);
+  return found ? found[0] : null;
+}
+
 /** Rodzaje (enum bazy), które umiemy odkrywać dla danego klucza z frontu. */
 export function typesForKey(typeKey?: string): string[] {
   const all = Object.keys(DISCOVERABLE);

@@ -268,6 +268,14 @@
                 <div class="feed-head">
                   <h2 data-i18n="yourTaste">Wasz gust</h2>
                 </div>
+                <button
+                  id="togetherBtn"
+                  class="more-btn"
+                  type="button"
+                  data-i18n="together"
+                >
+                  🍿 Co obejrzeć razem
+                </button>
                 <div id="compareBody" class="feed-list"></div>
               </div>
             </div>
@@ -383,6 +391,13 @@
             </button>
           </div>
           <div id="seeAllGrid" class="poster-grid"></div>
+          <!-- „Co obejrzeć razem": karty mają tytuł i powód pod plakatem. Siatka MUSI
+               mieć naturalną wysokość (przewija się kontener wokół niej) — gdy sama
+               siatka dostawała sztywną wysokość, rzędy wychodziły niższe niż plakat
+               i karty ucinały opis. -->
+          <div id="togetherWrap" class="together-wrap hidden">
+            <div id="togetherGrid" class="together-grid"></div>
+          </div>
         </div>
       </div>
 

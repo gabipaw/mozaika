@@ -1931,3 +1931,21 @@ footer {
   margin: 8px 0 0;
   line-height: 1.45;
 }
+
+/* „Co obejrzeć razem" — własna siatka, bo #seeAllGrid jest zrobiona pod SAME plakaty.
+   Kluczowe: przewija się WRAPPER, a siatka ma naturalną wysokość. Gdy scroll siedział
+   na samej siatce, dostawała ona sztywną wysokość, a wtedy przeglądarka liczy wysokość
+   rzędu z „intrinsic" wysokości karty — w której plakat (aspect-ratio + szerokość
+   procentowa) wnosi prawie zero. Rzędy wychodziły niższe niż plakat i karta (overflow:
+   hidden) ucinała tytuł oraz powód. */
+.together-wrap {
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+}
+
+.together-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}

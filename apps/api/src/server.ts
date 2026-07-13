@@ -29,6 +29,7 @@ import {
 import { addReview, deleteReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
+import { togetherPicks } from "./logic/together.js";
 import { tastePortrait } from "./logic/tasteProfile.js";
 import { invalidateDiscoveryCache, tasteDiscovery } from "./logic/discovery.js";
 import { addMediaFromTmdb, searchTmdb } from "./logic/tmdb.js";
@@ -277,6 +278,12 @@ api.post("/me/follow", requireAuth, async (c) => {
   return c.json({ ok: true });
 });
 
+// „Co obejrzeć razem" — typy dla Ciebie i oglądanego użytkownika.
+api.get("/users/:id/together", requireAuth, async (c) => {
+  const otherId = intParam(c.req.param("id"), "id");
+  return c.json(await togetherPicks(c.get("userId"), otherId));
+});
+
 // --- Web Push: powiadomienia na telefon ---
 
 // Klucz publiczny VAPID (przeglądarka potrzebuje go do subskrypcji).
@@ -404,7 +411,10 @@ api.get("/media/:id/reviews", async (c) => {
       rating: true,
       text: true,
       createdAt: true,
-      user: { select: { displayName: true } },
+      // id — front rozpoznawał „swoją" recenzję po displayName, a nazwy NIE są
+      // unikalne (unikalny jest tylko e-mail): dwie osoby o tym samym nicku
+      // podstawiały sobie nawzajem ocenę i komentarz do edycji.
+      user: { select: { id: true, displayName: true } },
     },
   });
   return c.json(reviews);
