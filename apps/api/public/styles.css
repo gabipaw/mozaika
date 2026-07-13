@@ -576,7 +576,9 @@ h2 {
    kolumn, a panel Znajomych przewija się w środku (patrz .feed-list). */
 .profile-cols {
   display: grid;
-  grid-template-columns: 300px 1fr 240px;
+  /* Lewa kolumna szersza (było 300px) — plakaty Top 4 i watchlisty biorą szerokość
+     z kolumny, więc to jedyny sposób, żeby je powiększyć bez łamania proporcji 2:3. */
+  grid-template-columns: 340px 1fr 240px;
   gap: 32px;
   align-items: stretch;
   margin-top: 0;
@@ -621,15 +623,15 @@ h2 {
 
 /* Watchlist: 3×2 wypełnia pozostałą wysokość lewej kolumny (dół w jednej linii
    z prawą kolumną). Karty skalowane do wysokości rzędu, plakaty 2:3. */
-/* Watchlista: 3 kolumny, wysokość z proporcji plakatu. NIE rozciągamy jej na resztę
-   kolumny (dawne flex: 1 1 auto + rows 1fr + card height 100%) — lewa kolumna równa
-   się do najwyższej (środkowej), więc watchlista pochłaniała cały nadmiar i plakaty
-   były rozciągane w pionie. */
+/* Watchlista: 3 kolumny, wysokość plakatu z proporcji 2:3 — NIGDY nie rozciągamy
+   samych kart (dawne rows: 1fr + card height 100% wydłużało plakaty).
+   Żeby dół kolumny mimo to trafiał w tę samą linię co pozostałe kolumny, siatka
+   wypełnia dostępną wysokość i rozkłada RZĘDY (align-content: space-between) —
+   rośnie odstęp między rzędami, a nie plakaty. */
 #watchlist {
   flex: 0 0 auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  justify-content: start;
   gap: 10px;
 }
 
