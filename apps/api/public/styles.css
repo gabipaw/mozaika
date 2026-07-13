@@ -930,6 +930,12 @@ h2 {
   scrollbar-color: var(--line) transparent;
 }
 
+/* Na desktopie panel Znajomych ma własny scroll, więc historii nie zwijamy i przycisk
+   „Pokaż więcej" jest niepotrzebny. Odsłania go dopiero media query dla telefonu. */
+.feed-more {
+  display: none;
+}
+
 .feed-list::-webkit-scrollbar {
   width: 8px;
 }
@@ -1445,6 +1451,24 @@ h2 {
      więc naturalnie ląduje nad paskiem okładek, po prawej stronie etykiety. */
   .cat-seeall {
     align-self: center;
+  }
+
+  /* Historia znajomych bywa długa, a na telefonie panel nie ma własnego scrolla —
+     rozciągałaby profil na kilka ekranów. Pokazujemy 5 wpisów, resztę pod
+     przyciskiem „Pokaż więcej" (klasa `expanded` odsłania wszystko). */
+  .feed-list:not(.expanded) .feed-item:nth-child(n + 6) {
+    display: none;
+  }
+  .feed-more:not(.hidden) {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    background: var(--bg-2);
+    color: var(--accent);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-weight: 600;
   }
 
   /* Panel znajomych/porównania: pod spodem, bez wewnętrznego scrolla. */

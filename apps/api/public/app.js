@@ -128,6 +128,7 @@ const I18N = {
     following: "Obserwujesz",
     noFollows: "Nie obserwujesz jeszcze nikogo — dodaj znajomych przyciskiem „＋ Dodaj”.",
     noActivity: "Twoi znajomi nie ocenili jeszcze nic.",
+    showMore: "Pokaż więcej ({n})",
     noUsers: "Brak innych użytkowników.",
     yourTaste: "Wasz gust",
     matchCap: "dopasowania · {n} wspólnych",
@@ -261,6 +262,7 @@ const I18N = {
     following: "Following",
     noFollows: "You're not following anyone yet — add friends with the “＋ Add” button.",
     noActivity: "Your friends haven't rated anything yet.",
+    showMore: "Show more ({n})",
     noUsers: "No other users.",
     yourTaste: "Your taste",
     matchCap: "match · {n} in common",
@@ -909,8 +911,15 @@ function avatarEl(user) {
   return el;
 }
 
+// Ile wpisów historii pokazujemy na telefonie zanim schowamy resztę pod „Pokaż więcej".
+// Na desktopie panel ma własny scroll, więc tam nic nie chowamy (patrz styles.css).
+const FEED_COLLAPSED = 5;
+
 async function loadActivity() {
   const box = $("activityFeed");
+  const more = $("feedMore");
+  box.classList.remove("expanded"); // po odświeżeniu historia znów jest zwinięta
+  more.classList.add("hidden");
   box.innerHTML = `<p class="muted small">${t("loading")}</p>`;
   try {
     const [items, following] = await Promise.all([
@@ -918,6 +927,9 @@ async function loadActivity() {
       api("/me/following").catch(() => []),
     ]);
     box.innerHTML = "";
+    // Przycisk ma sens tylko wtedy, gdy naprawdę jest co rozwijać.
+    more.classList.toggle("hidden", items.length <= FEED_COLLAPSED);
+    more.textContent = t("showMore", { n: items.length - FEED_COLLAPSED });
     if (items.length === 0) {
       box.innerHTML = `<p class="muted small">${
         following.length === 0 ? t("noFollows") : t("noActivity")
@@ -959,7 +971,15 @@ async function loadActivity() {
     }
   } catch (e) {
     box.innerHTML = `<p class="muted small">${e.message}</p>`;
+    $("feedMore").classList.add("hidden");
   }
+}
+
+// „Pokaż więcej" — rozwija pełną historię (CSS chowa wpisy powyżej FEED_COLLAPSED
+// tylko na telefonie; na desktopie klasa `expanded` niczego nie zmienia).
+function expandFeed() {
+  $("activityFeed").classList.add("expanded");
+  $("feedMore").classList.add("hidden");
 }
 
 const friendsData = { others: [], followingIds: new Set() };
@@ -1878,6 +1898,7 @@ async function init() {
     if (e.target === $("settingsOverlay")) closeSettings();
   });
   $("friendsBtn").addEventListener("click", openFriends);
+  $("feedMore").addEventListener("click", expandFeed);
   $("friendsClose").addEventListener("click", closeFriends);
   $("friendsSearch").addEventListener("input", drawFriends);
   $("notifBtn").addEventListener("click", openNotif);
