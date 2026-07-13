@@ -731,7 +731,9 @@ h2 {
 /* Sekcja pod dashboardem: komentarze (lewo, wypełniają) + portret (prawo, 340px). */
 .profile-below {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  /* minmax(0,…) — patrz uwaga w media query: `1fr` ma podłogę min-content, więc
+     długi tytuł komentarza rozpychałby kolumnę także tutaj. */
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 32px;
   align-items: start;
   margin: 28px 0 40px;
@@ -1314,13 +1316,18 @@ h2 {
     min-height: 0;
   }
   /* Na telefonie: sekcja pod dashboardem stackuje się (komentarze nad portretem),
-     a karty komentarzy 1 w rzędzie (3 byłyby za wąskie). */
+     a karty komentarzy 1 w rzędzie (3 byłyby za wąskie).
+     minmax(0,1fr), NIE 1fr: samo `1fr` znaczy minmax(auto,1fr), a to `auto` jest
+     podłogą równą min-content ścieżki. Długi tytuł w karcie (.comment-title ma
+     nowrap) podnosił tę podłogę i rozpychał WSZYSTKIE karty — strona jechała
+     w bok. Zerowa podłoga pozwala kolumnie zwęzić się do ekranu, a tytuł dostaje
+     wielokropek, tak jak zaprojektowano. */
   .profile-below {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
   }
   .my-comments {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .profile-left,
   .profile-right,
