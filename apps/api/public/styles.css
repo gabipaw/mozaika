@@ -1358,17 +1358,10 @@ h2 {
     flex: 0 0 auto;
     gap: 6px;
   }
-  /* Kolejność w pasku (tylko telefon): dzwonek → profil → ustawienia.
-     „Wyloguj" przeniesione do nakładki Ustawień. */
-  #notifBtn {
-    order: 1;
-  }
-  #hello {
-    order: 2;
-  }
-  #settingsBtn {
-    order: 3;
-  }
+  /* Bez przestawiania kolejności — telefon trzyma się układu z HTML, tak samo jak
+     laptop: profil → dzwonek → ustawienia (ustawienia i tak wypadają po samej
+     prawej). Wcześniej reguły `order` przesuwały tu profil za dzwonek i te same
+     przyciski miały inną kolejność na telefonie niż na laptopie. */
   /* Profil = samo zdjęcie w rogu (etykieta „Twój profil" nie zmieściłaby się obok
      reszty). Awatar w prawym górnym rogu to i tak czytelny standard. */
   #hello span:not(.hello-avatar) {
