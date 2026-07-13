@@ -1338,13 +1338,46 @@ h2 {
     padding: 10px 12px;
   }
 
-  /* Topbar: zawijaj i zmniejsz. */
+  /* Topbar: JEDEN rząd. Wcześniej zawijał się na dwa i cała grupa (profil, dzwonek,
+     ustawienia, wyloguj) lądowała pod logo, dosunięta do LEWEJ — profil nie był
+     w żadnym rogu. Teraz: logo z lewej, reszta dosunięta do prawej krawędzi,
+     ustawienia jako ostatnie (po samej prawej), profil tuż przed nimi. */
   .topbar {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     padding: 10px 12px;
+    gap: 8px;
   }
   .brand {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+  }
+  .topbar-left {
+    min-width: 0;
+    gap: 8px;
+  }
+  .userbox {
+    flex: 0 0 auto;
+    gap: 6px;
+  }
+  /* Kolejność w pasku (tylko telefon): dzwonek → wyloguj → profil → ustawienia. */
+  #notifBtn {
+    order: 1;
+  }
+  #logout {
+    order: 2;
+  }
+  #hello {
+    order: 3;
+  }
+  #settingsBtn {
+    order: 4;
+  }
+  /* Profil = samo zdjęcie w rogu (etykieta „Twój profil" nie zmieściłaby się obok
+     reszty). Awatar w prawym górnym rogu to i tak czytelny standard. */
+  #hello span:not(.hello-avatar) {
+    display: none;
+  }
+  .hello-link {
+    padding: 4px !important;
   }
 
   /* Zakładki typów mediów: jeden poziomy pasek do przesuwania (bez zawijania).
