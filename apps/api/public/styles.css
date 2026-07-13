@@ -1358,18 +1358,16 @@ h2 {
     flex: 0 0 auto;
     gap: 6px;
   }
-  /* Kolejność w pasku (tylko telefon): dzwonek → wyloguj → profil → ustawienia. */
+  /* Kolejność w pasku (tylko telefon): dzwonek → profil → ustawienia.
+     „Wyloguj" przeniesione do nakładki Ustawień. */
   #notifBtn {
     order: 1;
   }
-  #logout {
+  #hello {
     order: 2;
   }
-  #hello {
-    order: 3;
-  }
   #settingsBtn {
-    order: 4;
+    order: 3;
   }
   /* Profil = samo zdjęcie w rogu (etykieta „Twój profil" nie zmieściłaby się obok
      reszty). Awatar w prawym górnym rogu to i tak czytelny standard. */
@@ -1687,6 +1685,25 @@ h2 {
 /* Nakładka Ustawienia. */
 .settings-card {
   max-width: 340px;
+}
+
+/* „Wyloguj" w Ustawieniach — akcja odsunięta od reszty i wyraźnie odróżniona
+   od przycisków wyboru języka. */
+.logout-btn {
+  width: 100%;
+  margin-top: 18px;
+  background: transparent;
+  color: #ff8f8f;
+  border: 1px solid #5a2b2b;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-weight: 600;
+}
+
+.logout-btn:hover {
+  background: #ff6b6b;
+  color: #2a0b0b;
+  border-color: transparent;
 }
 
 .settings-label {

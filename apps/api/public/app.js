@@ -1873,6 +1873,9 @@ function renderHello() {
 }
 
 function logout() {
+  // „Wyloguj" siedzi teraz w nakładce Ustawień — zamknij ją, inaczej zostałaby
+  // otwarta nad ekranem logowania.
+  $("settingsOverlay").classList.add("hidden");
   clearToken();
   showAuth();
 }
