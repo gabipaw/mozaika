@@ -20,7 +20,9 @@ import {
   discoverAniListByGenre,
   similarAniList,
 } from "./anilist.js";
+import { discoverBooks, discoverBooksByGenre, recognizesBookGenre } from "./books.js";
 import { discoverRawg, similarRawg } from "./games.js";
+import { discoverMusic, discoverMusicByGenre, recognizesMusicGenre } from "./music.js";
 import type { ExternalMedia } from "./media.js";
 import {
   computeTasteProfile,
@@ -52,7 +54,9 @@ export const MAX_GENRES = 2;
 interface Source {
   key: string;
   discover: (from: number, to: number) => Promise<ExternalMedia[]>;
-  similar: (externalId: string) => Promise<ExternalMedia[]>;
+  // Opcjonalne: Open Library i iTunes nie mają API „podobne do". Brak `similar`
+  // oznacza, że tytuły tego rodzaju nie są ziarnami podobieństwa (pickSeeds).
+  similar?: (externalId: string) => Promise<ExternalMedia[]>;
   // Odkrywanie po gatunku — tylko źródła, które to wspierają (TMDB, AniList).
   discoverByGenre?: (genre: string, from: number, to: number) => Promise<ExternalMedia[]>;
   recognizesGenre?: (genre: string) => boolean; // które nazwy gatunków źródło zna
@@ -85,6 +89,21 @@ const DISCOVERABLE: Record<string, Source> = {
     key: "game",
     discover: (f, t) => discoverRawg(f, t),
     similar: (id) => similarRawg(id),
+  },
+  // Książki i muzyka NIE mają w swoich API odpowiednika „podobne do” — dlatego
+  // opierają się na gatunku i popularności. Gatunek książki bierzemy z gustu
+  // nauczonego na filmach (książki nie mają gatunków w bazie).
+  KSIAZKA: {
+    key: "book",
+    discover: (f, t) => discoverBooks(f, t),
+    discoverByGenre: (g, f, t) => discoverBooksByGenre(g, f, t),
+    recognizesGenre: (g) => recognizesBookGenre(g),
+  },
+  MUZYKA: {
+    key: "music",
+    discover: () => discoverMusic(), // iTunes RSS nie filtruje po roku
+    discoverByGenre: (g) => discoverMusicByGenre(g),
+    recognizesGenre: (g) => recognizesMusicGenre(g),
   },
 };
 
@@ -136,10 +155,15 @@ export function pickYearWindow(
   return { from: currentYear - FALLBACK_YEARS_BACK, to: currentYear };
 }
 
-/** Ziarna podobieństwa: wysoko ocenione, odkrywalne tytuły; ulubione i najlepsze wpierw. */
+/**
+ * Ziarna podobieństwa: wysoko ocenione tytuły ze źródeł, które MAJĄ API „podobne do".
+ * Książki i muzyka go nie mają, więc ziarnem nie będą (pytanie o nie byłoby jałowe).
+ */
 export function pickSeeds(rated: RatedSeed[]): RatedSeed[] {
   return rated
-    .filter((r) => DISCOVERABLE[r.type] && r.externalId && r.rating >= LIKE_THRESHOLD)
+    .filter(
+      (r) => DISCOVERABLE[r.type]?.similar && r.externalId && r.rating >= LIKE_THRESHOLD,
+    )
     .sort((a, b) => Number(b.favorite) - Number(a.favorite) || b.rating - a.rating)
     .slice(0, MAX_SEEDS);
 }
@@ -303,7 +327,10 @@ export async function tasteDiscovery(
     const [similarRaw, genreRaw, popularRaw] = await Promise.all([
       Promise.all(
         seeds.map(async (s) => {
-          const found = await DISCOVERABLE[s.type].similar(s.externalId);
+          // pickSeeds przepuszcza tylko źródła z `similar`, ale sprawdzamy jawnie.
+          const similar = DISCOVERABLE[s.type].similar;
+          if (!similar) return [];
+          const found = await similar(s.externalId);
           return found.map((m) => toItem(m, s.type, { kind: "similar", to: s.title }));
         }),
       ),

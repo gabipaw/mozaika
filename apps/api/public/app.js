@@ -657,9 +657,9 @@ function tasteReasonLabel(reason, item) {
   return t("reasonGeneral");
 }
 
-// Rodzaje, dla których źródła mają API „podobne"/„odkrywaj" (patrz DISCOVERABLE
-// w logic/discovery.ts). Książki (Open Library) i muzyka (iTunes) go nie mają.
-const DISCOVERABLE_KEYS = ["film", "anime", "manga", "game"];
+// Rodzaje, które umiemy odkrywać (patrz DISCOVERABLE w logic/discovery.ts).
+// Książki i muzyka nie mają API „podobne do", więc jadą na gatunku i popularności.
+const DISCOVERABLE_KEYS = ["film", "anime", "manga", "game", "book", "music"];
 
 // Odkrywanie pod gust — świeże tytuły z zewnątrz (TMDB/AniList/RAWG), nie z katalogu.
 // Pozycje są zewnętrzne (mają externalId, brak mediaId) — klik otwiera detal i ocenę.

@@ -120,6 +120,87 @@ export async function searchBooks(query: string): Promise<ExternalMedia[]> {
   return out;
 }
 
+/**
+ * Nasze nazwy gatunków (z TMDB/AniList) → „subject_key" w Open Library. Dzięki temu
+ * gust nauczony na filmach przenosi się na książki: lubisz sci-fi → dostajesz książki
+ * sci-fi. Książki NIE mają gatunków w bazie (OL podaje tylko zaszumione „subjects",
+ * patrz toBook), więc to jedyny sposób na afinność gatunkową dla tej kategorii.
+ *
+ * Mapujemy TYLKO gatunki, w których OL jest wiarygodne — sprawdzone na żywym API.
+ * Pominięte celowo: War/History (zwracają fantasy i przypadkowe non-fiction),
+ * Drama/Action (dla książek nic nie znaczą). Lepiej mniej kategorii niż śmieci.
+ */
+const OL_SUBJECTS: Record<string, string> = {
+  "Sci-Fi": "science_fiction",
+  Fantasy: "fantasy",
+  Horror: "horror",
+  Thriller: "thriller",
+  Mystery: "mystery",
+  Romance: "romance",
+  Adventure: "adventure",
+  Comedy: "humor",
+  Crime: "crime",
+};
+
+/** Czy Open Library rozpoznaje ten gatunek na tyle dobrze, żeby o niego pytać. */
+export function recognizesBookGenre(genre: string): boolean {
+  return genre in OL_SUBJECTS;
+}
+
+/**
+ * Zapytanie do Open Library posortowane po ocenach czytelników (`sort=rating`).
+ * Bierzemy z zapasem, bo odpadają pozycje bez okładki i kolejne tomy tej samej serii.
+ * Błąd źródła = pusta lista (odkrywanie ma nie wywalać całej strony głównej).
+ */
+async function olDiscover(query: string): Promise<ExternalMedia[]> {
+  const url =
+    `${OL}/search.json?limit=60&sort=rating` +
+    `&fields=key,title,first_publish_year,cover_i,author_name` +
+    `&q=${encodeURIComponent(query)}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { docs?: OlDoc[] };
+
+    const seen = new Set<string>();
+    const out: ExternalMedia[] = [];
+    for (const d of data.docs ?? []) {
+      if (!d.title || !d.key || !d.cover_i) continue; // tylko z okładką
+      const key = dedupKey(d.title);
+      if (!key || seen.has(key)) continue; // kolejny tom tej samej serii
+      seen.add(key);
+      out.push(toBook(d));
+      if (out.length >= 18) break;
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+/** „Odkrywanie" książek: najlepiej oceniane z okna lat (bez zapisu w bazie). */
+export function discoverBooks(
+  yearFrom: number,
+  yearTo: number,
+): Promise<ExternalMedia[]> {
+  return olDiscover(`first_publish_year:[${yearFrom} TO ${yearTo}]`);
+}
+
+/** Książki w danym gatunku i oknie lat — najlepiej oceniane. */
+export function discoverBooksByGenre(
+  genre: string,
+  yearFrom: number,
+  yearTo: number,
+): Promise<ExternalMedia[]> {
+  const subject = OL_SUBJECTS[genre];
+  if (!subject) return Promise.resolve([]);
+  // subject_key (ścisła fasetka), NIE subject (rozmyty tekst) — rozmyty zwracał
+  // „Złodzieja pioruna" dla horroru i Harry'ego Pottera dla wojny.
+  return olDiscover(
+    `subject_key:${subject} first_publish_year:[${yearFrom} TO ${yearTo}]`,
+  );
+}
+
 /** Czy klucz tytułu książki pasuje do którejś mangi (zawiera się / jest zawarty). */
 function isManga(bookKey: string, mangaKeys: string[]): boolean {
   if (bookKey.length < 5) return false;

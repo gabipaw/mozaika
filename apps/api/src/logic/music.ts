@@ -96,3 +96,96 @@ export async function musicDescription(externalId: string): Promise<string> {
 
   return [header.join(" · "), ...tracks].filter(Boolean).join("\n");
 }
+
+/**
+ * Gatunki iTunes (`primaryGenreName`, tak je zapisujemy w bazie) → id kanału RSS
+ * „top albums". ID sprawdzone na żywym API — Apple nie publikuje ich w dokumentacji.
+ */
+const ITUNES_GENRE_IDS: Record<string, number> = {
+  Pop: 14,
+  Rock: 21,
+  Alternative: 20,
+  "Hip-Hop/Rap": 18,
+  "R&B/Soul": 15,
+  Electronic: 7,
+  Dance: 17,
+  Jazz: 11,
+  Classical: 5,
+  Country: 6,
+  Soundtrack: 16,
+  Reggae: 24,
+  Blues: 2,
+};
+
+/** Czy iTunes ma kanał „top albums" dla tego gatunku. */
+export function recognizesMusicGenre(genre: string): boolean {
+  return genre in ITUNES_GENRE_IDS;
+}
+
+interface RssEntry {
+  id?: { attributes?: { "im:id"?: string } };
+  "im:name"?: { label?: string };
+  "im:artist"?: { label?: string };
+  "im:image"?: { label?: string }[];
+  "im:releaseDate"?: { label?: string };
+  category?: { attributes?: { label?: string } };
+}
+
+/**
+ * UWAGA: gdy kanał zwróci DOKŁADNIE JEDEN album, Apple podaje `entry` jako obiekt,
+ * a nie tablicę jednoelementową. Kod zakładający tablicę cicho zwracał pustkę.
+ */
+function rssEntries(feed: { entry?: RssEntry | RssEntry[] } | undefined): RssEntry[] {
+  const e = feed?.entry;
+  if (!e) return [];
+  return Array.isArray(e) ? e : [e];
+}
+
+function fromRss(e: RssEntry): ExternalMedia | null {
+  const externalId = e.id?.attributes?.["im:id"];
+  const album = (e["im:name"]?.label ?? "").trim();
+  if (!externalId || !album) return null;
+
+  const artist = (e["im:artist"]?.label ?? "").trim();
+  const images = e["im:image"] ?? [];
+  const date = e["im:releaseDate"]?.label ?? "";
+  const genre = e.category?.attributes?.label;
+  return {
+    externalId,
+    title: artist ? `${album} — ${artist}` : album,
+    year: date ? Number(date.slice(0, 4)) || null : null,
+    // ostatnia miniatura = największa; bigArt podmienia ją na okładkę 600x600
+    posterUrl: bigArt(images[images.length - 1]?.label),
+    genres: genre ? [genre] : [],
+  };
+}
+
+/** Najpopularniejsze albumy (opcjonalnie w gatunku). Błąd źródła = pusta lista. */
+async function topAlbums(genreId?: number): Promise<ExternalMedia[]> {
+  const genre = genreId ? `genre=${genreId}/` : "";
+  try {
+    const res = await fetch(`${ITUNES}/pl/rss/topalbums/limit=20/${genre}json`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { feed?: { entry?: RssEntry | RssEntry[] } };
+    return rssEntries(data.feed)
+      .map(fromRss)
+      .filter((m): m is ExternalMedia => m !== null);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * „Odkrywanie" muzyki: najpopularniejsze albumy. iTunes nie ma API „podobne" ani
+ * filtra po roku, więc — inaczej niż filmy/gry — muzyka opiera się na popularności
+ * (i na gatunku, gdy znamy Twój ulubiony).
+ */
+export function discoverMusic(): Promise<ExternalMedia[]> {
+  return topAlbums();
+}
+
+/** Najpopularniejsze albumy w danym gatunku. */
+export function discoverMusicByGenre(genre: string): Promise<ExternalMedia[]> {
+  const id = ITUNES_GENRE_IDS[genre];
+  return id ? topAlbums(id) : Promise.resolve([]);
+}

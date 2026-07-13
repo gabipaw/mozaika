@@ -40,13 +40,16 @@ test("pickDiscoverTypes bierze najlubianiejsze, tylko odkrywalne rodzaje", () =>
   assert.ok(types.indexOf("ANIME") < types.indexOf("FILM"));
 });
 
-test("pickDiscoverTypes pomija rodzaje bez źródła discover (np. MUZYKA)", () => {
-  const music: TasteReview[] = [
+test("pickDiscoverTypes: MUZYKA jest odkrywalna (iTunes RSS), SERIAL nie ma źródła", () => {
+  const mixed: TasteReview[] = [
     { mediaId: 1, rating: 9, favorite: false, type: "MUZYKA", year: 2013, genres: [] },
     { mediaId: 2, rating: 8, favorite: false, type: "MUZYKA", year: 2016, genres: [] },
-    { mediaId: 3, rating: 7, favorite: false, type: "MUZYKA", year: 2019, genres: [] },
+    { mediaId: 3, rating: 9, favorite: false, type: "SERIAL", year: 2019, genres: [] },
+    { mediaId: 4, rating: 8, favorite: false, type: "SERIAL", year: 2020, genres: [] },
   ];
-  assert.deepEqual(pickDiscoverTypes(computeTasteProfile(music)), []);
+  const types = pickDiscoverTypes(computeTasteProfile(mixed));
+  assert.ok(types.includes("MUZYKA"), "muzyka ma teraz źródło odkrywania");
+  assert.ok(!types.includes("SERIAL"), "serial nie ma własnego źródła");
 });
 
 test("pickYearWindow zwraca ulubioną dekadę, gdy ma poparcie", () => {
@@ -81,13 +84,13 @@ test("pickSeeds: ulubione i najwyżej ocenione wpierw, tylko odkrywalne i ≥ pr
   const rated: RatedSeed[] = [
     { type: "FILM", externalId: "1", title: "A", rating: 8, favorite: false },
     { type: "ANIME", externalId: "2", title: "B", rating: 7.5, favorite: true },
-    { type: "MUZYKA", externalId: "3", title: "C", rating: 10, favorite: false }, // brak discover
+    { type: "MUZYKA", externalId: "3", title: "C", rating: 10, favorite: false }, // brak API „podobne"
     { type: "GRA", externalId: "4", title: "D", rating: 5, favorite: false }, // < próg
   ];
   const seeds = pickSeeds(rated);
   assert.deepEqual(
     seeds.map((s) => s.title),
-    ["B", "A"], // MUZYKA i za niska ocena odpadają; ulubione (B) przed A
+    ["B", "A"], // MUZYKA (brak „podobnych") i za niska ocena odpadają; ulubione (B) przed A
   );
 });
 
