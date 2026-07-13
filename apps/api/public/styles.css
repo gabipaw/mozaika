@@ -644,18 +644,24 @@ h2 {
   display: flex;
   flex-direction: column;
   height: 100%;
+  /* Rzędy mają naturalną wysokość (patrz .cat-row), więc kolumna może być wyższa
+     niż ekran — wtedy przewija się w środku, zamiast ucinać ostatnią kategorię. */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }
 
-/* Rząd kategorii: etykieta z lewej, do 4 plakatów; równa część wysokości.
-   „Zobacz wszystko" w prawym górnym rogu (pozycja absolutna, nie rozpycha). */
+/* Rząd kategorii: etykieta z lewej, do 4 okładek.
+   flex: 0 0 auto (NIE 1 1 0): rzędy dzieliły wcześniej wysokość kolumny po równo,
+   a okładki musiały się dopasować do tej narzuconej wysokości — przy 4 sztukach
+   nie mieściły się w szerokości i były rozciągane/przycinane. Teraz jest odwrotnie:
+   wysokość rzędu WYNIKA z okładek, więc proporcja 2:3 zawsze zostaje nietknięta. */
 .cat-row {
-  position: relative;
-  flex: 1 1 0;
-  min-height: 0;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 8px 0;
+  gap: 14px;
+  padding: 10px 0;
   border-top: 1px solid var(--line);
 }
 
@@ -669,8 +675,16 @@ h2 {
   padding-bottom: 0;
 }
 
+/* Lewa kolumna rzędu: nazwa kategorii + przycisk „Zmień" pod nią. */
+.cat-head {
+  flex: 0 0 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 .cat-label {
-  flex: 0 0 90px;
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 600;
@@ -680,33 +694,28 @@ h2 {
 .cat-posters {
   flex: 1;
   min-width: 0;
-  height: 100%;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  overflow: hidden;
+  align-items: flex-start;
+  gap: 10px;
 }
 
-/* 4 okładki dzielą szerokość rzędu po równo, więc ZAWSZE się mieszczą. Wcześniej
-   szerokość brała się z wysokości rzędu (proporcja 2:3) i ostatnia okładka wpadała
-   pod `overflow: hidden` — była ucięta. max-width: przy mniej niż 4 pozycjach karty
-   nie rozdmuchują się na całą kolumnę. */
+/* Okładki dzielą szerokość rzędu na 4 równe kolumny, a wysokość biorą z proporcji
+   plakatu (2:3) — nic nie jest rozciągane ani przycinane. Rzędy z mniej niż 4
+   pozycjami mają węższe karty tej samej wielkości, więc wszystkie kategorie
+   wyglądają spójnie. */
 .cat-posters .card {
-  flex: 1 1 0;
-  min-width: 0;
-  max-width: calc((100% - 3 * 12px) / 4);
-  height: 100%;
+  flex: 0 0 calc((100% - 3 * 10px) / 4);
+  max-width: calc((100% - 3 * 10px) / 4);
+  height: auto;
 }
 
 .cat-posters .card .poster {
-  height: 100%; /* pion zawsze mieści się w rzędzie; obrazek dokadruje (object-fit) */
+  height: auto; /* wysokość z aspect-ratio: 2/3 (muzyka: 1/1) */
 }
 
-/* Muzyka (kwadrat) — ta sama szerokość co plakaty 2:3 (= 2/3 wysokości rzędu),
-   dosunięta do dołu rzędu (nie „lewituje", stoi w linii z plakatami). */
+/* Muzyka: okładka kwadratowa jak płyta — ta sama szerokość, mniejsza wysokość. */
 .cat-posters .card.sq {
-  height: calc(200% / 3);
-  align-self: flex-end;
+  height: auto;
 }
 
 /* Pusta kategoria — kontener zostaje, delikatny placeholder. */
@@ -1179,13 +1188,10 @@ h2 {
   height: 100%;
 }
 
-/* Pod etykietą kategorii, nie nad plakatami: 4 okładki wypełniają teraz całą
-   szerokość rzędu, więc przycisk w prawym rogu leżałby na ostatniej okładce. */
+/* Siedzi w .cat-head (kolumna etykiety), więc nie potrzebuje już pozycji absolutnej
+   — nie ma jak wejść na okładki. */
 .cat-seeall {
-  position: absolute;
-  top: 8px;
-  left: 0;
-  z-index: 2;
+  flex: 0 0 auto;
 }
 
 /* Przycisk „Zobacz wszystko". */
@@ -1389,18 +1395,22 @@ h2 {
   #ratedByCat {
     display: block;
     height: auto;
+    overflow-y: visible; /* strona przewija się w całości, kolumna nie ma własnego scrolla */
   }
   .cat-row {
-    position: static;
     flex-direction: column;
     align-items: stretch;
     height: auto;
     gap: 8px;
     padding: 14px 0;
   }
-  .cat-label {
-    flex-basis: auto;
+  /* Etykieta i „Zmień" obok siebie NAD paskiem okładek (na telefonie nie ma miejsca
+     na osobną kolumnę z lewej). */
+  .cat-head {
+    flex: 0 0 auto;
     flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
   /* Każda kategoria = osobny poziomy pasek (swipe w bok), strona się nie rusza. */
   .cat-posters {
@@ -1417,6 +1427,7 @@ h2 {
   .cat-posters .card.sq {
     height: auto;
     width: 100px;
+    max-width: none; /* na desktopie karta to 1/4 rzędu — tu ma stałe 100px */
     flex: 0 0 auto;
     align-self: auto;
     scroll-snap-align: start;
@@ -1424,10 +1435,10 @@ h2 {
   .cat-posters .card .poster {
     height: auto;
   }
+  /* Bez `order: -1` — przycisk siedzi teraz w .cat-head obok nazwy kategorii,
+     więc naturalnie ląduje nad paskiem okładek, po prawej stronie etykiety. */
   .cat-seeall {
-    position: static;
-    align-self: flex-start;
-    order: -1; /* przycisk nad plakatami */
+    align-self: center;
   }
 
   /* Panel znajomych/porównania: pod spodem, bez wewnętrznego scrolla. */

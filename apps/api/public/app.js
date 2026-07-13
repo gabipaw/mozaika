@@ -847,9 +847,15 @@ function renderRatedByCat(reviews, readOnly) {
     const items = reviews.filter((r) => g.types.includes(r.media.type));
     const catRow = document.createElement("div");
     catRow.className = "cat-row";
+    // Nazwa kategorii i przycisk „Zmień" w jednej kolumnie po lewej. Przycisk był
+    // wcześniej pozycjonowany absolutnie nad plakatami i przy 4 okładkach (które
+    // wypełniają całą szerokość) lądował NA ostatniej z nich.
+    const head = document.createElement("div");
+    head.className = "cat-head";
     const label = document.createElement("div");
     label.className = "cat-label";
     label.textContent = g.label;
+    head.append(label);
     const posters = document.createElement("div");
     posters.className = "cat-posters";
     if (items.length === 0) {
@@ -862,7 +868,6 @@ function renderRatedByCat(reviews, readOnly) {
       const shown = readOnly ? items.slice(0, MAX_COVERS) : displayedForCat(g, items);
       for (const r of shown) appendCard(posters, r.media, r.rating);
     }
-    catRow.append(label, posters);
     // „Wybierz" tylko na WŁASNYM profilu (nie zmieniasz cudzych okładek).
     if (!readOnly && items.length > 0) {
       const btn = document.createElement("button");
@@ -873,8 +878,9 @@ function renderRatedByCat(reviews, readOnly) {
           ? t("pickN", { n: items.length, max: MAX_COVERS })
           : t("edit");
       btn.addEventListener("click", () => openCatPicker(g, items));
-      catRow.append(btn);
+      head.append(btn);
     }
+    catRow.append(head, posters);
     box.append(catRow);
   }
 }
