@@ -1,5 +1,5 @@
 // Service worker Mozaiki — cache'uje „powłokę" aplikacji (offline + instalowalność PWA).
-const CACHE = "mozaika-v104";
+const CACHE = "mozaika-v105";
 const SHELL = [
   "/",
   "/index.html",
@@ -42,5 +42,45 @@ self.addEventListener("fetch", (event) => {
         return res;
       })
       .catch(() => caches.match(request)),
+  );
+});
+
+// --- Web Push: powiadomienia na telefon (działają, gdy apka jest zamknięta) ---
+
+self.addEventListener("push", (event) => {
+  // Ładunek powinien być JSON-em z serwera, ale bramka może dostarczyć też pusty
+  // push — wtedy pokazujemy komunikat ogólny zamiast wywalać się na parsowaniu.
+  let dane = { title: "Mozaika", body: "Masz nowe powiadomienie.", url: "/" };
+  try {
+    if (event.data) dane = { ...dane, ...event.data.json() };
+  } catch {
+    if (event.data) dane.body = event.data.text();
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(dane.title, {
+      body: dane.body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      data: { url: dane.url || "/" },
+      // Ten sam tag → nowe powiadomienie ZASTĘPUJE stare, zamiast zasypywać ekran.
+      tag: "mozaika",
+    }),
+  );
+});
+
+// Klik w powiadomienie: podnieś już otwartą kartę Mozaiki, a jak żadnej nie ma — otwórz.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const cel = event.notification.data?.url || "/";
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((klienci) => {
+        for (const k of klienci) {
+          if ("focus" in k) return k.focus();
+        }
+        return self.clients.openWindow(cel);
+      }),
   );
 });

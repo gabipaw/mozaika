@@ -19,6 +19,13 @@ import { getDescription } from "./logic/details.js";
 import { addGameFromRawg, searchGames } from "./logic/games.js";
 import { addFromAniList, searchAniList } from "./logic/anilist.js";
 import { addMusicFromItunes, searchMusic } from "./logic/music.js";
+import {
+  pushEnabled,
+  pushPublicKey,
+  removePushSubscription,
+  savePushSubscription,
+  sendPushToUser,
+} from "./logic/push.js";
 import { addReview, deleteReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
@@ -245,10 +252,59 @@ api.post("/me/follow", requireAuth, async (c) => {
   if (followedId === followerId) {
     throw new ValidationError("Nie możesz obserwować samego siebie.");
   }
+  const istnial = await prisma.follow.findUnique({
+    where: { followerId_followedId: { followerId, followedId } },
+  });
   await prisma.follow.upsert({
     where: { followerId_followedId: { followerId, followedId } },
     update: {},
     create: { followerId, followedId },
+  });
+
+  // Push tylko przy NOWYM obserwowaniu — ponowne kliknięcie nie ma budzić telefonu.
+  // Wysyłka nie może wywalić obserwowania, więc łapiemy błąd.
+  if (!istnial) {
+    const kto = await prisma.user.findUnique({
+      where: { id: followerId },
+      select: { displayName: true },
+    });
+    sendPushToUser(followedId, {
+      title: "Nowy obserwujący",
+      body: `${kto?.displayName ?? "Ktoś"} zaczął Cię obserwować.`,
+      url: "/",
+    }).catch((e) => console.error("push (follow) nie wyszedl:", e));
+  }
+  return c.json({ ok: true });
+});
+
+// --- Web Push: powiadomienia na telefon ---
+
+// Klucz publiczny VAPID (przeglądarka potrzebuje go do subskrypcji).
+// enabled=false → front chowa przełącznik zamiast pokazywać zepsutą opcję.
+api.get("/push/key", (c) =>
+  c.json({ enabled: pushEnabled, publicKey: pushEnabled ? pushPublicKey() : null }),
+);
+
+// Zapisz subskrypcję tego urządzenia.
+api.post("/push/subscribe", requireAuth, async (c) => {
+  const sub = await c.req.json();
+  await savePushSubscription(c.get("userId"), sub);
+  return c.json({ ok: true }, 201);
+});
+
+// Wypisz urządzenie (user wyłączył powiadomienia).
+api.post("/push/unsubscribe", requireAuth, async (c) => {
+  const { endpoint } = await c.req.json();
+  await removePushSubscription(String(endpoint ?? ""));
+  return c.json({ ok: true });
+});
+
+// Wyślij testowe powiadomienie do siebie („Sprawdź" w Ustawieniach).
+api.post("/push/test", requireAuth, async (c) => {
+  await sendPushToUser(c.get("userId"), {
+    title: "Mozaika",
+    body: "Działa — tak będą wyglądać powiadomienia.",
+    url: "/",
   });
   return c.json({ ok: true });
 });

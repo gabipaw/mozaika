@@ -131,6 +131,21 @@ const I18N = {
     showMore: "Pokaż więcej ({n})",
     showLess: "Pokaż mniej",
     seeAllComments: "Zobacz wszystkie ({n})",
+    pushLabel: "Powiadomienia",
+    pushOff: "Włącz powiadomienia na telefon",
+    pushOn: "✓ Powiadomienia włączone",
+    pushOffHint:
+      "Damy znać, gdy ktoś zacznie Cię obserwować — nawet gdy Mozaika jest zamknięta.",
+    pushOnHint: "To urządzenie będzie dostawać powiadomienia.",
+    pushBlocked: "Powiadomienia zablokowane",
+    pushBlockedHint:
+      "Zablokowałeś powiadomienia dla tej strony. Odblokuj je w ustawieniach przeglądarki (kłódka przy adresie).",
+    pushUnsupported:
+      "Ta przeglądarka nie obsługuje powiadomień. Na iPhonie najpierw dodaj Mozaikę do ekranu głównego.",
+    pushEnabled: "Powiadomienia włączone",
+    pushDisabled: "Powiadomienia wyłączone",
+    pushSent: "Wysłano testowe powiadomienie",
+    pushTest: "Wyślij testowe",
     noUsers: "Brak innych użytkowników.",
     yourTaste: "Wasz gust",
     matchCap: "dopasowania · {n} wspólnych",
@@ -267,6 +282,21 @@ const I18N = {
     showMore: "Show more ({n})",
     showLess: "Show less",
     seeAllComments: "See all ({n})",
+    pushLabel: "Notifications",
+    pushOff: "Enable phone notifications",
+    pushOn: "✓ Notifications enabled",
+    pushOffHint:
+      "We'll let you know when someone follows you — even when Mozaika is closed.",
+    pushOnHint: "This device will receive notifications.",
+    pushBlocked: "Notifications blocked",
+    pushBlockedHint:
+      "You blocked notifications for this site. Unblock them in your browser settings (padlock next to the address).",
+    pushUnsupported:
+      "This browser doesn't support notifications. On iPhone, add Mozaika to your home screen first.",
+    pushEnabled: "Notifications enabled",
+    pushDisabled: "Notifications disabled",
+    pushSent: "Test notification sent",
+    pushTest: "Send test",
     noUsers: "No other users.",
     yourTaste: "Your taste",
     matchCap: "match · {n} in common",
@@ -364,8 +394,127 @@ function refreshDynamic() {
   }
 }
 
+// --- Powiadomienia push (na telefon) ---
+
+// Klucz VAPID przychodzi jako base64url; PushManager chce surowych bajtów.
+function vapidToBytes(base64url) {
+  const pad = "=".repeat((4 - (base64url.length % 4)) % 4);
+  const b64 = (base64url + pad).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(b64);
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
+
+const pushSupported = () =>
+  "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+async function currentPushSub() {
+  if (!pushSupported()) return null;
+  const reg = await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+
+// Rysuje stan przełącznika: włączone / wyłączone / zablokowane / nieobsługiwane.
+async function renderPushSettings() {
+  const grupa = $("pushGroup");
+  const btn = $("pushToggle");
+  const test = $("pushTest");
+  const hint = $("pushHint");
+
+  if (!pushSupported()) {
+    grupa.classList.remove("hidden");
+    btn.classList.add("hidden");
+    test.classList.add("hidden");
+    hint.textContent = t("pushUnsupported");
+    return;
+  }
+
+  // Serwer bez kluczy VAPID → nie udawaj, że opcja działa.
+  let key = null;
+  try {
+    const d = await api("/push/key");
+    if (d.enabled) key = d.publicKey;
+  } catch {
+    /* brak konfiguracji push — chowamy sekcję */
+  }
+  if (!key) {
+    grupa.classList.add("hidden");
+    return;
+  }
+  pushKeyCache = key;
+
+  grupa.classList.remove("hidden");
+  btn.classList.remove("hidden");
+
+  if (Notification.permission === "denied") {
+    btn.disabled = true;
+    btn.textContent = t("pushBlocked");
+    test.classList.add("hidden");
+    hint.textContent = t("pushBlockedHint");
+    return;
+  }
+
+  const sub = await currentPushSub();
+  btn.disabled = false;
+  btn.classList.toggle("active", !!sub);
+  btn.textContent = sub ? t("pushOn") : t("pushOff");
+  test.classList.toggle("hidden", !sub);
+  hint.textContent = sub ? t("pushOnHint") : t("pushOffHint");
+}
+
+let pushKeyCache = null;
+
+async function togglePush() {
+  const btn = $("pushToggle");
+  btn.disabled = true;
+  try {
+    const sub = await currentPushSub();
+    if (sub) {
+      // Wyłączenie: najpierw serwer (żeby przestał wysyłać), potem przeglądarka.
+      await api("/push/unsubscribe", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ endpoint: sub.endpoint }),
+      }).catch(() => {});
+      await sub.unsubscribe();
+      toast(t("pushDisabled"));
+    } else {
+      const zgoda = await Notification.requestPermission();
+      if (zgoda !== "granted") {
+        await renderPushSettings();
+        return;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      const nowa = await reg.pushManager.subscribe({
+        userVisibleOnly: true, // wymagane przez przeglądarki
+        applicationServerKey: vapidToBytes(pushKeyCache),
+      });
+      await api("/push/subscribe", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(nowa.toJSON()),
+      });
+      toast(t("pushEnabled"));
+    }
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+    await renderPushSettings();
+  }
+}
+
+async function testPush() {
+  try {
+    await api("/push/test", { method: "POST" });
+    toast(t("pushSent"));
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
 function openSettings() {
   renderLangList();
+  renderPushSettings();
   $("settingsOverlay").classList.remove("hidden");
 }
 function closeSettings() {
@@ -1945,6 +2094,8 @@ async function init() {
     if (e.target === $("seeAllOverlay")) closeSeeAll();
   });
   $("settingsBtn").addEventListener("click", openSettings);
+  $("pushToggle").addEventListener("click", togglePush);
+  $("pushTest").addEventListener("click", testPush);
   $("settingsClose").addEventListener("click", closeSettings);
   $("settingsOverlay").addEventListener("click", (e) => {
     if (e.target === $("settingsOverlay")) closeSettings();

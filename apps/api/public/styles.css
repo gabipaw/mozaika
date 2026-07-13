@@ -1920,3 +1920,14 @@ footer {
   color: var(--muted);
   font-size: 0.8rem;
 }
+
+/* Powiadomienia push w Ustawieniach. */
+.push-test {
+  display: block;
+  margin-top: 10px;
+}
+
+#pushHint {
+  margin: 8px 0 0;
+  line-height: 1.45;
+}

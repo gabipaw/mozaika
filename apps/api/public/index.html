@@ -306,6 +306,23 @@
             <div class="settings-label" data-i18n="language">Język</div>
             <div id="langList" class="lang-list"></div>
           </div>
+
+          <div class="settings-group hidden" id="pushGroup">
+            <div class="settings-label" data-i18n="pushLabel">Powiadomienia</div>
+            <button id="pushToggle" class="lang-btn" type="button">
+              Włącz powiadomienia na telefon
+            </button>
+            <button
+              id="pushTest"
+              class="linkbtn push-test hidden"
+              type="button"
+              data-i18n="pushTest"
+            >
+              Wyślij testowe
+            </button>
+            <p id="pushHint" class="muted small"></p>
+          </div>
+
           <button id="logout" class="logout-btn" type="button" data-i18n="logout">
             Wyloguj
           </button>

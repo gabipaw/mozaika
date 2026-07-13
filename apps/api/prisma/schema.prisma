@@ -36,6 +36,21 @@ model User {
   watchlist WatchlistItem[]
   following Follow[]        @relation("following") // kogo ja obserwuję
   followers Follow[]        @relation("followers") // kto obserwuje mnie
+  pushSubs  PushSubscription[]
+}
+
+/// Subskrypcja Web Push (jedna na urządzenie/przeglądarkę — user może mieć kilka).
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  endpoint  String   @unique // adres bramki push (unikalny per urządzenie)
+  p256dh    String // klucz publiczny przeglądarki (szyfrowanie ładunku)
+  auth      String // sekret uwierzytelniający przeglądarki
+  createdAt DateTime @default(now())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  @@index([userId])
 }
 
 /// Obserwowanie (znajomi) — kierunkowe: follower obserwuje followed.

@@ -23,10 +23,12 @@
   "dependencies": {
     "@hono/node-server": "^2.0.8",
     "@prisma/client": "^6.1.0",
-    "hono": "^4.12.28"
+    "hono": "^4.12.28",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/web-push": "^3.6.4",
     "prisma": "^6.1.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"

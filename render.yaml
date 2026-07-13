@@ -24,3 +24,9 @@ services:
         sync: false # klucz TMDB v3 — do wyszukiwarki filmów
       - key: RAWG_API_KEY
         sync: false # klucz RAWG — do wyszukiwarki gier (rawg.io/apikey)
+      - key: VAPID_PUBLIC_KEY
+        sync: false # Web Push — klucz publiczny (uzupełnij w panelu Render)
+      - key: VAPID_PRIVATE_KEY
+        sync: false # Web Push — klucz prywatny (SEKRET, tylko panel Render)
+      - key: VAPID_SUBJECT
+        sync: false # np. mailto:twoj@email — wymagane przez bramki push
