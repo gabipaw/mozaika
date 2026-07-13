@@ -1475,6 +1475,8 @@ async function onAvatarPick(ev) {
     $("avatarImg").src = avatarUrl;
     $("avatarImg").classList.remove("hidden");
     $("avatarInitial").classList.add("hidden");
+    me.avatarUrl = avatarUrl;
+    renderHello(); // nowe zdjęcie od razu w kafelku profilu na górze
     toast(t("savedPhoto"));
   } catch (e) {
     toast(e.message);
@@ -1845,10 +1847,29 @@ async function showApp() {
   $("topBack").classList.add("hidden");
   $("searchbar").classList.remove("hidden");
   $("browse").classList.remove("hidden");
-  $("hello").textContent = `Cześć, ${me.displayName}`;
+  renderHello();
   await loadMe(); // katalog i profil czytają myProfile — najpierw je pobierz
   loadFollowers(); // licznik powiadomień (nowi obserwujący)
   await Promise.all([loadTasteRecommendations(), loadRecommendations(), loadCatalog()]);
+}
+
+// Wejście na własny profil było zwykłym napisem „Cześć, X" — nie wyglądało na
+// klikalne i nikt nie wiedział, gdzie szukać profilu. Teraz to kafelek: zdjęcie
+// (lub inicjał) + „Twój profil" i imię pod spodem.
+function renderHello() {
+  if (!me) return;
+  const av = $("helloAvatar");
+  av.innerHTML = "";
+  if (me.avatarUrl) {
+    const img = document.createElement("img");
+    img.src = me.avatarUrl;
+    img.alt = "";
+    av.append(img);
+  } else {
+    av.textContent = (me.displayName[0] || "?").toUpperCase();
+  }
+  $("helloName").textContent = t("yourProfile");
+  $("hello").title = me.displayName;
 }
 
 function logout() {
