@@ -1011,6 +1011,9 @@ h2 {
   gap: 10px;
   align-items: center;
   text-align: left;
+  /* To <button>, więc bez tego dziedziczy ciemny kolor tekstu z reguły `button`
+     (#05221d na akcencie) → imię znajomego było czarne na czarnym. */
+  color: var(--text);
   background: var(--bg-2);
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -1391,9 +1394,13 @@ h2 {
     padding-top: 16px;
     height: auto;
   }
+  /* flex-basis 0 w kolumnie o wysokości auto liczy się do wysokości rodzica jako
+     zero → panel kurczył się do nagłówka, a lista wylewała się na sekcję niżej. */
   .feed-list {
+    flex: 0 0 auto;
     height: auto;
     overflow-y: visible;
+    padding-right: 0;
   }
 
   /* Nakładki: pełna szerokość ekranu. */
