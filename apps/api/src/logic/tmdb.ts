@@ -159,6 +159,35 @@ export async function addMediaFromTmdb(externalId: string) {
   return upsertExternalMedia(MediaType.FILM, toFilm((await res.json()) as TmdbMovie));
 }
 
+interface TmdbVideo {
+  key: string;
+  site: string;
+  type: string;
+  official?: boolean;
+}
+
+/**
+ * Zwiastun filmu z YouTube'a. TMDB trzyma materiały per język, a dla polskiego
+ * zwykle nie ma nic — dlatego pytamy o angielskie (`en-US`), gdzie zwiastuny są
+ * praktycznie zawsze. Wolimy oficjalny „Trailer"; teaser to plan awaryjny.
+ */
+export async function tmdbTrailer(externalId: string): Promise<string | null> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id)) return null;
+  const res = await fetch(
+    `${TMDB}/movie/${id}/videos?api_key=${apiKey()}&language=en-US`,
+  );
+  if (!res.ok) return null;
+  const { results = [] } = (await res.json()) as { results?: TmdbVideo[] };
+
+  const yt = results.filter((v) => v.site === "YouTube");
+  const best =
+    yt.find((v) => v.type === "Trailer" && v.official) ??
+    yt.find((v) => v.type === "Trailer") ??
+    yt.find((v) => v.type === "Teaser");
+  return best ? `https://www.youtube.com/embed/${best.key}` : null;
+}
+
 /** Data premiery filmu (TMDB `release_date`). Null, gdy TMDB jej nie zna. */
 export async function tmdbReleaseDate(externalId: string): Promise<Date | null> {
   const id = externalId.trim();

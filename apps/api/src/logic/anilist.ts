@@ -208,6 +208,33 @@ export async function aniListDescription(
 }
 
 /**
+ * Zwiastun anime (AniList `trailer`). AniList podaje samo ID i serwis, adres
+ * składamy sami. Manga zwiastunów nie ma, więc dla niej zawsze null.
+ */
+export async function aniListTrailer(
+  type: AniType,
+  externalId: string,
+): Promise<string | null> {
+  const id = externalId.trim();
+  if (type !== "ANIME" || !/^\d+$/.test(id)) return null;
+  try {
+    const data = await gql<{
+      Media: { trailer?: { id?: string | null; site?: string | null } | null } | null;
+    }>(`query ($id: Int) { Media(id: $id, type: ANIME) { trailer { id site } } }`, {
+      id: Number(id),
+    });
+    const tr = data.Media?.trailer;
+    if (!tr?.id) return null;
+    if (tr.site === "youtube") return `https://www.youtube.com/embed/${tr.id}`;
+    if (tr.site === "dailymotion")
+      return `https://www.dailymotion.com/embed/video/${tr.id}`;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Data premiery anime/mangi (AniList `startDate`). AniList często zna tylko rok
  * albo rok i miesiąc — wtedy zwracamy null, bo do zapowiedzi potrzebny jest dzień.
  */

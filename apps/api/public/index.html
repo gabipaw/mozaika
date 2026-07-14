@@ -189,6 +189,27 @@
               <div id="detailGenres" class="detail-genres"></div>
               <p id="detailDesc" class="detail-desc"></p>
 
+              <!-- Zwiastun (film/anime). Ukryty, dopóki nie wiadomo, że jakiś jest. -->
+              <div id="detailTrailer" class="detail-trailer hidden">
+                <h2 class="trailer-h" data-i18n="trailer">Zwiastun</h2>
+                <div class="trailer-frame">
+                  <iframe
+                    id="trailerFrame"
+                    title="Zwiastun"
+                    loading="lazy"
+                    allow="
+                      accelerometer;
+                      clipboard-write;
+                      encrypted-media;
+                      gyroscope;
+                      picture-in-picture;
+                    "
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen
+                  ></iframe>
+                </div>
+              </div>
+
               <div class="detail-rateline">
                 <span class="detail-label" data-i18n="yourRating">Twoja ocena</span>
                 <div

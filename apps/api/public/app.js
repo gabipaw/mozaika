@@ -51,6 +51,7 @@ const I18N = {
     forYouHint: "Polecane przez osoby o podobnym guście.",
     tasteRecs: "Pod Twój gust",
     tasteRecsHint: "Nowe tytuły spoza Twojego katalogu, dobrane do Twojego gustu.",
+    trailer: "Zwiastun",
     upcoming: "Nadchodzące",
     upcomingHint: "Z Twojej listy — jeszcze nie wyszły. Damy znać w dniu premiery.",
     premiereOn: "Premiera {date}",
@@ -217,6 +218,7 @@ const I18N = {
     forYouHint: "Recommended by people with similar taste.",
     tasteRecs: "For your taste",
     tasteRecsHint: "Fresh titles beyond your catalog, matched to your taste.",
+    trailer: "Trailer",
     upcoming: "Coming soon",
     upcomingHint: "From your list — not out yet. We'll ping you on release day.",
     premiereOn: "Out {date}",
@@ -1767,6 +1769,23 @@ async function onAvatarPick(ev) {
 
 // --- Szczegóły tytułu (opis + ocena + komentarz) ---
 let detailCtx = null;
+/**
+ * Pokazuje zwiastun albo chowa sekcję, gdy go nie ma.
+ * Podanie null czyści też `src` ramki — inaczej film grałby dalej (i było go
+ * słychać) po wyjściu ze szczegółów albo po przejściu do innego tytułu.
+ */
+function showTrailer(url) {
+  const box = $("detailTrailer");
+  const frame = $("trailerFrame");
+  if (!url) {
+    frame.removeAttribute("src");
+    box.classList.add("hidden");
+    return;
+  }
+  frame.src = url;
+  box.classList.remove("hidden");
+}
+
 let detailReturn = "browse"; // dokąd wrócić z widoku szczegółów
 let detailStars = null;
 
@@ -1848,12 +1867,14 @@ async function openDetail(item) {
   $("topBack").classList.remove("hidden");
   window.scrollTo(0, 0);
 
+  showTrailer(null); // z poprzedniego tytułu mógł zostać zwiastun — czyścimy
   if (item.type && item.externalId) {
     api(
       `/details?type=${encodeURIComponent(item.type)}&externalId=${encodeURIComponent(item.externalId)}`,
     )
       .then((d) => {
         $("detailDesc").textContent = d.description || t("noDesc");
+        showTrailer(d.trailerUrl);
       })
       .catch(() => {
         $("detailDesc").textContent = t("noDesc");
@@ -2054,6 +2075,7 @@ async function saveDetail() {
 
 function closeDetail() {
   $("detailView").classList.add("hidden");
+  showTrailer(null); // zatrzymaj zwiastun — inaczej gra dalej w tle
   detailCtx = null;
   if (detailReturn === "profile") {
     if (viewingUserId) openUserProfile(viewingUserId);

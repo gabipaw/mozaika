@@ -15,7 +15,7 @@ import { prisma } from "./db.js";
 import { ForbiddenError, NotFoundError, ValidationError } from "./errors.js";
 import { login, register } from "./logic/auth.js";
 import { addBookFromOpenLibrary, searchBooks } from "./logic/books.js";
-import { getDescription } from "./logic/details.js";
+import { getDescription, getTrailer } from "./logic/details.js";
 import { addGameFromRawg, searchGames } from "./logic/games.js";
 import { addFromAniList, searchAniList } from "./logic/anilist.js";
 import { addMusicFromItunes, searchMusic } from "./logic/music.js";
@@ -420,7 +420,13 @@ api.post("/media", async (c) => {
 api.get("/details", async (c) => {
   const type = c.req.query("type") ?? "film";
   const externalId = c.req.query("externalId") ?? "";
-  return c.json({ description: await getDescription(type, externalId) });
+  // Opis i zwiastun idą równolegle — zwiastun jest dodatkiem, więc jego brak
+  // (albo padnięte API) nie może zabrać widzowi opisu.
+  const [description, trailerUrl] = await Promise.all([
+    getDescription(type, externalId),
+    getTrailer(type, externalId).catch(() => null),
+  ]);
+  return c.json({ description, trailerUrl });
 });
 
 // Komentarze/oceny danego tytułu (do widoku szczegółów).
