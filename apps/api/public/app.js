@@ -1437,12 +1437,6 @@ function renderProfileData(data, readOnly) {
   } else {
     // Muzyka w Top 4 jako prostokąt 2:3 (rect), nie kwadrat.
     for (const r of top) appendCard(topBox, r.media, r.rating, undefined, true);
-    // Wolne miejsca do czterech zostają puste — siatka ma zawsze wyglądać 2×2.
-    for (let i = top.length; i < 4; i++) {
-      const empty = document.createElement("div");
-      empty.className = "card-empty";
-      topBox.append(empty);
-    }
   }
 
   // Lista „do obejrzenia/zagrania" — do 6 (3×2), reszta pod „Zobacz wszystko".
