@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
-import type { MiddlewareHandler } from "hono";
+import type { Context, MiddlewareHandler } from "hono";
 import { sign, verify } from "hono/jwt";
 
 import { prisma } from "./db.js";
@@ -28,6 +28,7 @@ import {
 } from "./logic/push.js";
 import { checkPremieres, ensureReleaseDate, upcomingForUser } from "./logic/premieres.js";
 import { addReview, deleteReview } from "./logic/reviews.js";
+import { likeReview, likedReviewIds, unlikeReview } from "./logic/reviewLikes.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
 import { togetherPicks } from "./logic/together.js";
@@ -57,16 +58,23 @@ function makeToken(userId: number): Promise<string> {
   return sign(payload, JWT_SECRET, "HS256");
 }
 
-/** Wymaga poprawnego tokenu JWT; zapisuje userId w kontekście. */
-const requireAuth: MiddlewareHandler<Vars> = async (c, next) => {
+/** Odczytuje userId z nagłówka Bearer. null = brak tokenu albo token niepoprawny. */
+async function userIdFromHeader(c: Context<Vars>): Promise<number | null> {
   const header = c.req.header("Authorization") ?? "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
   try {
     const payload = await verify(token, JWT_SECRET, "HS256");
-    c.set("userId", Number(payload.userId));
+    return Number(payload.userId);
   } catch {
-    return c.json({ error: "Wymagane logowanie." }, 401);
+    return null;
   }
+}
+
+/** Wymaga poprawnego tokenu JWT; zapisuje userId w kontekście. */
+const requireAuth: MiddlewareHandler<Vars> = async (c, next) => {
+  const userId = await userIdFromHeader(c);
+  if (userId === null) return c.json({ error: "Wymagane logowanie." }, 401);
+  c.set("userId", userId);
   await next();
 };
 
@@ -430,22 +438,50 @@ api.get("/details", async (c) => {
 });
 
 // Komentarze/oceny danego tytułu (do widoku szczegółów).
+// Trafione recenzje (najwięcej polubień) idą na górę — świeże rozstrzygają remis.
+// Trasa jest publiczna, ale gdy przyjdzie token, doklejamy „czy JA to polubiłem".
 api.get("/media/:id/reviews", async (c) => {
   const id = intParam(c.req.param("id"), "id");
   const reviews = await prisma.review.findMany({
     where: { mediaId: id },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ likes: { _count: "desc" } }, { createdAt: "desc" }],
     select: {
+      id: true,
       rating: true,
       text: true,
       createdAt: true,
-      // id — front rozpoznawał „swoją" recenzję po displayName, a nazwy NIE są
+      // user.id — front rozpoznawał „swoją" recenzję po displayName, a nazwy NIE są
       // unikalne (unikalny jest tylko e-mail): dwie osoby o tym samym nicku
       // podstawiały sobie nawzajem ocenę i komentarz do edycji.
       user: { select: { id: true, displayName: true } },
+      _count: { select: { likes: true } },
     },
   });
-  return c.json(reviews);
+
+  const meId = await userIdFromHeader(c);
+  const liked = await likedReviewIds(
+    meId,
+    reviews.map((r) => r.id),
+  );
+
+  return c.json(
+    reviews.map(({ _count, ...r }) => ({
+      ...r,
+      likes: _count.likes,
+      likedByMe: liked.has(r.id),
+    })),
+  );
+});
+
+// Polub / odlub cudzą recenzję. Zwraca nowy stan: { likes, likedByMe }.
+api.post("/reviews/:id/like", requireAuth, async (c) => {
+  const id = intParam(c.req.param("id"), "id");
+  return c.json(await likeReview(c.get("userId"), id));
+});
+
+api.delete("/reviews/:id/like", requireAuth, async (c) => {
+  const id = intParam(c.req.param("id"), "id");
+  return c.json(await unlikeReview(c.get("userId"), id));
 });
 
 // Dodaj/aktualizuj recenzję (jako zalogowany użytkownik). Body: { mediaId, rating, text? }.

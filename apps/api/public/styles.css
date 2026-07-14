@@ -1629,6 +1629,52 @@ h2 {
   font-weight: 700;
 }
 
+.review-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.like-btn:hover:not(:disabled) {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.like-btn.active {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+/* Autor widzi własny licznik, ale nie może go klikać — kursor ma to zdradzać. */
+.like-btn:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.like-count {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pusty licznik (0 polubień) nie ma zostawiać dziury po gap-ie. */
+.like-count:empty {
+  display: none;
+}
+
 .review .text {
   font-size: 0.9rem;
   color: #ffffff;

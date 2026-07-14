@@ -32,11 +32,12 @@ model User {
   avatarUrl    String? // zdjęcie profilowe jako data:image (skompresowane ~256px)
   createdAt    DateTime @default(now())
 
-  reviews   Review[]
-  watchlist WatchlistItem[]
-  following Follow[]        @relation("following") // kogo ja obserwuję
-  followers Follow[]        @relation("followers") // kto obserwuje mnie
-  pushSubs  PushSubscription[]
+  reviews     Review[]
+  watchlist   WatchlistItem[]
+  following   Follow[]           @relation("following") // kogo ja obserwuję
+  followers   Follow[]           @relation("followers") // kto obserwuje mnie
+  pushSubs    PushSubscription[]
+  reviewLikes ReviewLike[] // recenzje, które polubiłem
 }
 
 /// Subskrypcja Web Push (jedna na urządzenie/przeglądarkę — user może mieć kilka).
@@ -101,8 +102,26 @@ model Review {
   media   Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
   mediaId Int
 
+  likes ReviewLike[]
+
   // Jeden użytkownik = jedna ocena danego tytułu.
   @@unique([userId, mediaId])
+}
+
+/// Polubienie cudzej recenzji („przydatna/trafna"). Własnej polubić się nie da.
+model ReviewLike {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId Int
+
+  // Jeden użytkownik = jedno polubienie danej recenzji.
+  @@unique([userId, reviewId])
+  @@index([reviewId])
 }
 
 /// Lista „do obejrzenia/zagrania" — tytuły, które user chce sprawdzić później.

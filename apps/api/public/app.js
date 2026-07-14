@@ -99,6 +99,10 @@ const I18N = {
     deletedReview: "Usunięto ocenę",
     comments: "Komentarze",
     noComments: "Brak komentarzy — bądź pierwszy.",
+    likeAdd: "Trafna recenzja",
+    likeRemove: "Już nie uważam, że trafna",
+    likeOwn: "Tylu osobom przydała się Twoja recenzja",
+    likeLogin: "Zaloguj się, żeby polubić recenzję.",
     loadingDesc: "Ładowanie opisu…",
     noDesc: "Brak opisu.",
     pickRating: "Wybierz ocenę (kliknij gwiazdki).",
@@ -266,6 +270,10 @@ const I18N = {
     deletedReview: "Rating deleted",
     comments: "Comments",
     noComments: "No comments — be the first.",
+    likeAdd: "Helpful review",
+    likeRemove: "No longer helpful",
+    likeOwn: "This many people found your review helpful",
+    likeLogin: "Log in to like a review.",
     loadingDesc: "Loading description…",
     noDesc: "No description.",
     pickRating: "Pick a rating (click the stars).",
@@ -2029,10 +2037,72 @@ async function loadDetailReviews(mediaId) {
         txt.textContent = r.text;
         el.append(txt);
       }
+      el.append(likeControl(r));
       box.append(el);
     }
   } catch {
     /* lista komentarzy opcjonalna */
+  }
+}
+
+// Serce + licznik pod recenzją. Własnej recenzji polubić się nie da (reguła z backendu),
+// więc autorowi pokazujemy sam licznik — bez klikalnego przycisku.
+function likeControl(review) {
+  const foot = document.createElement("div");
+  foot.className = "review-foot";
+  const mine = me && review.user.id === me.id;
+
+  const btn = document.createElement("button");
+  btn.className = "like-btn";
+  btn.type = "button";
+  if (mine) {
+    btn.disabled = true;
+    btn.title = t("likeOwn");
+  } else {
+    btn.addEventListener("click", () => toggleLike(review, btn));
+  }
+  paintLike(btn, review, mine);
+
+  foot.append(btn);
+  return foot;
+}
+
+// Serce wypełnione = polubione, obrys = nie. Licznik ukryty przy zerze, żeby nie krzyczeć „0".
+function paintLike(btn, review, mine) {
+  const on = !!review.likedByMe;
+  btn.classList.toggle("active", on);
+  btn.setAttribute("aria-pressed", String(on));
+  if (!mine) btn.title = on ? t("likeRemove") : t("likeAdd");
+  btn.innerHTML =
+    `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" ` +
+    `fill="${on ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" ` +
+    `stroke-linecap="round" stroke-linejoin="round">` +
+    `<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.7-7.5 1.1-1.1a5.5 5.5 0 0 0 0-7.8z"/>` +
+    `</svg>`;
+  const n = document.createElement("span");
+  n.className = "like-count";
+  n.textContent = review.likes > 0 ? String(review.likes) : "";
+  btn.append(n);
+}
+
+// Optymistycznie nie zgadujemy — licznik bierzemy z odpowiedzi serwera (źródło prawdy).
+async function toggleLike(review, btn) {
+  if (!me) {
+    toast(t("likeLogin"));
+    return;
+  }
+  btn.disabled = true;
+  try {
+    const state = await api(`/reviews/${review.id}/like`, {
+      method: review.likedByMe ? "DELETE" : "POST",
+    });
+    review.likes = state.likes;
+    review.likedByMe = state.likedByMe;
+    paintLike(btn, review, false);
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
   }
 }
 
