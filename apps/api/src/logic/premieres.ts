@@ -21,7 +21,7 @@ import { sendPushToUser } from "./push.js";
 import { tmdbReleaseDate } from "./tmdb.js";
 
 /** Typy, dla których zewnętrzne API zna dzień premiery. */
-const ANNOUNCED_TYPES = [MediaType.FILM, MediaType.ANIME, MediaType.GRA];
+const ANNOUNCED_TYPES: MediaType[] = [MediaType.FILM, MediaType.ANIME, MediaType.GRA];
 
 /** Jak długo ufamy zapamiętanej dacie premiery, zanim zapytamy API ponownie. */
 const RECHECK_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
@@ -78,6 +78,49 @@ function fetchReleaseDate(m: Media): Promise<Date | null> {
 }
 
 /**
+ * Pyta API o datę i zapisuje ją przy tytule. Gdy API padnie, zwraca tytuł bez
+ * zmian (bez znacznika sprawdzenia), więc wróci do nas w kolejnym przebiegu.
+ */
+async function refreshReleaseDate(m: Media, now: Date): Promise<Media> {
+  try {
+    const releaseDate = await fetchReleaseDate(m);
+    return await prisma.media.update({
+      where: { id: m.id },
+      data: { releaseDate, releaseCheckedAt: now },
+    });
+  } catch (e) {
+    console.error(
+      "premiery: nie udało się pobrać daty",
+      m.type,
+      m.externalId,
+      (e as Error).message,
+    );
+    return m;
+  }
+}
+
+/**
+ * Data premiery tytułu — pobrana od razu, jeśli jeszcze jej nie znamy.
+ * Wołane przy dodawaniu do watchlisty: bez tego świeżo dodany, niewydany tytuł
+ * pojawiłby się w „Nadchodzących" dopiero po nocnym przebiegu crona.
+ */
+export async function ensureReleaseDate(mediaId: number, now: Date = new Date()) {
+  const m = await prisma.media.findUnique({ where: { id: mediaId } });
+  if (!m || !ANNOUNCED_TYPES.includes(m.type) || !needsLookup(m, now)) return;
+  await refreshReleaseDate(m, now);
+}
+
+/** Tytuły z listy „do obejrzenia", które jeszcze nie wyszły — od najbliższej premiery. */
+export async function upcomingForUser(userId: number, now: Date = new Date()) {
+  const items = await prisma.watchlistItem.findMany({
+    where: { userId, media: { releaseDate: { gt: now } } },
+    include: { media: true },
+    orderBy: { media: { releaseDate: "asc" } },
+  });
+  return items.map((it) => ({ ...it.media, releaseDate: it.media.releaseDate }));
+}
+
+/**
  * Jeden przebieg: odśwież daty, wyślij pushe o tym, co właśnie wyszło.
  * `now` wstrzykiwane w testach.
  */
@@ -96,25 +139,7 @@ export async function checkPremieres(now: Date = new Date()): Promise<PremiereRu
     if (lookups >= MAX_LOOKUPS) break;
     if (!needsLookup(m, now)) continue;
     lookups++;
-    try {
-      const releaseDate = await fetchReleaseDate(m);
-      media.set(
-        m.id,
-        await prisma.media.update({
-          where: { id: m.id },
-          data: { releaseDate, releaseCheckedAt: now },
-        }),
-      );
-    } catch (e) {
-      // Padnięte API to nie powód, żeby wywalić cały przebieg — nie zapisujemy
-      // znacznika sprawdzenia, więc ten tytuł wróci w kolejnym przebiegu.
-      console.error(
-        "premiery: nie udało się pobrać daty",
-        m.type,
-        m.externalId,
-        (e as Error).message,
-      );
-    }
+    media.set(m.id, await refreshReleaseDate(m, now));
   }
 
   let sent = 0;

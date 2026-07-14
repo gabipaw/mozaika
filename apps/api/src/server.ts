@@ -26,7 +26,7 @@ import {
   savePushSubscription,
   sendPushToUser,
 } from "./logic/push.js";
-import { checkPremieres } from "./logic/premieres.js";
+import { checkPremieres, ensureReleaseDate, upcomingForUser } from "./logic/premieres.js";
 import { addReview, deleteReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
@@ -197,8 +197,17 @@ api.post("/me/watchlist", requireAuth, async (c) => {
     update: {},
     create: { userId, mediaId },
   });
+  // Datę premiery dociągamy od razu, żeby niewydany tytuł wskoczył do sekcji
+  // „Nadchodzące" natychmiast, a nie dopiero po nocnym cronie. Gdy API nie
+  // odpowie, trudno — dodanie do listy i tak ma się udać, a cron spróbuje znowu.
+  await ensureReleaseDate(mediaId).catch(() => {});
   return c.json({ ok: true });
 });
+
+// Tytuły z listy, które jeszcze nie wyszły („Nadchodzące" na ekranie głównym).
+api.get("/me/upcoming", requireAuth, async (c) =>
+  c.json(await upcomingForUser(c.get("userId"))),
+);
 
 // Usuń tytuł z listy.
 api.delete("/me/watchlist/:id", requireAuth, async (c) => {

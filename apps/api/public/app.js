@@ -51,6 +51,12 @@ const I18N = {
     forYouHint: "Polecane przez osoby o podobnym guście.",
     tasteRecs: "Pod Twój gust",
     tasteRecsHint: "Nowe tytuły spoza Twojego katalogu, dobrane do Twojego gustu.",
+    upcoming: "Nadchodzące",
+    upcomingHint: "Z Twojej listy — jeszcze nie wyszły. Damy znać w dniu premiery.",
+    premiereOn: "Premiera {date}",
+    premiereToday: "Premiera dziś!",
+    premiereInDays: "Za {n} dni",
+    premiereTomorrow: "Jutro",
     noTasteRecs: "Oceń kilka tytułów, a odkryjemy coś nowego pod Twój gust.",
     noTasteRecsType: "Oceń kilka tytułów z tej kategorii, a dobierzemy coś nowego.",
     noDiscoverForType: "Dla tej kategorii nie mamy jeszcze świeżych rekomendacji.",
@@ -211,6 +217,12 @@ const I18N = {
     forYouHint: "Recommended by people with similar taste.",
     tasteRecs: "For your taste",
     tasteRecsHint: "Fresh titles beyond your catalog, matched to your taste.",
+    upcoming: "Coming soon",
+    upcomingHint: "From your list — not out yet. We'll ping you on release day.",
+    premiereOn: "Out {date}",
+    premiereToday: "Out today!",
+    premiereInDays: "In {n} days",
+    premiereTomorrow: "Tomorrow",
     noTasteRecs: "Rate a few titles and we'll discover something new for you.",
     noTasteRecsType: "Rate a few titles in this category and we'll find something new.",
     noDiscoverForType: "No fresh recommendations for this category yet.",
@@ -841,6 +853,52 @@ function tasteReasonLabel(reason, item) {
 // Rodzaje, które umiemy odkrywać (patrz DISCOVERABLE w logic/discovery.ts).
 // Książki i muzyka nie mają API „podobne do", więc jadą na gatunku i popularności.
 const DISCOVERABLE_KEYS = ["film", "anime", "manga", "game", "book", "music"];
+
+/** „Za 3 dni" / „Jutro" / „Premiera 12 września 2026" — zależnie od tego, jak blisko. */
+function premiereLabel(iso) {
+  const data = new Date(iso);
+  const dzien = 24 * 60 * 60 * 1000;
+  const dzis = new Date();
+  // Liczymy w pełnych dniach kalendarzowych — inaczej premiera „jutro rano"
+  // wychodziłaby jako „dziś", bo od teraz dzieli ją mniej niż 24 godziny.
+  const dni = Math.round(
+    (Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate()) -
+      Date.UTC(dzis.getFullYear(), dzis.getMonth(), dzis.getDate())) /
+      dzien,
+  );
+  if (dni <= 0) return t("premiereToday");
+  if (dni === 1) return t("premiereTomorrow");
+  if (dni <= 30) return t("premiereInDays", { n: dni });
+  return t("premiereOn", {
+    date: data.toLocaleDateString(lang === "en" ? "en-GB" : "pl-PL", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }),
+  });
+}
+
+// „Nadchodzące" — tytuły z watchlisty, które jeszcze nie wyszły, od najbliższej
+// premiery. Sekcja chowa się w całości, gdy nie ma na co czekać — pusty rząd na
+// ekranie głównym byłby tylko dziurą.
+async function loadUpcoming() {
+  const row = $("upcoming");
+  const section = $("upcomingSection");
+  try {
+    const items = await api("/me/upcoming");
+    section.classList.toggle("hidden", items.length === 0);
+    if (items.length === 0) return;
+    row.innerHTML = "";
+    for (const m of items) {
+      const { card } = posterCard(m, { recby: premiereLabel(m.releaseDate) });
+      card.addEventListener("click", () => openDetail(toDetail(m, m.type, m.id)));
+      row.append(card);
+    }
+  } catch {
+    // Nadchodzące to dodatek — gdy padnie, po prostu nie pokazujemy sekcji.
+    section.classList.add("hidden");
+  }
+}
 
 // Odkrywanie pod gust — świeże tytuły z zewnątrz (TMDB/AniList/RAWG), nie z katalogu.
 // Pozycje są zewnętrzne (mają externalId, brak mediaId) — klik otwiera detal i ocenę.
@@ -1908,6 +1966,7 @@ async function toggleWatchlist() {
       });
     }
     await loadMe();
+    loadUpcoming(); // tytuł mógł właśnie dojść (albo zniknąć) z „Nadchodzących"
     updateDetailButtons();
     toast(t(onWatch ? "removedList" : "addedList"));
   } catch (e) {
@@ -2073,7 +2132,12 @@ async function showApp() {
   renderHello();
   await loadMe(); // katalog i profil czytają myProfile — najpierw je pobierz
   loadFollowers(); // licznik powiadomień (nowi obserwujący)
-  await Promise.all([loadTasteRecommendations(), loadRecommendations(), loadCatalog()]);
+  await Promise.all([
+    loadTasteRecommendations(),
+    loadRecommendations(),
+    loadUpcoming(),
+    loadCatalog(),
+  ]);
 }
 
 // Wejście na własny profil było zwykłym napisem „Cześć, X" — nie wyglądało na
