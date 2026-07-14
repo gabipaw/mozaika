@@ -603,22 +603,40 @@ h2 {
   height: 100%;
 }
 
-/* Top 4: jeden rząd 1×4 (4 równe kolumny), plakaty 2:3, naturalna wysokość. */
+/* Top 4: siatka 2×2 (4 równe pola), plakaty 2:3, naturalna wysokość.
+   Wolne miejsca zostają jako puste ramki (.card-empty) — przy jednym ulubionym
+   tytule karta nie ma się rozpychać na całą szerokość kolumny. */
 #topMedia {
   flex: 0 0 auto;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
-  align-items: flex-start;
+  align-items: start;
 }
 
 #topMedia .card {
-  flex: 1 1 0;
   min-width: 0;
   height: auto;
 }
 
 #topMedia .card .poster {
   height: auto;
+}
+
+/* Puste miejsce w Top 4 — trzyma kształt plakatu, żeby siatka zawsze była 2×2.
+   align-self: stretch dociąga ramkę do dołu rzędu (karta obok jest wyższa o pasek
+   z tytułem); w rzędzie z samych ramek wysokość i tak wychodzi z proporcji 2:3. */
+.card-empty {
+  aspect-ratio: 2 / 3;
+  align-self: stretch;
+  /* Szerokość bierzemy z kolumny, nie z proporcji — inaczej rozciągnięta ramka
+     liczyła szerokość z wysokości i wychodziła poza swoje pole. Proporcja 2:3
+     zostaje i rządzi wysokością tam, gdzie w rzędzie stoją same ramki. */
+  width: 100%;
+  min-width: 0;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: var(--bg-2);
 }
 
 /* Watchlist: 3×2 wypełnia pozostałą wysokość lewej kolumny (dół w jednej linii
@@ -1449,7 +1467,8 @@ h2 {
     padding-bottom: 6px;
   }
   #topMedia .card,
-  #watchlist .card {
+  #watchlist .card,
+  #topMedia .card-empty {
     flex: 0 0 auto;
     width: 108px;
     height: auto;
