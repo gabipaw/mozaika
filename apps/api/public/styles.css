@@ -431,10 +431,11 @@ h2 {
   font-size: 1rem;
 }
 
+/* Pełna szerokość kolumny z opisem — zwiastun ma sięgać tak daleko jak tekst. */
 .trailer-frame {
   position: relative;
   aspect-ratio: 16 / 9;
-  max-width: 560px;
+  width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
   overflow: hidden;
