@@ -946,6 +946,12 @@ h2 {
   border-color: var(--accent);
 }
 
+/* „Co obejrzeć razem” jako jedyny .more-btn stoi POD nagłówkiem, a nie pod listą —
+   margines górny z .more-btn dokładał się do .feed-head i robił podwójny odstęp. */
+#togetherBtn {
+  margin-top: 0;
+}
+
 /* Komentarze: zwinięte do COMMENTS_COLLAPSED (9) — tak samo na laptopie i telefonie. */
 .my-comments:not(.expanded) .comment-item:nth-child(n + 10) {
   display: none;
