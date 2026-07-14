@@ -2329,8 +2329,31 @@ async function init() {
 }
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+  // Czy stroną steruje już jakiś Service Worker? Zapamiętujemy TERAZ, bo poniżej
+  // rozróżniamy pierwsze wejście (nic nie steruje) od podmiany SW na nowszy.
+  const miałKontroler = Boolean(navigator.serviceWorker.controller);
+  let juzPrzeladowano = false;
+
+  window.addEventListener("load", async () => {
+    try {
+      // updateViaCache: "none" — sam plik service-worker.js ma iść Z SIECI, nie
+      // z cache HTTP. Bez tego przeglądarka trzyma stary SW nawet dobę i telefon
+      // siedzi na starym froncie, choć serwer dawno wystawił nowy.
+      const reg = await navigator.serviceWorker.register("/service-worker.js", {
+        updateViaCache: "none",
+      });
+      reg.update();
+    } catch {
+      // Brak SW = brak trybu offline. Aplikacja działa normalnie, nie przeszkadzamy.
+    }
+  });
+
+  // Nowy SW właśnie przejął stronę → w karcie wisi jeszcze stary front. Przeładuj
+  // raz, żeby użytkownik nie musiał sam ubijać apki po każdym deployu.
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!miałKontroler || juzPrzeladowano) return; // pierwsze wejście: nie przeładowuj
+    juzPrzeladowano = true;
+    location.reload();
   });
 }
 
