@@ -609,9 +609,9 @@ h2 {
    kolumn, a panel Znajomych przewija się w środku (patrz .feed-list). */
 .profile-cols {
   display: grid;
-  /* Lewa kolumna szersza (było 300px) — plakaty Top 4 i watchlisty biorą szerokość
-     z kolumny, więc to jedyny sposób, żeby je powiększyć bez łamania proporcji 2:3. */
-  grid-template-columns: 340px 1fr 240px;
+  /* Plakaty Top 4 i watchlisty biorą szerokość z tej kolumny — poszerzenie jej
+     powiększa je (próbowaliśmy 340px; za duże, wróciliśmy do 300px). */
+  grid-template-columns: 300px 1fr 240px;
   gap: 32px;
   align-items: stretch;
   margin-top: 0;
