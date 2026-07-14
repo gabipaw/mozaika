@@ -4,7 +4,7 @@
  * że własny profil zna swój e-mail. Wcześniej były to dwa skopiowane bloki — stąd wspólny moduł.
  */
 import { prisma } from "../db.js";
-import { likedReviewIds } from "./reviewLikes.js";
+import { reactionSummary } from "./reactions.js";
 
 const mediaSelect = {
   id: true,
@@ -36,12 +36,11 @@ export async function profilePayload(
       where: { userId },
       orderBy: { createdAt: "desc" },
       select: {
-        id: true, // do usuwania recenzji (DELETE /reviews/:id) i do polubień
+        id: true, // do usuwania recenzji (DELETE /reviews/:id) i do reakcji
         rating: true,
         text: true,
         favorite: true,
         media: { select: mediaSelect },
-        _count: { select: { likes: true } },
       },
     }),
     prisma.watchlistItem.findMany({
@@ -53,14 +52,13 @@ export async function profilePayload(
     prisma.follow.count({ where: { followerId: userId } }).catch(() => 0),
   ]);
 
-  const liked = await likedReviewIds(
-    viewerId,
+  const summary = await reactionSummary(
     rows.map((r) => r.id),
+    viewerId,
   );
-  const reviews = rows.map(({ _count, ...r }) => ({
+  const reviews = rows.map((r) => ({
     ...r,
-    likes: _count.likes,
-    likedByMe: liked.has(r.id),
+    ...(summary.get(r.id) ?? { likes: 0, dislikes: 0, myReaction: 0 }),
   }));
 
   const avg = reviews.length

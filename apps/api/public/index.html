@@ -189,12 +189,15 @@
               <div id="detailGenres" class="detail-genres"></div>
               <p id="detailDesc" class="detail-desc"></p>
 
-              <!-- Zwiastun (film/anime). Ukryty, dopóki nie wiadomo, że jakiś jest. -->
+              <!-- Zwiastun. Ukryty, dopóki nie wiadomo, że jakiś jest.
+                   Film i anime = osadzenie YouTube (iframe), gry = plik wideo z RAWG
+                   (mp4, nie da się go wsadzić w iframe) — stąd dwa elementy. -->
               <div id="detailTrailer" class="detail-trailer hidden">
                 <h2 class="trailer-h" data-i18n="trailer">Zwiastun</h2>
                 <div class="trailer-frame">
                   <iframe
                     id="trailerFrame"
+                    class="hidden"
                     title="Zwiastun"
                     loading="lazy"
                     allow="
@@ -207,6 +210,7 @@
                     referrerpolicy="strict-origin-when-cross-origin"
                     allowfullscreen
                   ></iframe>
+                  <video id="trailerVideo" class="hidden" controls preload="none"></video>
                 </div>
               </div>
 

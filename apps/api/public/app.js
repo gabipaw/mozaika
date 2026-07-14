@@ -100,9 +100,10 @@ const I18N = {
     comments: "Komentarze",
     noComments: "Brak komentarzy — bądź pierwszy.",
     likeAdd: "Trafna recenzja",
-    likeRemove: "Już nie uważam, że trafna",
-    likeOwn: "Tylu osobom przydała się Twoja recenzja",
-    likeLogin: "Zaloguj się, żeby polubić recenzję.",
+    dislikeAdd: "Nietrafiona recenzja",
+    reactRemove: "Cofnij reakcję",
+    likeOwn: "Tak inni ocenili Twoją recenzję",
+    likeLogin: "Zaloguj się, żeby zareagować na recenzję.",
     loadingDesc: "Ładowanie opisu…",
     noDesc: "Brak opisu.",
     pickRating: "Wybierz ocenę (kliknij gwiazdki).",
@@ -273,9 +274,10 @@ const I18N = {
     comments: "Comments",
     noComments: "No comments — be the first.",
     likeAdd: "Helpful review",
-    likeRemove: "No longer helpful",
-    likeOwn: "This many people found your review helpful",
-    likeLogin: "Log in to like a review.",
+    dislikeAdd: "Unhelpful review",
+    reactRemove: "Undo reaction",
+    likeOwn: "How others rated your review",
+    likeLogin: "Log in to react to a review.",
     loadingDesc: "Loading description…",
     noDesc: "No description.",
     pickRating: "Pick a rating (click the stars).",
@@ -1796,15 +1798,26 @@ let detailCtx = null;
  * Podanie null czyści też `src` ramki — inaczej film grałby dalej (i było go
  * słychać) po wyjściu ze szczegółów albo po przejściu do innego tytułu.
  */
-function showTrailer(url) {
+// Film i anime przychodzą jako osadzenie YouTube (iframe), gry jako plik mp4 z RAWG
+// (w iframe by nie ruszył) — stąd dwa elementy i przełączanie po `kind`.
+function showTrailer(url, kind) {
   const box = $("detailTrailer");
   const frame = $("trailerFrame");
+  const video = $("trailerVideo");
+
+  frame.removeAttribute("src");
+  video.pause(); // bez tego dźwięk poprzedniego zwiastuna leci dalej po zamknięciu
+  video.removeAttribute("src");
+  frame.classList.add("hidden");
+  video.classList.add("hidden");
+
   if (!url) {
-    frame.removeAttribute("src");
     box.classList.add("hidden");
     return;
   }
-  frame.src = url;
+  const player = kind === "video" ? video : frame;
+  player.src = url;
+  player.classList.remove("hidden");
   box.classList.remove("hidden");
 }
 
@@ -1896,7 +1909,7 @@ async function openDetail(item) {
     )
       .then((d) => {
         $("detailDesc").textContent = d.description || t("noDesc");
-        showTrailer(d.trailerUrl);
+        showTrailer(d.trailerUrl, d.trailerKind);
       })
       .catch(() => {
         $("detailDesc").textContent = t("noDesc");
@@ -2059,8 +2072,26 @@ async function loadDetailReviews(mediaId) {
   }
 }
 
-// Serce + licznik pod recenzją. Własnej recenzji polubić się nie da (reguła z backendu),
-// więc autorowi pokazujemy sam licznik — bez klikalnego przycisku.
+const LIKE = 1;
+const DISLIKE = -1;
+const NO_REACTION = 0;
+
+// Ikonki reakcji (obrys = nie kliknięte, wypełnienie = TWOJA reakcja).
+const HEART_PATH =
+  "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.7-7.5 1.1-1.1a5.5 5.5 0 0 0 0-7.8z";
+const THUMB_DOWN_PATH =
+  "M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17";
+
+function reactionSvg(path, on) {
+  return (
+    `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" ` +
+    `fill="${on ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" ` +
+    `stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`
+  );
+}
+
+// Serce + kciuk w dół pod recenzją. Na własną recenzję zareagować się nie da (reguła
+// z backendu), więc autorowi pokazujemy same liczniki — przyciski są nieklikalne.
 // authorId podajemy z zewnątrz, bo na profilu recenzje nie niosą pola `user` — autorem
 // jest po prostu właściciel profilu.
 function likeControl(review, authorId) {
@@ -2068,60 +2099,72 @@ function likeControl(review, authorId) {
   foot.className = "review-foot";
   const mine = !!me && authorId === me.id;
 
-  const btn = document.createElement("button");
-  btn.className = "like-btn";
-  btn.type = "button";
-  if (mine) {
-    btn.disabled = true;
-    btn.title = t("likeOwn");
-  } else {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation(); // na profilu cała karta komentarza otwiera tytuł — serce nie ma go otwierać
-      toggleLike(review, btn);
-    });
+  for (const value of [LIKE, DISLIKE]) {
+    const btn = document.createElement("button");
+    btn.className = value === DISLIKE ? "like-btn down" : "like-btn";
+    btn.type = "button";
+    btn.dataset.value = String(value);
+    if (mine) {
+      btn.disabled = true;
+      btn.title = t("likeOwn");
+    } else {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation(); // na profilu cała karta otwiera tytuł — reakcja nie ma go otwierać
+        sendReaction(review, foot, value);
+      });
+    }
+    foot.append(btn);
   }
-  paintLike(btn, review, mine);
-
-  foot.append(btn);
+  paintReactions(foot, review, mine);
   return foot;
 }
 
-// Serce wypełnione = polubione, obrys = nie. Licznik ukryty przy zerze, żeby nie krzyczeć „0".
-function paintLike(btn, review, mine) {
-  const on = !!review.likedByMe;
-  btn.classList.toggle("active", on);
-  btn.setAttribute("aria-pressed", String(on));
-  if (!mine) btn.title = on ? t("likeRemove") : t("likeAdd");
-  btn.innerHTML =
-    `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" ` +
-    `fill="${on ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" ` +
-    `stroke-linecap="round" stroke-linejoin="round">` +
-    `<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.7-7.5 1.1-1.1a5.5 5.5 0 0 0 0-7.8z"/>` +
-    `</svg>`;
-  const n = document.createElement("span");
-  n.className = "like-count";
-  n.textContent = review.likes > 0 ? String(review.likes) : "";
-  btn.append(n);
+// Przerysowuje OBA przyciski, bo przestawienie serce→kciuk zmienia dwa liczniki naraz.
+// Licznik ukryty przy zerze, żeby nie krzyczeć „0".
+function paintReactions(foot, review, mine) {
+  for (const btn of foot.querySelectorAll(".like-btn")) {
+    const value = Number(btn.dataset.value);
+    const on = review.myReaction === value;
+    const count = value === LIKE ? review.likes : review.dislikes;
+
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", String(on));
+    if (!mine) {
+      btn.title = on ? t("reactRemove") : t(value === LIKE ? "likeAdd" : "dislikeAdd");
+    }
+    btn.innerHTML = reactionSvg(value === LIKE ? HEART_PATH : THUMB_DOWN_PATH, on);
+
+    const n = document.createElement("span");
+    n.className = "like-count";
+    n.textContent = count > 0 ? String(count) : "";
+    btn.append(n);
+  }
 }
 
-// Optymistycznie nie zgadujemy — licznik bierzemy z odpowiedzi serwera (źródło prawdy).
-async function toggleLike(review, btn) {
+// Liczników nie zgadujemy — bierzemy je z odpowiedzi serwera (jedno źródło prawdy).
+async function sendReaction(review, foot, clicked) {
   if (!me) {
     toast(t("likeLogin"));
     return;
   }
-  btn.disabled = true;
+  // Klik w reakcję, którą już masz, ją zdejmuje; klik w drugą — przestawia.
+  const value = review.myReaction === clicked ? NO_REACTION : clicked;
+  const btns = [...foot.querySelectorAll(".like-btn")];
+  btns.forEach((b) => (b.disabled = true));
   try {
-    const state = await api(`/reviews/${review.id}/like`, {
-      method: review.likedByMe ? "DELETE" : "POST",
+    const state = await api(`/reviews/${review.id}/reaction`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ value }),
     });
     review.likes = state.likes;
-    review.likedByMe = state.likedByMe;
-    paintLike(btn, review, false);
+    review.dislikes = state.dislikes;
+    review.myReaction = state.myReaction;
+    paintReactions(foot, review, false);
   } catch (e) {
     toast(e.message);
   } finally {
-    btn.disabled = false;
+    btns.forEach((b) => (b.disabled = false));
   }
 }
 

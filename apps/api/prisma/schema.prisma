@@ -37,7 +37,7 @@ model User {
   following   Follow[]           @relation("following") // kogo ja obserwuję
   followers   Follow[]           @relation("followers") // kto obserwuje mnie
   pushSubs    PushSubscription[]
-  reviewLikes ReviewLike[] // recenzje, które polubiłem
+  reactions   ReviewReaction[] // moje reakcje na cudze recenzje
 }
 
 /// Subskrypcja Web Push (jedna na urządzenie/przeglądarkę — user może mieć kilka).
@@ -102,15 +102,19 @@ model Review {
   media   Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
   mediaId Int
 
-  likes ReviewLike[]
+  reactions ReviewReaction[]
 
   // Jeden użytkownik = jedna ocena danego tytułu.
   @@unique([userId, mediaId])
 }
 
-/// Polubienie cudzej recenzji („przydatna/trafna"). Własnej polubić się nie da.
-model ReviewLike {
+/// Reakcja na cudzą recenzję: serce (value = 1) albo kciuk w dół (value = -1).
+/// Na własną recenzję zareagować się nie da.
+/// Tabela w bazie nazywa się jeszcze „ReviewLike" (@@map) — powstała, gdy istniały
+/// same polubienia; zmiana nazwy tabeli nic by nie dała poza ryzykiem przy deployu.
+model ReviewReaction {
   id        Int      @id @default(autoincrement())
+  value     Int      @default(1) // 1 = serce, -1 = kciuk w dół
   createdAt DateTime @default(now())
 
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -119,9 +123,10 @@ model ReviewLike {
   review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   reviewId Int
 
-  // Jeden użytkownik = jedno polubienie danej recenzji.
+  // Jeden użytkownik = jedna reakcja na daną recenzję (serce ALBO kciuk, nie oba).
   @@unique([userId, reviewId])
   @@index([reviewId])
+  @@map("ReviewLike")
 }
 
 /// Lista „do obejrzenia/zagrania" — tytuły, które user chce sprawdzić później.

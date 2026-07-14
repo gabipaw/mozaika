@@ -101,6 +101,29 @@ export async function addGameFromRawg(externalId: string) {
   return upsertExternalMedia(MediaType.GRA, toGame((await res.json()) as RawgGame));
 }
 
+/** Klip z RAWG: `data` trzyma warianty jakości pod kluczami "480" i "max". */
+interface RawgMovie {
+  data?: { "480"?: string; max?: string };
+}
+
+/**
+ * Zwiastun gry (RAWG `/movies`). W przeciwieństwie do filmu i anime to NIE jest
+ * osadzenie YouTube, tylko bezpośredni plik mp4 — front musi go puścić w <video>.
+ * Null, gdy RAWG nie ma klipu dla tej gry (ma je tylko część tytułów).
+ */
+export async function gameTrailer(externalId: string): Promise<string | null> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id) || !process.env.RAWG_API_KEY) return null;
+
+  const res = await fetch(`${RAWG}/games/${id}/movies?key=${apiKey()}`);
+  if (!res.ok) return null;
+
+  const { results = [] } = (await res.json()) as { results?: RawgMovie[] };
+  const data = results[0]?.data;
+  // "max" to najlepsza jakość; gdy jej nie ma, bierzemy 480p — byle cokolwiek zagrało.
+  return data?.max ?? data?.["480"] ?? null;
+}
+
 /**
  * Data premiery gry (RAWG `released`). Null, gdy nieznana albo gdy RAWG oznacza
  * datę jako orientacyjną (`tba`) — wtedy nie ma czego zapowiadać.

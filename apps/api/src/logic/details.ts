@@ -4,7 +4,7 @@
  */
 import { aniListDescription, aniListTrailer } from "./anilist.js";
 import { bookDescription } from "./books.js";
-import { gameDescription } from "./games.js";
+import { gameDescription, gameTrailer } from "./games.js";
 import { musicDescription } from "./music.js";
 import { tmdbDescription, tmdbTrailer } from "./tmdb.js";
 
@@ -18,14 +18,29 @@ export async function getDescription(type: string, externalId: string): Promise<
 }
 
 /**
- * Adres zwiastuna do osadzenia. Mają go tylko filmy (TMDB) i anime (AniList) —
- * dla książek, muzyki, gier i mangi te API zwiastunów nie trzymają.
+ * Zwiastun do pokazania w szczegółach.
+ * `kind` mówi frontowi, CZYM to odtworzyć: film (TMDB) i anime (AniList) dają
+ * osadzenie YouTube, a gry (RAWG) — goły plik mp4, którego w iframe puścić się nie da.
+ * Książki, manga i muzyka zwiastunów nie mają.
  */
+export interface Trailer {
+  url: string;
+  kind: "youtube" | "video";
+}
+
 export async function getTrailer(
   type: string,
   externalId: string,
-): Promise<string | null> {
-  if (type === "anime") return aniListTrailer("ANIME", externalId);
-  if (type === "film") return tmdbTrailer(externalId);
-  return null;
+): Promise<Trailer | null> {
+  if (type === "game") {
+    const url = await gameTrailer(externalId);
+    return url ? { url, kind: "video" } : null;
+  }
+  const url =
+    type === "anime"
+      ? await aniListTrailer("ANIME", externalId)
+      : type === "film"
+        ? await tmdbTrailer(externalId)
+        : null;
+  return url ? { url, kind: "youtube" } : null;
 }

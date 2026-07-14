@@ -442,7 +442,10 @@ h2 {
   background: #000;
 }
 
-.trailer-frame iframe {
+/* iframe = zwiastun z YouTube (film/anime), video = plik mp4 z RAWG (gry).
+   Widoczny jest zawsze tylko jeden — oba mają wypełnić tę samą ramkę 16:9. */
+.trailer-frame iframe,
+.trailer-frame video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -1632,6 +1635,7 @@ h2 {
 .review-foot {
   display: flex;
   justify-content: flex-end;
+  gap: 6px;
   margin-top: 6px;
 }
 
@@ -1657,6 +1661,14 @@ h2 {
 .like-btn.active {
   color: var(--gold);
   border-color: var(--gold);
+}
+
+/* Kciuk w dół nie może świecić tym samym złotem co serce — inaczej „nietrafiona"
+   wygląda jak wyróżnienie. Stąd osobny, chłodniejszy kolor. */
+.like-btn.down:hover:not(:disabled),
+.like-btn.down.active {
+  color: var(--accent-2);
+  border-color: var(--accent-2);
 }
 
 /* Autor widzi własny licznik, ale nie może go klikać — kursor ma to zdradzać. */

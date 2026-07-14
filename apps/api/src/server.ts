@@ -28,7 +28,7 @@ import {
 } from "./logic/push.js";
 import { checkPremieres, ensureReleaseDate, upcomingForUser } from "./logic/premieres.js";
 import { addReview, deleteReview } from "./logic/reviews.js";
-import { likeReview, likedReviewIds, unlikeReview } from "./logic/reviewLikes.js";
+import { react, reactionScore, reactionSummary } from "./logic/reactions.js";
 import { profilePayload } from "./logic/profile.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
@@ -387,21 +387,26 @@ api.get("/details", async (c) => {
   const externalId = c.req.query("externalId") ?? "";
   // Opis i zwiastun idą równolegle — zwiastun jest dodatkiem, więc jego brak
   // (albo padnięte API) nie może zabrać widzowi opisu.
-  const [description, trailerUrl] = await Promise.all([
+  const [description, trailer] = await Promise.all([
     getDescription(type, externalId),
     getTrailer(type, externalId).catch(() => null),
   ]);
-  return c.json({ description, trailerUrl });
+  // trailerKind mówi frontowi, czym to odtworzyć: "youtube" (iframe) czy "video" (mp4 z RAWG).
+  return c.json({
+    description,
+    trailerUrl: trailer?.url ?? null,
+    trailerKind: trailer?.kind ?? null,
+  });
 });
 
 // Komentarze/oceny danego tytułu (do widoku szczegółów).
-// Trafione recenzje (najwięcej polubień) idą na górę — świeże rozstrzygają remis.
-// Trasa jest publiczna, ale gdy przyjdzie token, doklejamy „czy JA to polubiłem".
+// Trafione recenzje idą na górę (serca minus kciuki), remis rozstrzyga świeżość.
+// Trasa jest publiczna, ale gdy przyjdzie token, doklejamy „jak JA zareagowałem".
 api.get("/media/:id/reviews", async (c) => {
   const id = intParam(c.req.param("id"), "id");
-  const reviews = await prisma.review.findMany({
+  const rows = await prisma.review.findMany({
     where: { mediaId: id },
-    orderBy: [{ likes: { _count: "desc" } }, { createdAt: "desc" }],
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       rating: true,
@@ -411,34 +416,31 @@ api.get("/media/:id/reviews", async (c) => {
       // unikalne (unikalny jest tylko e-mail): dwie osoby o tym samym nicku
       // podstawiały sobie nawzajem ocenę i komentarz do edycji.
       user: { select: { id: true, displayName: true } },
-      _count: { select: { likes: true } },
     },
   });
 
-  const meId = await userIdFromHeader(c);
-  const liked = await likedReviewIds(
-    meId,
-    reviews.map((r) => r.id),
+  const summary = await reactionSummary(
+    rows.map((r) => r.id),
+    await userIdFromHeader(c),
   );
-
-  return c.json(
-    reviews.map(({ _count, ...r }) => ({
+  // Sortujemy po wyniku w kodzie, bo liczniki liczy groupBy — baza nie zna „serca minus kciuki".
+  // Lista recenzji jednego tytułu jest krótka, więc to nic nie kosztuje.
+  const reviews = rows
+    .map((r) => ({
       ...r,
-      likes: _count.likes,
-      likedByMe: liked.has(r.id),
-    })),
-  );
+      ...(summary.get(r.id) ?? { likes: 0, dislikes: 0, myReaction: 0 }),
+    }))
+    .sort((a, b) => reactionScore(b) - reactionScore(a));
+
+  return c.json(reviews);
 });
 
-// Polub / odlub cudzą recenzję. Zwraca nowy stan: { likes, likedByMe }.
-api.post("/reviews/:id/like", requireAuth, async (c) => {
+// Reakcja na cudzą recenzję. Body: { value: 1 (serce) | -1 (kciuk w dół) | 0 (zdejmij) }.
+// Zwraca nowy stan: { likes, dislikes, myReaction }.
+api.post("/reviews/:id/reaction", requireAuth, async (c) => {
   const id = intParam(c.req.param("id"), "id");
-  return c.json(await likeReview(c.get("userId"), id));
-});
-
-api.delete("/reviews/:id/like", requireAuth, async (c) => {
-  const id = intParam(c.req.param("id"), "id");
-  return c.json(await unlikeReview(c.get("userId"), id));
+  const { value } = await c.req.json();
+  return c.json(await react(c.get("userId"), id, value));
 });
 
 // Dodaj/aktualizuj recenzję (jako zalogowany użytkownik). Body: { mediaId, rating, text? }.
