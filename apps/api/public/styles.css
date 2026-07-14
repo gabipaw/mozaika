@@ -947,9 +947,14 @@ h2 {
 }
 
 /* „Co obejrzeć razem” jako jedyny .more-btn stoi POD nagłówkiem, a nie pod listą —
-   margines górny z .more-btn dokładał się do .feed-head i robił podwójny odstęp. */
+   margines górny z .more-btn dokładał się do .feed-head i robił podwójny odstęp.
+   Guzik ma siedzieć tuż pod „Wasz gust”, więc ścieśniamy też odstęp nagłówka. */
 #togetherBtn {
   margin-top: 0;
+}
+
+#comparePanel .feed-head {
+  margin-bottom: 4px;
 }
 
 /* Komentarze: zwinięte do COMMENTS_COLLAPSED (9) — tak samo na laptopie i telefonie. */
