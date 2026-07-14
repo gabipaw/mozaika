@@ -312,7 +312,9 @@
           </div>
           <div class="profile-below">
             <div id="myCommentsWrap" class="profile-comments hidden">
-              <h2 class="profile-h" data-i18n="myComments">Moje komentarze</h2>
+              <!-- Nagłówek zależy od tego, czyj to profil („Moje komentarze" vs
+                   „Recenzje Bartka"), więc tekst ustawia renderProfileData, nie data-i18n. -->
+              <h2 id="commentsTitle" class="profile-h">Moje komentarze</h2>
               <div id="myComments" class="my-comments"></div>
               <button id="commentsMore" class="more-btn hidden" type="button">
                 Zobacz wszystkie

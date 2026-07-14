@@ -29,6 +29,7 @@ import {
 import { checkPremieres, ensureReleaseDate, upcomingForUser } from "./logic/premieres.js";
 import { addReview, deleteReview } from "./logic/reviews.js";
 import { likeReview, likedReviewIds, unlikeReview } from "./logic/reviewLikes.js";
+import { profilePayload } from "./logic/profile.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
 import { togetherPicks } from "./logic/together.js";
@@ -94,51 +95,7 @@ api.post("/auth/login", async (c) => {
 // Profil zalogowanego użytkownika + jego oceny i statystyki.
 api.get("/me", requireAuth, async (c) => {
   const userId = c.get("userId");
-  const user = await prisma.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: { id: true, email: true, displayName: true, avatarUrl: true },
-  });
-  const mediaSelect = {
-    id: true,
-    title: true,
-    type: true,
-    externalId: true,
-    year: true,
-    posterUrl: true,
-    genres: true,
-  } as const;
-  const [reviews, watchlist, followersCount, followingCount] = await Promise.all([
-    prisma.review.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true, // potrzebne do usuwania recenzji (DELETE /reviews/:id)
-        rating: true,
-        text: true,
-        favorite: true,
-        media: { select: mediaSelect },
-      },
-    }),
-    prisma.watchlistItem.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      select: { media: { select: mediaSelect } },
-    }),
-    prisma.follow.count({ where: { followedId: userId } }).catch(() => 0),
-    prisma.follow.count({ where: { followerId: userId } }).catch(() => 0),
-  ]);
-  const avg = reviews.length
-    ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
-    : null;
-  return c.json({
-    user,
-    count: reviews.length,
-    avg,
-    followersCount,
-    followingCount,
-    reviews,
-    watchlist,
-  });
+  return c.json(await profilePayload(userId, userId, true));
 });
 
 api.get("/me/recommendations", requireAuth, async (c) => {
@@ -515,48 +472,11 @@ api.get("/users/:id/recommendations", async (c) => {
   return c.json(await recommendations(id));
 });
 
-// Publiczny profil innego użytkownika (do podglądu): oceny + lista.
+// Publiczny profil innego użytkownika: oceny, komentarze i lista — to samo, co widzi
+// właściciel (minus e-mail). Gdy przyjdzie token, doklejamy „czy JA polubiłem tę recenzję".
 api.get("/users/:id/profile", async (c) => {
   const id = intParam(c.req.param("id"), "id");
-  const user = await prisma.user.findUniqueOrThrow({
-    where: { id },
-    select: { id: true, displayName: true, avatarUrl: true },
-  });
-  const mediaSelect = {
-    id: true,
-    title: true,
-    type: true,
-    externalId: true,
-    year: true,
-    posterUrl: true,
-    genres: true,
-  } as const;
-  const [reviews, watchlist, followersCount, followingCount] = await Promise.all([
-    prisma.review.findMany({
-      where: { userId: id },
-      orderBy: { createdAt: "desc" },
-      select: { rating: true, favorite: true, media: { select: mediaSelect } },
-    }),
-    prisma.watchlistItem.findMany({
-      where: { userId: id },
-      orderBy: { createdAt: "desc" },
-      select: { media: { select: mediaSelect } },
-    }),
-    prisma.follow.count({ where: { followedId: id } }).catch(() => 0),
-    prisma.follow.count({ where: { followerId: id } }).catch(() => 0),
-  ]);
-  const avg = reviews.length
-    ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
-    : null;
-  return c.json({
-    user,
-    count: reviews.length,
-    avg,
-    followersCount,
-    followingCount,
-    reviews,
-    watchlist,
-  });
+  return c.json(await profilePayload(id, await userIdFromHeader(c)));
 });
 
 // Porównanie gustu z zalogowanym userem: % dopasowania + wspólnie ocenione tytuły.

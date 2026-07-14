@@ -118,6 +118,8 @@ const I18N = {
     top4EmptyRO: "Brak ulubionych.",
     myComments: "Moje komentarze",
     myCommentsEmpty: "Nie dodałeś jeszcze żadnego komentarza do ocen.",
+    userComments: "Recenzje: {name}",
+    userCommentsEmpty: "{name} nie dodał(a) jeszcze żadnego komentarza.",
     watchlistTitle: "Do obejrzenia / zagrania",
     watchEmpty: "Pusto — dodaj coś przyciskiem „Do listy”.",
     watchEmptyRO: "Pusto.",
@@ -289,6 +291,8 @@ const I18N = {
     top4EmptyRO: "No favorites.",
     myComments: "My comments",
     myCommentsEmpty: "You haven't added any comments to your ratings yet.",
+    userComments: "Reviews: {name}",
+    userCommentsEmpty: "{name} hasn't written any comments yet.",
     watchlistTitle: "To watch / play",
     watchEmpty: "Empty — add something with the “To list” button.",
     watchEmptyRO: "Empty.",
@@ -1460,9 +1464,14 @@ function renderProfileData(data, readOnly) {
   // Prawa strona: ocenione pogrupowane po kategoriach.
   renderRatedByCat(data.reviews, readOnly);
 
-  // Moje komentarze (recenzje z tekstem) — lewy dół, tylko własny profil.
-  $("myCommentsWrap").classList.toggle("hidden", readOnly);
-  if (!readOnly) renderMyComments(data.reviews);
+  // Komentarze (recenzje z tekstem) — lewy dół. Na cudzym profilu też: chcesz przeczytać,
+  // co kolega napisał, bez wchodzenia w każdy tytuł osobno. I móc je stamtąd polubić.
+  $("myCommentsWrap").classList.remove("hidden");
+  const name = data.user.displayName;
+  $("commentsTitle").textContent = readOnly
+    ? t("userComments", { name })
+    : t("myComments");
+  renderMyComments(data.reviews, data.user.id, readOnly ? name : null);
 }
 
 // Lista Twoich recenzji z komentarzem: plakat + tytuł + ocena + tekst.
@@ -1471,7 +1480,9 @@ function renderProfileData(data, readOnly) {
 // na telefonie, bo na desktopie ma własny scroll).
 const COMMENTS_COLLAPSED = 9;
 
-function renderMyComments(reviews) {
+// authorId = czyj to profil (autor tych recenzji); ownerName = imię, gdy to CUDZY profil
+// (null na własnym) — z niego bierzemy nagłówek i tekst pustej listy.
+function renderMyComments(reviews, authorId, ownerName) {
   const box = $("myComments");
   const more = $("commentsMore");
   box.innerHTML = "";
@@ -1479,7 +1490,10 @@ function renderMyComments(reviews) {
   more.classList.add("hidden");
   const withText = reviews.filter((r) => r.media && (r.text || "").trim());
   if (withText.length === 0) {
-    box.innerHTML = `<p class="muted">${t("myCommentsEmpty")}</p>`;
+    const empty = ownerName
+      ? t("userCommentsEmpty", { name: ownerName })
+      : t("myCommentsEmpty");
+    box.innerHTML = `<p class="muted">${empty}</p>`;
     return;
   }
   // Przycisk tylko wtedy, gdy naprawdę jest co rozwijać.
@@ -1515,7 +1529,7 @@ function renderMyComments(reviews) {
     const text = document.createElement("p");
     text.className = "comment-text";
     text.textContent = r.text;
-    body.append(head, text);
+    body.append(head, text, likeControl(r, authorId));
 
     item.append(poster, body);
     item.addEventListener("click", () =>
@@ -2037,7 +2051,7 @@ async function loadDetailReviews(mediaId) {
         txt.textContent = r.text;
         el.append(txt);
       }
-      el.append(likeControl(r));
+      el.append(likeControl(r, r.user.id));
       box.append(el);
     }
   } catch {
@@ -2047,10 +2061,12 @@ async function loadDetailReviews(mediaId) {
 
 // Serce + licznik pod recenzją. Własnej recenzji polubić się nie da (reguła z backendu),
 // więc autorowi pokazujemy sam licznik — bez klikalnego przycisku.
-function likeControl(review) {
+// authorId podajemy z zewnątrz, bo na profilu recenzje nie niosą pola `user` — autorem
+// jest po prostu właściciel profilu.
+function likeControl(review, authorId) {
   const foot = document.createElement("div");
   foot.className = "review-foot";
-  const mine = me && review.user.id === me.id;
+  const mine = !!me && authorId === me.id;
 
   const btn = document.createElement("button");
   btn.className = "like-btn";
@@ -2059,7 +2075,10 @@ function likeControl(review) {
     btn.disabled = true;
     btn.title = t("likeOwn");
   } else {
-    btn.addEventListener("click", () => toggleLike(review, btn));
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation(); // na profilu cała karta komentarza otwiera tytuł — serce nie ma go otwierać
+      toggleLike(review, btn);
+    });
   }
   paintLike(btn, review, mine);
 
