@@ -5,7 +5,7 @@
 import { MediaType } from "@prisma/client";
 
 import { NotFoundError, ValidationError } from "../errors.js";
-import { type ExternalMedia, upsertExternalMedia } from "./media.js";
+import { type ExternalMedia, parseReleaseDate, upsertExternalMedia } from "./media.js";
 
 const TMDB = "https://api.themoviedb.org/3";
 const IMG = "https://image.tmdb.org/t/p/w500";
@@ -157,6 +157,16 @@ export async function addMediaFromTmdb(externalId: string) {
   if (!res.ok) throw new Error(`TMDB error ${res.status}`);
 
   return upsertExternalMedia(MediaType.FILM, toFilm((await res.json()) as TmdbMovie));
+}
+
+/** Data premiery filmu (TMDB `release_date`). Null, gdy TMDB jej nie zna. */
+export async function tmdbReleaseDate(externalId: string): Promise<Date | null> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id)) return null;
+  const res = await fetch(`${TMDB}/movie/${id}?api_key=${apiKey()}&language=pl-PL`);
+  if (!res.ok) return null;
+  const m = (await res.json()) as { release_date?: string };
+  return parseReleaseDate(m.release_date);
 }
 
 /** Opis filmu (streszczenie TMDB) — do widoku szczegółów. Pusty, gdy brak. */

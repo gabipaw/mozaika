@@ -5,7 +5,7 @@
 import { MediaType } from "@prisma/client";
 
 import { NotFoundError, ValidationError } from "../errors.js";
-import { type ExternalMedia, upsertExternalMedia } from "./media.js";
+import { type ExternalMedia, parseReleaseDate, upsertExternalMedia } from "./media.js";
 
 const RAWG = "https://api.rawg.io/api";
 
@@ -99,6 +99,20 @@ export async function addGameFromRawg(externalId: string) {
   if (!res.ok) throw new Error(`RAWG error ${res.status}`);
 
   return upsertExternalMedia(MediaType.GRA, toGame((await res.json()) as RawgGame));
+}
+
+/**
+ * Data premiery gry (RAWG `released`). Null, gdy nieznana albo gdy RAWG oznacza
+ * datę jako orientacyjną (`tba`) — wtedy nie ma czego zapowiadać.
+ */
+export async function gameReleaseDate(externalId: string): Promise<Date | null> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id) || !process.env.RAWG_API_KEY) return null;
+  const res = await fetch(`${RAWG}/games/${id}?key=${apiKey()}`);
+  if (!res.ok) return null;
+  const g = (await res.json()) as { released?: string; tba?: boolean };
+  if (g.tba) return null;
+  return parseReleaseDate(g.released);
 }
 
 /** Opis gry (RAWG description_raw) — do widoku szczegółów. Pusty, gdy brak/klucza. */

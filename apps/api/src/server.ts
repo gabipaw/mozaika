@@ -26,6 +26,7 @@ import {
   savePushSubscription,
   sendPushToUser,
 } from "./logic/push.js";
+import { checkPremieres } from "./logic/premieres.js";
 import { addReview, deleteReview } from "./logic/reviews.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
@@ -314,6 +315,18 @@ api.post("/push/test", requireAuth, async (c) => {
     url: "/",
   });
   return c.json({ ok: true });
+});
+
+// Cron premier — woła to raz dziennie GitHub Actions (Render w planie free nie ma
+// crona). Nie jest to trasa użytkownika, więc zamiast JWT chroni ją wspólny sekret;
+// bez CRON_SECRET w env trasa jest po prostu wyłączona.
+api.post("/cron/premieres", async (c) => {
+  const secret = process.env.CRON_SECRET ?? "";
+  if (!secret) return c.json({ error: "Cron wyłączony (brak CRON_SECRET)." }, 503);
+  if (c.req.header("x-cron-secret") !== secret) {
+    return c.json({ error: "Brak dostępu." }, 401);
+  }
+  return c.json(await checkPremieres());
 });
 
 // Przestań obserwować.

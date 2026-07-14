@@ -6,7 +6,7 @@
 import { MediaType } from "@prisma/client";
 
 import { NotFoundError, ValidationError } from "../errors.js";
-import { type ExternalMedia, upsertExternalMedia } from "./media.js";
+import { type ExternalMedia, parseReleaseDate, upsertExternalMedia } from "./media.js";
 
 const ANILIST = "https://graphql.anilist.co";
 
@@ -204,6 +204,34 @@ export async function aniListDescription(
     return (data.Media?.description ?? "").replace(/<[^>]+>/g, "").trim();
   } catch {
     return "";
+  }
+}
+
+/**
+ * Data premiery anime/mangi (AniList `startDate`). AniList często zna tylko rok
+ * albo rok i miesiąc — wtedy zwracamy null, bo do zapowiedzi potrzebny jest dzień.
+ */
+export async function aniListReleaseDate(
+  type: AniType,
+  externalId: string,
+): Promise<Date | null> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id)) return null;
+  try {
+    const data = await gql<{
+      Media: {
+        startDate?: { year?: number | null; month?: number | null; day?: number | null };
+      } | null;
+    }>(
+      `query ($id: Int) { Media(id: $id, type: ${type}) { startDate { year month day } } }`,
+      { id: Number(id) },
+    );
+    const d = data.Media?.startDate;
+    if (!d?.year || !d.month || !d.day) return null;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return parseReleaseDate(`${d.year}-${pad(d.month)}-${pad(d.day)}`);
+  } catch {
+    return null;
   }
 }
 

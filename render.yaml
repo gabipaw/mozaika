@@ -30,3 +30,5 @@ services:
         sync: false # Web Push — klucz prywatny (SEKRET, tylko panel Render)
       - key: VAPID_SUBJECT
         sync: false # np. mailto:twoj@email — wymagane przez bramki push
+      - key: CRON_SECRET
+        sync: false # sekret dla /api/cron/premieres — ten sam wpisz w GitHub → Secrets

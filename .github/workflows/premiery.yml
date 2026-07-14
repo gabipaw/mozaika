@@ -1,0 +1,38 @@
+# Codzienne sprawdzenie premier tytułów z watchlisty.
+# Render w planie free nie ma crona, więc budzikiem jest GitHub Actions: puka do
+# /api/cron/premieres, a cała robota (pobranie dat, wysyłka pushy) dzieje się na
+# serwerze Mozaiki.
+#
+# Wymaga sekretu CRON_SECRET w DWÓCH miejscach — muszą być identyczne:
+#   • GitHub → Settings → Secrets and variables → Actions → New repository secret
+#   • Render → usługa „mozaika" → Environment → Add environment variable
+name: Premiery
+
+on:
+  schedule:
+    - cron: "0 8 * * *" # codziennie 08:00 UTC (10:00 w Polsce latem)
+  workflow_dispatch: # pozwala odpalić ręcznie z zakładki Actions
+
+jobs:
+  sprawdz-premiery:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Zapytaj Mozaikę o premiery
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::Brak sekretu CRON_SECRET w ustawieniach repo."
+            exit 1
+          fi
+          # --retry: usługa na planie free zasypia, więc pierwsze pukanie może iść
+          # w zimny start (nawet ~minuta). Dajemy jej czas i kilka podejść.
+          kod=$(curl -sS -X POST \
+            --max-time 180 --retry 3 --retry-all-errors --retry-delay 20 \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -o odpowiedz.json -w "%{http_code}" \
+            https://mozaika-1.onrender.com/api/cron/premieres)
+          echo "HTTP $kod"
+          cat odpowiedz.json
+          echo
+          test "$kod" = "200"

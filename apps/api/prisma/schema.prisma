@@ -69,14 +69,16 @@ model Follow {
 
 /// Tytuł do oceniania (film, serial, książka, gra, muzyka).
 model Media {
-  id         Int       @id @default(autoincrement())
-  type       MediaType
-  title      String
-  externalId String? // np. ID z TMDB — żeby nie dublować tego samego tytułu
-  year       Int?
-  posterUrl  String?
-  genres     String[] @default([]) // gatunki (np. Sci-Fi, Horror) — do afinności gustu
-  createdAt  DateTime  @default(now())
+  id               Int       @id @default(autoincrement())
+  type             MediaType
+  title            String
+  externalId       String? // np. ID z TMDB — żeby nie dublować tego samego tytułu
+  year             Int?
+  posterUrl        String?
+  genres           String[]  @default([]) // gatunki (np. Sci-Fi, Horror) — do afinności gustu
+  releaseDate      DateTime? // premiera wg TMDB/AniList/RAWG — do powiadomień o premierach
+  releaseCheckedAt DateTime? // kiedy ostatnio pytaliśmy API o datę (żeby nie pytać co dzień)
+  createdAt        DateTime  @default(now())
 
   reviews   Review[]
   watchlist WatchlistItem[]
@@ -107,6 +109,10 @@ model Review {
 model WatchlistItem {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
+
+  // Push o premierze tego tytułu został już rozstrzygnięty: albo wysłany, albo
+  // świadomie pominięty (tytuł był wydany, zanim trafił na listę). Null = czekamy.
+  premiereNotifiedAt DateTime?
 
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
