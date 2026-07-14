@@ -1902,7 +1902,11 @@ h2 {
 
 #authForm .pw-field input {
   flex: 1;
-  padding-right: 46px;
+  padding-right: 46px; /* miejsce na oczko „pokaż hasło" */
+  /* Bez min-width: 0 input nie zwęzi się poniżej swojej naturalnej szerokości
+     (domyślnie ~20 znaków + ten padding) i wystaje poza kartę logowania — pole
+     hasła było szersze od e-maila. */
+  min-width: 0;
 }
 
 .pw-toggle {
