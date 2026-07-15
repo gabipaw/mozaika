@@ -479,7 +479,7 @@ h2 {
   gap: 4px;
   position: fixed;
   left: 14px;
-  top: 16px;
+  top: 70px; /* pod nagłówkiem (topbar), żeby nie zasłaniać logo */
   bottom: 16px;
   z-index: 50;
   background: var(--bg-2);
