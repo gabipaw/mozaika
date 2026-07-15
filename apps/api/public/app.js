@@ -1568,6 +1568,9 @@ async function openChat(user) {
   $("chatListView").classList.add("hidden");
   $("chatThreadView").classList.remove("hidden");
   $("chatWith").textContent = user.displayName;
+  const avBox = $("chatWithAvatar");
+  avBox.innerHTML = "";
+  avBox.append(avatarEl(user));
   $("chatText").value = "";
   await loadThread(true);
   $("chatText").focus();
