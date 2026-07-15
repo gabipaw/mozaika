@@ -1427,6 +1427,8 @@ function renderProfileData(data, readOnly) {
   $("profileFeed").classList.toggle("hidden", readOnly);
   $("comparePanel").classList.toggle("hidden", !readOnly);
   $("tastePanel").classList.toggle("hidden", readOnly); // portret tylko na własnym profilu
+  // Cudzy profil: portretu gustu nie ma, więc komentarze biorą CAŁĄ szerokość (3×3).
+  $("profileView").classList.toggle("readonly", readOnly);
 
   // Top 4 = przypięte (favorite).
   const top = data.reviews.filter((r) => r.favorite).slice(0, 4);

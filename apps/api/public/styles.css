@@ -808,6 +808,15 @@ h2 {
   min-width: 0;
 }
 
+/* Cudzy profil: nie ma „Portretu gustu", więc nie rezerwujemy kolumny 340px —
+   komentarze (recenzje kolegi) rozciągają się na CAŁĄ szerokość, siatka 3×3. */
+#profileView.readonly .profile-below {
+  grid-template-columns: 1fr;
+}
+#profileView.readonly .my-comments {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .taste-body {
   font-size: 0.9rem;
 }
@@ -1475,11 +1484,13 @@ h2 {
      nowrap) podnosił tę podłogę i rozpychał WSZYSTKIE karty — strona jechała
      w bok. Zerowa podłoga pozwala kolumnie zwęzić się do ekranu, a tytuł dostaje
      wielokropek, tak jak zaprojektowano. */
-  .profile-below {
+  .profile-below,
+  #profileView.readonly .profile-below {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
   }
-  .my-comments {
+  .my-comments,
+  #profileView.readonly .my-comments {
     grid-template-columns: minmax(0, 1fr);
   }
   .profile-left,
