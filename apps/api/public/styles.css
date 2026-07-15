@@ -1043,9 +1043,11 @@ h2 {
 
 /* Imię + liczniki obserwacji w nagłówku. */
 .profile-id {
+  flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
 }
 
@@ -1054,10 +1056,11 @@ h2 {
   color: var(--muted);
 }
 
-/* Przycisk „Obserwuj" w nagłówku profilu (przy oglądaniu cudzego). */
+/* Przycisk „Obserwuj" w nagłówku profilu — pod imieniem, NAD licznikami.
+   align-self: flex-start → guzik trzyma szerokość treści (nie rozciąga się). */
 .profile-head .follow-btn {
-  margin-left: auto;
-  align-self: center;
+  align-self: flex-start;
+  margin: 4px 0 2px;
 }
 
 /* Panel „Wasz gust" — % dopasowania + wspólne tytuły. */
