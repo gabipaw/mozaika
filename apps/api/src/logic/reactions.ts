@@ -6,6 +6,7 @@
  */
 import { prisma } from "../db.js";
 import { NotFoundError, ValidationError } from "../errors.js";
+import { notifyLike } from "./notifications.js";
 
 export const LIKE = 1;
 export const DISLIKE = -1;
@@ -59,7 +60,7 @@ export async function react(
 
   const review = await prisma.review.findUnique({
     where: { id: reviewId },
-    select: { userId: true },
+    select: { userId: true, mediaId: true },
   });
   if (!review) throw new NotFoundError(`Recenzja #${reviewId} nie istnieje.`);
   checkCanReact(review.userId, userId);
@@ -73,6 +74,8 @@ export async function react(
       update: { value: wanted },
       create: { userId, reviewId, value: wanted },
     });
+    // Powiadomienie tylko przy polubieniu (serce = wartość dodatnia), nie przy „–”.
+    if (wanted > 0) notifyLike(review.userId, userId, reviewId, review.mediaId);
   }
 
   const summary = await reactionSummary([reviewId], userId);

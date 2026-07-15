@@ -137,6 +137,8 @@ const I18N = {
     noFriendsFound: "Nikogo nie znaleziono.",
     notifications: "Powiadomienia",
     notifFollowed: "zaczął(-ęła) Cię obserwować",
+    notifLiked: "polubił(-a) Twoją recenzję",
+    notifRated: "ocenił(-a) tytuł z Twojej listy",
     noNotif: "Brak powiadomień. Gdy ktoś Cię zaobserwuje, pojawi się tu.",
     counts: "{fo} obserwujących · {fw} obserwowanych",
     followersLink: "{n} obserwujących",
@@ -339,6 +341,8 @@ const I18N = {
     noFriendsFound: "No one found.",
     notifications: "Notifications",
     notifFollowed: "started following you",
+    notifLiked: "liked your review",
+    notifRated: "rated a title from your watchlist",
     noNotif: "No notifications. When someone follows you, it'll show up here.",
     counts: "{fo} followers · {fw} following",
     followersLink: "{n} followers",
@@ -1376,46 +1380,49 @@ function drawFriends() {
   }
 }
 
-// --- Powiadomienia: nowi obserwujący (znacznik „przeczytane" w localStorage) ---
-const NOTIF_SEEN_KEY = "mozaika_notif_seen";
-let followersCache = [];
+// --- Centrum powiadomień (follow / polubienie recenzji / ocena z listy) ---
+let notifCache = [];
 
-const getNotifSeen = () => Number(localStorage.getItem(NOTIF_SEEN_KEY) || 0);
-
-async function loadFollowers() {
+async function loadNotifications() {
   try {
-    followersCache = await api("/me/followers");
+    notifCache = await api("/me/notifications");
   } catch {
-    followersCache = [];
+    notifCache = [];
   }
   updateNotifBadge();
 }
 
 function updateNotifBadge() {
-  const seen = getNotifSeen();
-  const n = followersCache.filter((f) => new Date(f.since).getTime() > seen).length;
+  const n = notifCache.filter((x) => !x.readAt).length;
   const badge = $("notifBadge");
   badge.textContent = n > 9 ? "9+" : String(n);
   badge.classList.toggle("hidden", n === 0);
 }
 
+function notifVerb(type) {
+  if (type === "like") return t("notifLiked");
+  if (type === "watchlist_rated") return t("notifRated");
+  return t("notifFollowed");
+}
+
 function renderNotifList() {
   const list = $("notifList");
-  const seen = getNotifSeen();
   list.innerHTML = "";
-  if (followersCache.length === 0) {
+  if (!notifCache.length) {
     list.innerHTML = `<p class="muted small">${t("noNotif")}</p>`;
     return;
   }
-  for (const f of followersCache) {
+  for (const n of notifCache) {
+    const toMedia = n.media && (n.type === "like" || n.type === "watchlist_rated");
     const row = document.createElement("div");
     row.className = "friend-row notif-row";
-    if (new Date(f.since).getTime() > seen) row.classList.add("new");
-    const av = avatarEl(f);
+    if (!n.readAt) row.classList.add("new");
+    const av = avatarEl(n.actor);
     av.style.cursor = "pointer";
     const go = () => {
       closeNotif();
-      openUserProfile(f.id);
+      if (toMedia) openDetail(toDetail(n.media, n.media.type, n.media.id));
+      else openUserProfile(n.actor.id);
     };
     av.addEventListener("click", go);
     const body = document.createElement("div");
@@ -1423,22 +1430,26 @@ function renderNotifList() {
     const txt = document.createElement("span");
     txt.className = "friend-link";
     const b = document.createElement("b");
-    b.textContent = f.displayName;
-    txt.append(b, ` ${t("notifFollowed")}`);
+    b.textContent = n.actor.displayName;
+    txt.append(b, ` ${notifVerb(n.type)}`);
+    if (toMedia) txt.append(`: „${n.media.title}”`);
     txt.addEventListener("click", go);
     const time = document.createElement("span");
     time.className = "notif-time muted small";
-    time.textContent = timeAgo(f.since);
+    time.textContent = timeAgo(n.createdAt);
     body.append(txt, time);
     row.append(av, body);
     list.append(row);
   }
 }
 
-function openNotif() {
+async function openNotif() {
   $("notifOverlay").classList.remove("hidden");
+  await loadNotifications();
   renderNotifList();
-  localStorage.setItem(NOTIF_SEEN_KEY, String(Date.now())); // oznacz jako przeczytane
+  // Oznacz jako przeczytane na serwerze i wyzeruj badge.
+  api("/me/notifications/read", { method: "POST" }).catch(() => {});
+  notifCache.forEach((n) => (n.readAt = n.readAt || new Date().toISOString()));
   updateNotifBadge();
 }
 function closeNotif() {
@@ -2974,9 +2985,10 @@ async function showApp() {
   $("browse").classList.remove("hidden");
   renderHello();
   await loadMe(); // katalog i profil czytają myProfile — najpierw je pobierz
-  loadFollowers(); // licznik powiadomień (nowi obserwujący)
+  loadNotifications(); // licznik powiadomień (follow / polubienia / oceny z listy)
   refreshMsgBadge(); // licznik nieprzeczytanych wiadomości
   setInterval(refreshMsgBadge, 30000); // odświeżaj co 30 s (bez otwierania czatu)
+  setInterval(loadNotifications, 45000); // odświeżaj powiadomienia co 45 s
   await Promise.all([
     loadTasteRecommendations(),
     loadRecommendations(),

@@ -41,6 +41,27 @@ model User {
   sentMessages     Message[] @relation("sentMessages")
   receivedMessages Message[] @relation("receivedMessages")
   messageReactions MessageReaction[]
+  notifications    Notification[] @relation("notifRecipient") // powiadomienia dla mnie
+  actedNotifs      Notification[] @relation("notifActor") // powiadomienia, które wywołałem
+}
+
+/// Powiadomienie w centrum powiadomień (follow / polubienie recenzji / ocena z listy).
+model Notification {
+  id        Int       @id @default(autoincrement())
+  type      String // "follow" | "like" | "watchlist_rated"
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+  reviewId  Int? // dla type=like (bez FK — recenzja bywa usuwana, powiadomienie zostaje)
+
+  user    User @relation("notifRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  userId  Int // odbiorca
+  actor   User @relation("notifActor", fields: [actorId], references: [id], onDelete: Cascade)
+  actorId Int // kto wywołał
+  media   Media? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  mediaId Int?
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }
 
 /// Wiadomość 1:1 w czacie. API pozwala pisać tylko przy WZAJEMNEJ obserwacji.
@@ -122,9 +143,10 @@ model Media {
   releaseCheckedAt DateTime? // kiedy ostatnio pytaliśmy API o datę (żeby nie pytać co dzień)
   createdAt        DateTime  @default(now())
 
-  reviews   Review[]
-  watchlist WatchlistItem[]
-  messages  Message[] // udostępnienia tego tytułu w czacie
+  reviews       Review[]
+  watchlist     WatchlistItem[]
+  messages      Message[] // udostępnienia tego tytułu w czacie
+  notifications Notification[]
 
   // Ten sam tytuł z tego samego źródła nie może istnieć dwa razy.
   @@unique([type, externalId])

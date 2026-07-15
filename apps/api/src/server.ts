@@ -38,6 +38,12 @@ import {
   reactToMessage,
   sendMessage,
 } from "./logic/messages.js";
+import {
+  listNotifications,
+  markAllRead,
+  notifyFollow,
+  unreadCount,
+} from "./logic/notifications.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
 import { togetherPicks } from "./logic/together.js";
@@ -245,9 +251,9 @@ api.post("/me/follow", requireAuth, async (c) => {
     create: { followerId, followedId },
   });
 
-  // Push tylko przy NOWYM obserwowaniu — ponowne kliknięcie nie ma budzić telefonu.
-  // Wysyłka nie może wywalić obserwowania, więc łapiemy błąd.
+  // Push + powiadomienie tylko przy NOWYM obserwowaniu (ponowny klik nie budzi).
   if (!istnial) {
+    notifyFollow(followedId, followerId);
     const kto = await prisma.user.findUnique({
       where: { id: followerId },
       select: { displayName: true },
@@ -260,6 +266,17 @@ api.post("/me/follow", requireAuth, async (c) => {
   }
   return c.json({ ok: true });
 });
+
+// --- Centrum powiadomień ---
+api.get("/me/notifications", requireAuth, async (c) =>
+  c.json(await listNotifications(c.get("userId"))),
+);
+api.get("/me/notifications/unread", requireAuth, async (c) =>
+  c.json({ count: await unreadCount(c.get("userId")) }),
+);
+api.post("/me/notifications/read", requireAuth, async (c) =>
+  c.json(await markAllRead(c.get("userId"))),
+);
 
 // „Co obejrzeć razem" — typy dla Ciebie i oglądanego użytkownika.
 api.get("/users/:id/together", requireAuth, async (c) => {

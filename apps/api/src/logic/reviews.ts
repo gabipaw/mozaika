@@ -5,6 +5,7 @@
  */
 import { prisma } from "../db.js";
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors.js";
+import { notifyWatchlistWatchers } from "./notifications.js";
 
 export const MIN_RATING = 0.5;
 export const MAX_RATING = 10;
@@ -64,7 +65,11 @@ export async function addReview(input: ReviewInput) {
   if (!media) throw new NotFoundError(`Tytuł #${valid.mediaId} nie istnieje.`);
 
   // Reguła „jeden user = jedna ocena tytułu": aktualizuj istniejącą albo utwórz nową.
-  return prisma.review.upsert({
+  const before = await prisma.review.findUnique({
+    where: { userId_mediaId: { userId: valid.userId, mediaId: valid.mediaId } },
+    select: { id: true },
+  });
+  const review = await prisma.review.upsert({
     where: { userId_mediaId: { userId: valid.userId, mediaId: valid.mediaId } },
     update: { rating: valid.rating, text: valid.text },
     create: {
@@ -74,6 +79,13 @@ export async function addReview(input: ReviewInput) {
       text: valid.text,
     },
   });
+  // Tylko przy NOWEJ ocenie: powiadom obserwujących, którzy mają tytuł na liście.
+  if (!before) {
+    notifyWatchlistWatchers(valid.userId, valid.mediaId).catch((e) =>
+      console.error("notif watchlist nie wyszlo:", e),
+    );
+  }
+  return review;
 }
 
 /**
