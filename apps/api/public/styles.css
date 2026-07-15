@@ -811,10 +811,13 @@ h2 {
 /* Cudzy profil: nie ma „Portretu gustu", więc nie rezerwujemy kolumny 340px —
    komentarze (recenzje kolegi) rozciągają się na CAŁĄ szerokość, siatka 3×3. */
 #profileView.readonly .profile-below {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
 }
+/* minmax(0,…) — NIE `1fr`: `1fr`=`minmax(auto,1fr)`, a `auto` ma podłogę min-content.
+   Długi tytuł (.comment-title ma nowrap) rozdymałby wtedy jedną kolumnę i wypychał
+   stronę w bok. Zerowa podłoga pozwala kolumnie zwęzić się, tytuł dostaje wielokropek. */
 #profileView.readonly .my-comments {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .taste-body {
