@@ -468,9 +468,48 @@ h2 {
   font-size: 0.9rem;
 }
 
-/* Dolny pasek nawigacji — domyślnie ukryty; pokazuje go tylko telefon. */
+/* Panel nawigacji. Desktop: pionowy, przyklejony z PRAWEJ (wyśrodkowany w pionie).
+   Telefon: poziomy pasek na dole (patrz media query). Pokazywany tylko po
+   zalogowaniu (jest w #appView, które na ekranie logowania ma display:none). */
 .bottom-nav {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: fixed;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 10px 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+.bottom-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.66rem;
+  padding: 8px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    background 0.12s;
+}
+.bottom-nav-btn:hover {
+  color: var(--text);
+  background: var(--card);
+}
+.bn-icon {
+  position: relative;
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 @media (max-width: 640px) {
@@ -483,36 +522,28 @@ h2 {
     width: 160px;
   }
 
-  /* Dolny pasek: zawsze przyklejony do dołu ekranu. */
+  /* Telefon: panel wraca na DÓŁ jako poziomy pasek na całą szerokość. */
   .bottom-nav {
-    display: flex;
-    position: fixed;
+    flex-direction: row;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 50; /* nad wszystkim (też nad czatem) — pasek zawsze widoczny */
+    top: auto;
+    transform: none;
     justify-content: space-around;
-    background: var(--bg-2);
+    border: none;
     border-top: 1px solid var(--line);
+    border-radius: 0;
+    box-shadow: none;
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
   }
   .bottom-nav-btn {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     gap: 2px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 0.66rem;
     padding: 4px 0;
-    cursor: pointer;
   }
   .bn-icon {
-    position: relative;
     font-size: 1.3rem;
-    line-height: 1;
   }
   /* Żeby treść nie chowała się pod paskiem. */
   #appView {
