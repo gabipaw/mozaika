@@ -1691,6 +1691,8 @@ async function openTogether() {
 // Porównanie gustu z oglądanym userem: % dopasowania + wspólnie ocenione tytuły.
 async function loadCompare(id) {
   const body = $("compareBody");
+  const scoreSlot = $("compareScore");
+  scoreSlot.innerHTML = "";
   body.innerHTML = '<p class="muted small">Liczenie…</p>';
   try {
     const data = await api(`/users/${id}/compare`);
@@ -1708,7 +1710,8 @@ async function loadCompare(id) {
     cap.className = "match-cap";
     cap.textContent = t("matchCap", { n: data.sharedCount });
     score.append(pct, cap);
-    body.append(score);
+    // Procent nad przyciskiem „Co obejrzeć razem" (osobny slot pod nagłówkiem).
+    scoreSlot.append(score);
     for (const s of data.shared) {
       const row = document.createElement("button");
       row.type = "button";
