@@ -8,6 +8,7 @@ let authMode = "login";
 let searchType = "film"; // "film" (TMDB) | "book" (Open Library)
 let viewingUserId = null; // null = własny profil; inaczej id oglądanego usera
 let viewingName = ""; // imię oglądanego usera (do etykiet porównania)
+let viewingUser = null; // pełny obiekt oglądanego usera {id, displayName, avatarUrl}
 
 // --- i18n (tłumaczenia) ---
 const I18N = {
@@ -150,6 +151,8 @@ const I18N = {
     noConversations:
       "Brak rozmów. Napisz do znajomego przyciskiem „💬 Napisz” na jego profilu.",
     chatEmpty: "Zacznijcie rozmowę — napisz pierwszy!",
+    seen: "Zobaczone",
+    sent: "Wysłano",
     follow: "Obserwuj",
     following: "Obserwujesz",
     noFollows: "Nie obserwujesz jeszcze nikogo — dodaj znajomych przyciskiem „＋ Dodaj”.",
@@ -336,6 +339,8 @@ const I18N = {
     noConversations:
       "No conversations yet. Message a friend with the “💬 Message” button on their profile.",
     chatEmpty: "Start the conversation — say hi!",
+    seen: "Seen",
+    sent: "Sent",
     follow: "Follow",
     following: "Following",
     noFollows: "You're not following anyone yet — add friends with the “＋ Add” button.",
@@ -1470,7 +1475,13 @@ function closePeople() {
 
 // --- Czat (wiadomości między wzajemnymi znajomymi) ---
 let chatWithId = null; // z kim mamy otwartą rozmowę (null = widok listy)
+let chatWithUser = null; // pełny obiekt rozmówcy {id, displayName, avatarUrl} — do awatara
 let chatPollTimer = null; // odświeżanie otwartej rozmowy co kilka sekund
+
+// Godzina wiadomości (HH:MM) w lokalnej strefie/locale przeglądarki.
+function fmtMsgTime(iso) {
+  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
 
 function openMessages() {
   $("chatOverlay").classList.remove("hidden");
@@ -1528,16 +1539,17 @@ async function loadConversations() {
       badge.textContent = c.unread > 9 ? "9+" : String(c.unread);
       row.append(badge);
     }
-    row.addEventListener("click", () => openChat(c.user.id, c.user.displayName));
+    row.addEventListener("click", () => openChat(c.user));
     list.append(row);
   }
 }
 
-async function openChat(userId, name) {
-  chatWithId = userId;
+async function openChat(user) {
+  chatWithId = user.id;
+  chatWithUser = user;
   $("chatListView").classList.add("hidden");
   $("chatThreadView").classList.remove("hidden");
-  $("chatWith").textContent = name;
+  $("chatWith").textContent = user.displayName;
   $("chatText").value = "";
   await loadThread(true);
   $("chatText").focus();
@@ -1562,12 +1574,51 @@ async function loadThread(forceScroll = false) {
   if (!msgs.length) {
     box.innerHTML = `<p class="muted small chat-empty">${t("chatEmpty")}</p>`;
   } else {
-    for (const m of msgs) {
-      const b = document.createElement("div");
-      b.className = `chat-bubble ${m.senderId === chatWithId ? "them" : "me"}`;
-      b.textContent = m.text;
-      box.append(b);
-    }
+    // Ostatnia MOJA wiadomość — tylko przy niej pokazujemy „Wysłano/Zobaczone".
+    let lastMineIdx = -1;
+    msgs.forEach((m, i) => {
+      if (m.senderId !== chatWithId) lastMineIdx = i;
+    });
+    msgs.forEach((m, i) => {
+      const mine = m.senderId !== chatWithId;
+      // Awatar/meta tylko na końcu serii wiadomości od tej samej osoby (mniej szumu).
+      const endOfGroup = i === msgs.length - 1 || msgs[i + 1].senderId !== m.senderId;
+
+      const line = document.createElement("div");
+      line.className = `chat-line ${mine ? "me" : "them"}`;
+
+      // Awatar (albo pusta przestrzeń dla wyrównania w środku serii).
+      if (endOfGroup) {
+        const av = avatarEl(mine ? myProfile.user : chatWithUser);
+        av.classList.add("chat-avatar");
+        line.append(av);
+      } else {
+        const spacer = document.createElement("div");
+        spacer.className = "chat-avatar spacer";
+        line.append(spacer);
+      }
+
+      const col = document.createElement("div");
+      col.className = "chat-col";
+      const bubble = document.createElement("div");
+      bubble.className = `chat-bubble ${mine ? "me" : "them"}`;
+      bubble.textContent = m.text;
+      col.append(bubble);
+
+      if (endOfGroup) {
+        const meta = document.createElement("div");
+        meta.className = "chat-meta";
+        let txt = fmtMsgTime(m.createdAt);
+        if (mine && i === lastMineIdx) {
+          txt += ` · ${m.readAt ? `✓✓ ${t("seen")}` : `✓ ${t("sent")}`}`;
+        }
+        meta.textContent = txt;
+        col.append(meta);
+      }
+
+      line.append(col);
+      box.append(line);
+    });
   }
   if (forceScroll || atBottom) box.scrollTop = box.scrollHeight;
   refreshMsgBadge(); // przeczytanie zmniejsza licznik
@@ -1872,6 +1923,7 @@ async function loadUserProfile(id) {
     api("/me/following").catch(() => []),
   ]);
   viewingName = data.user.displayName;
+  viewingUser = data.user;
   renderProfileData(data, true);
   setFollowBtn(following.some((u) => u.id === id));
   loadCompare(id);
@@ -2659,9 +2711,9 @@ async function init() {
     if (e.target === $("chatOverlay")) closeChat();
   });
   $("msgProfileBtn").addEventListener("click", () => {
-    if (!viewingUserId) return;
+    if (!viewingUser) return;
     $("chatOverlay").classList.remove("hidden");
-    openChat(viewingUserId, viewingName);
+    openChat(viewingUser);
   });
   $("followProfileBtn").addEventListener("click", async () => {
     if (!viewingUserId) return;
