@@ -468,11 +468,18 @@ h2 {
   font-size: 0.9rem;
 }
 
-/* Desktop: rezerwa miejsca z lewej na panel nawigacji, żeby nie zasłaniał treści
-   (panel jest position:fixed, więc bez tego wchodzi na zawartość na węższych ekranach). */
+/* Desktop: rezerwa miejsca z lewej na panel nawigacji (position:fixed), ale treść
+   ma zostać WYŚRODKOWANA w przestrzeni na prawo od panelu (nie przesunięta).
+   body dostaje padding-left → main (margin:auto) centruje się w pozostałej szerokości.
+   Topbar wyciągamy z powrotem na pełną szerokość (tło i user-box przy krawędziach). */
 @media (min-width: 641px) {
-  main {
+  body {
     padding-left: 140px;
+  }
+  .topbar {
+    margin-left: -140px;
+    width: calc(100% + 140px);
+    padding-left: 156px;
   }
 }
 
