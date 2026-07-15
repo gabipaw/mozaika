@@ -562,10 +562,21 @@ h2 {
   }
   #profileView .profile-id {
     align-items: center;
+    width: 100%;
   }
-  #profileView .profile-actions,
-  #profileView .profile-counts {
+  #profileView .profile-actions {
     justify-content: center;
+  }
+  /* Followers/Following: dwa duże kafle na CAŁĄ szerokość ekranu. */
+  #profileView .profile-counts {
+    width: 100%;
+    gap: 8px;
+  }
+  #profileView .count-link {
+    flex: 1;
+    justify-content: center;
+    padding: 12px 10px;
+    font-size: 0.95rem;
   }
 }
 
