@@ -997,6 +997,14 @@ h2 {
   flex: 0 0 auto;
 }
 
+/* Kreska oddziela przycisk „Co obejrzeć razem" od listy wspólnych tytułów —
+   czyli kreska JEST POD przyciskiem, nad listą (nie pod procentem). */
+#compareBody {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
 #comparePanel .feed-head {
   margin-bottom: 4px;
 }
@@ -1057,9 +1065,8 @@ h2 {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 2px 0 12px;
-  margin-bottom: 10px;
-  border-bottom: 1px solid var(--line);
+  padding: 2px 0 0;
+  margin-bottom: 12px;
 }
 
 .match-pct {
