@@ -518,9 +518,14 @@ h2 {
   #appView {
     padding-bottom: 74px;
   }
-  /* „← Wróć" niepotrzebny na telefonie — nawigacja jest w dolnym pasku (🏠). */
-  .topback {
+  /* „← Wróć" i 💬 w nagłówku niepotrzebne na telefonie — jest dolny pasek. */
+  .topback,
+  #msgBtn {
     display: none !important;
+  }
+  /* Strona (Znajomi) nie chowa treści pod dolnym paskiem. */
+  .page-inner {
+    padding-bottom: 84px;
   }
 }
 
@@ -1626,6 +1631,26 @@ h2 {
   align-items: center;
   justify-content: center;
   padding: 24px;
+}
+
+/* Widok-strona (np. Znajomi) — pełny ekran, nie modal. Pod dolnym paskiem
+   (z-index 25 < nav 30), więc pasek zostaje klikalny. */
+.page-view {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  overflow-y: auto;
+  background: var(--bg);
+}
+.page-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 18px 20px 24px;
+}
+/* Na stronie lista płynie naturalnie (bez własnego scrolla 60vh z modala). */
+.page-view .friends-list {
+  max-height: none;
+  overflow: visible;
 }
 
 .overlay-card {

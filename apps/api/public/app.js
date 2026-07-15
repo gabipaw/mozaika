@@ -1499,6 +1499,7 @@ function fmtMsgTime(iso) {
 }
 
 function openMessages() {
+  closeFriends();
   $("chatOverlay").classList.remove("hidden");
   showConvList();
   loadConversations();
@@ -2677,6 +2678,7 @@ function closeProfile() {
 // Powrót na stronę główną (dolny pasek na telefonie). Chowa profil/szczegóły/wyniki.
 function goHome() {
   viewingUserId = null;
+  closeFriends();
   $("profileView").classList.add("hidden");
   $("detailView").classList.add("hidden");
   $("searchResults").classList.add("hidden");
@@ -2873,9 +2875,6 @@ async function init() {
     } catch (e) {
       toast(e.message);
     }
-  });
-  $("friendsOverlay").addEventListener("click", (e) => {
-    if (e.target === $("friendsOverlay")) closeFriends();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
