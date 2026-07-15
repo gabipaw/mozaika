@@ -1672,20 +1672,24 @@ h2 {
   -webkit-box-orient: vertical;
 }
 
-/* Reakcje pod dymkiem. */
+/* Reakcje wciągnięte na PRAWY DOLNY RÓG dymka (styl Messenger). */
 .chat-reactions {
   display: flex;
   gap: 3px;
-  margin-top: 2px;
+  align-self: flex-end;
+  margin: -13px 8px 0 0;
+  position: relative;
+  z-index: 1;
 }
 .reaction-chip {
   background: var(--bg-2);
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 0 6px;
-  font-size: 0.85rem;
-  line-height: 1.5;
+  padding: 0 5px;
+  font-size: 0.8rem;
+  line-height: 1.4;
   cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
 }
 .reaction-chip.mine {
   border-color: var(--accent);
