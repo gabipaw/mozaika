@@ -1489,7 +1489,6 @@ function renderProfileData(data, readOnly) {
   };
   counts.append(
     mkLink(t("followersLink", { n: fo }), "followers"),
-    document.createTextNode(" · "),
     mkLink(t("followingLink", { n: fw }), "following"),
   );
 
