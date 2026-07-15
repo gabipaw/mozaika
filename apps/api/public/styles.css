@@ -474,16 +474,18 @@ h2 {
 .bottom-nav {
   display: flex;
   flex-direction: column;
+  /* Wykorzystaj całą wysokość: panel od góry do dołu, ikony rozłożone równo. */
+  justify-content: space-evenly;
   gap: 4px;
   position: fixed;
   left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 16px;
+  bottom: 16px;
   z-index: 50;
   background: var(--bg-2);
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 10px 8px;
+  padding: 16px 8px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 .bottom-nav-btn {
