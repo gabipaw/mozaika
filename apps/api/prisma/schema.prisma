@@ -38,6 +38,24 @@ model User {
   followers   Follow[]           @relation("followers") // kto obserwuje mnie
   pushSubs    PushSubscription[]
   reactions   ReviewReaction[] // moje reakcje na cudze recenzje
+  sentMessages     Message[] @relation("sentMessages")
+  receivedMessages Message[] @relation("receivedMessages")
+}
+
+/// Wiadomość 1:1 w czacie. API pozwala pisać tylko przy WZAJEMNEJ obserwacji.
+model Message {
+  id         Int       @id @default(autoincrement())
+  text       String
+  createdAt  DateTime  @default(now())
+  readAt     DateTime? // null = jeszcze nieprzeczytana przez odbiorcę
+
+  sender     User @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId   Int
+  receiver   User @relation("receivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId Int
+
+  @@index([senderId, receiverId, createdAt])
+  @@index([receiverId, readAt])
 }
 
 /// Subskrypcja Web Push (jedna na urządzenie/przeglądarkę — user może mieć kilka).

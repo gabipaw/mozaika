@@ -5,6 +5,7 @@
  */
 import { prisma } from "../db.js";
 import { reactionSummary } from "./reactions.js";
+import { areFriends } from "./messages.js";
 
 const mediaSelect = {
   id: true,
@@ -65,12 +66,18 @@ export async function profilePayload(
     ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
     : null;
 
+  // Czy oglądający i właściciel profilu to znajomi (wzajemna obserwacja) —
+  // front pokazuje wtedy przycisk „Napisz". Tylko dla zalogowanego, nie na sobie.
+  const mutualFriend =
+    viewerId && viewerId !== userId ? await areFriends(viewerId, userId) : false;
+
   return {
     user,
     count: reviews.length,
     avg,
     followersCount,
     followingCount,
+    mutualFriend,
     reviews,
     watchlist,
   };

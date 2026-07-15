@@ -30,6 +30,7 @@ import { checkPremieres, ensureReleaseDate, upcomingForUser } from "./logic/prem
 import { addReview, deleteReview } from "./logic/reviews.js";
 import { react, reactionScore, reactionSummary } from "./logic/reactions.js";
 import { profilePayload } from "./logic/profile.js";
+import { conversation, conversations, sendMessage } from "./logic/messages.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
 import { togetherPicks } from "./logic/together.js";
@@ -309,6 +310,40 @@ api.delete("/me/follow/:id", requireAuth, async (c) => {
   const followedId = intParam(c.req.param("id"), "id");
   await prisma.follow.deleteMany({ where: { followerId, followedId } });
   return c.json({ ok: true });
+});
+
+// --- Czat (tylko między wzajemnymi znajomymi) ---
+
+// Lista rozmów: rozmówca + ostatnia wiadomość + liczba nieprzeczytanych.
+api.get("/me/conversations", requireAuth, async (c) =>
+  c.json(await conversations(c.get("userId"))),
+);
+
+// Historia rozmowy z danym userem (oznacza jego wiadomości jako przeczytane).
+api.get("/me/messages/:id", requireAuth, async (c) => {
+  const otherId = intParam(c.req.param("id"), "id");
+  return c.json(await conversation(c.get("userId"), otherId));
+});
+
+// Wyślij wiadomość do znajomego → powiadomienie push do odbiorcy.
+api.post("/me/messages", requireAuth, async (c) => {
+  const meId = c.get("userId");
+  const body = await c.req.json();
+  const toId = Number(body.toUserId);
+  if (!Number.isInteger(toId) || toId <= 0) {
+    throw new ValidationError("Nieprawidłowy odbiorca.");
+  }
+  const msg = await sendMessage(meId, toId, String(body.text ?? ""));
+  const me = await prisma.user.findUnique({
+    where: { id: meId },
+    select: { displayName: true },
+  });
+  sendPushToUser(toId, {
+    title: me?.displayName ?? "Nowa wiadomość",
+    body: msg.text.length > 120 ? `${msg.text.slice(0, 117)}…` : msg.text,
+    url: "/",
+  }).catch((e) => console.error("push (message) nie wyszedl:", e));
+  return c.json(msg, 201);
 });
 
 // Feed aktywności obserwowanych — ostatnie oceny (kto, co, ile, kiedy).

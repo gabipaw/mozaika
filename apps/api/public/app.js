@@ -143,6 +143,13 @@ const I18N = {
     followersTitle: "Obserwujący",
     followingTitle: "Obserwowani",
     peopleEmpty: "Nikogo tu jeszcze nie ma.",
+    messages: "Wiadomości",
+    writeMessage: "💬 Napisz",
+    msgPlaceholder: "Napisz wiadomość…",
+    send: "Wyślij",
+    noConversations:
+      "Brak rozmów. Napisz do znajomego przyciskiem „💬 Napisz” na jego profilu.",
+    chatEmpty: "Zacznijcie rozmowę — napisz pierwszy!",
     follow: "Obserwuj",
     following: "Obserwujesz",
     noFollows: "Nie obserwujesz jeszcze nikogo — dodaj znajomych przyciskiem „＋ Dodaj”.",
@@ -322,6 +329,13 @@ const I18N = {
     followersTitle: "Followers",
     followingTitle: "Following",
     peopleEmpty: "No one here yet.",
+    messages: "Messages",
+    writeMessage: "💬 Message",
+    msgPlaceholder: "Write a message…",
+    send: "Send",
+    noConversations:
+      "No conversations yet. Message a friend with the “💬 Message” button on their profile.",
+    chatEmpty: "Start the conversation — say hi!",
     follow: "Follow",
     following: "Following",
     noFollows: "You're not following anyone yet — add friends with the “＋ Add” button.",
@@ -1454,6 +1468,159 @@ function closePeople() {
   $("peopleOverlay").classList.add("hidden");
 }
 
+// --- Czat (wiadomości między wzajemnymi znajomymi) ---
+let chatWithId = null; // z kim mamy otwartą rozmowę (null = widok listy)
+let chatPollTimer = null; // odświeżanie otwartej rozmowy co kilka sekund
+
+function openMessages() {
+  $("chatOverlay").classList.remove("hidden");
+  showConvList();
+  loadConversations();
+}
+
+function closeChat() {
+  stopChatPoll();
+  chatWithId = null;
+  $("chatOverlay").classList.add("hidden");
+}
+
+function showConvList() {
+  stopChatPoll();
+  chatWithId = null;
+  $("chatThreadView").classList.add("hidden");
+  $("chatListView").classList.remove("hidden");
+}
+
+async function loadConversations() {
+  const list = $("convList");
+  list.innerHTML = `<p class="muted small">…</p>`;
+  let convs;
+  try {
+    convs = await api("/me/conversations");
+  } catch (e) {
+    list.innerHTML = `<p class="muted small">${e.message}</p>`;
+    return;
+  }
+  updateMsgBadge(convs.reduce((s, c) => s + c.unread, 0));
+  list.innerHTML = "";
+  if (!convs.length) {
+    list.innerHTML = `<p class="muted small">${t("noConversations")}</p>`;
+    return;
+  }
+  for (const c of convs) {
+    const row = document.createElement("div");
+    row.className = "friend-row conv-row";
+    if (c.unread > 0) row.classList.add("unread");
+    const av = avatarEl(c.user);
+    const body = document.createElement("div");
+    body.className = "conv-body";
+    const name = document.createElement("span");
+    name.className = "friend-name";
+    name.textContent = c.user.displayName;
+    const preview = document.createElement("span");
+    preview.className = "conv-preview muted small";
+    preview.textContent = (c.fromMe ? `${t("you")}: ` : "") + c.lastText;
+    body.append(name, preview);
+    row.append(av, body);
+    if (c.unread > 0) {
+      const badge = document.createElement("span");
+      badge.className = "conv-unread";
+      badge.textContent = c.unread > 9 ? "9+" : String(c.unread);
+      row.append(badge);
+    }
+    row.addEventListener("click", () => openChat(c.user.id, c.user.displayName));
+    list.append(row);
+  }
+}
+
+async function openChat(userId, name) {
+  chatWithId = userId;
+  $("chatListView").classList.add("hidden");
+  $("chatThreadView").classList.remove("hidden");
+  $("chatWith").textContent = name;
+  $("chatText").value = "";
+  await loadThread(true);
+  $("chatText").focus();
+  startChatPoll();
+}
+
+// forceScroll: true = zawsze na dół (otwarcie/wysłanie); false = tylko gdy user
+// już był na dole (poll nie wyrywa mu widoku, gdy czyta starsze wiadomości).
+async function loadThread(forceScroll = false) {
+  if (!chatWithId) return;
+  const box = $("chatMessages");
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  let msgs;
+  try {
+    msgs = await api(`/me/messages/${chatWithId}`);
+  } catch (e) {
+    box.innerHTML = `<p class="muted small">${e.message}</p>`;
+    return;
+  }
+  if (chatWithId === null) return; // zamknięto w międzyczasie
+  box.innerHTML = "";
+  if (!msgs.length) {
+    box.innerHTML = `<p class="muted small chat-empty">${t("chatEmpty")}</p>`;
+  } else {
+    for (const m of msgs) {
+      const b = document.createElement("div");
+      b.className = `chat-bubble ${m.senderId === chatWithId ? "them" : "me"}`;
+      b.textContent = m.text;
+      box.append(b);
+    }
+  }
+  if (forceScroll || atBottom) box.scrollTop = box.scrollHeight;
+  refreshMsgBadge(); // przeczytanie zmniejsza licznik
+}
+
+async function sendChat(ev) {
+  ev.preventDefault();
+  const input = $("chatText");
+  const text = input.value.trim();
+  if (!text || !chatWithId) return;
+  input.value = "";
+  try {
+    await api("/me/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ toUserId: chatWithId, text }),
+    });
+    await loadThread(true);
+  } catch (e) {
+    toast(e.message);
+    input.value = text; // przywróć treść, żeby nie zgubić
+  }
+}
+
+function startChatPoll() {
+  stopChatPoll();
+  chatPollTimer = setInterval(() => {
+    if (chatWithId && !$("chatOverlay").classList.contains("hidden")) loadThread(false);
+  }, 4000);
+}
+
+function stopChatPoll() {
+  if (chatPollTimer) {
+    clearInterval(chatPollTimer);
+    chatPollTimer = null;
+  }
+}
+
+function updateMsgBadge(n) {
+  const b = $("msgBadge");
+  b.textContent = n > 9 ? "9+" : String(n);
+  b.classList.toggle("hidden", !n);
+}
+
+async function refreshMsgBadge() {
+  try {
+    const convs = await api("/me/conversations");
+    updateMsgBadge(convs.reduce((s, c) => s + c.unread, 0));
+  } catch {
+    /* cichy — badge to detal */
+  }
+}
+
 // Renderuje dane profilu — własnego (readOnly=false) lub cudzego (readOnly=true).
 function renderProfileData(data, readOnly) {
   // Nagłówek: zdjęcie profilowe + imię.
@@ -1474,6 +1641,8 @@ function renderProfileData(data, readOnly) {
   $("avatarBtn").disabled = readOnly; // cudzego zdjęcia nie zmieniasz
   $("avatarBtn").title = readOnly ? "" : t("changePhoto");
   $("followProfileBtn").classList.toggle("hidden", !readOnly);
+  // „Napisz" tylko na cudzym profilu i tylko gdy jesteście znajomymi (wzajemnie).
+  $("msgProfileBtn").classList.toggle("hidden", !(readOnly && data.mutualFriend));
 
   // Liczniki obserwacji pod imieniem — KLIKALNE: pokazują listę osób.
   const fo = data.followersCount ?? 0;
@@ -2354,6 +2523,8 @@ async function showApp() {
   renderHello();
   await loadMe(); // katalog i profil czytają myProfile — najpierw je pobierz
   loadFollowers(); // licznik powiadomień (nowi obserwujący)
+  refreshMsgBadge(); // licznik nieprzeczytanych wiadomości
+  setInterval(refreshMsgBadge, 30000); // odświeżaj co 30 s (bez otwierania czatu)
   await Promise.all([
     loadTasteRecommendations(),
     loadRecommendations(),
@@ -2474,6 +2645,23 @@ async function init() {
   $("notifClose").addEventListener("click", closeNotif);
   $("notifOverlay").addEventListener("click", (e) => {
     if (e.target === $("notifOverlay")) closeNotif();
+  });
+  // Czat
+  $("msgBtn").addEventListener("click", openMessages);
+  $("chatClose").addEventListener("click", closeChat);
+  $("chatClose2").addEventListener("click", closeChat);
+  $("chatBack").addEventListener("click", () => {
+    showConvList();
+    loadConversations();
+  });
+  $("chatForm").addEventListener("submit", sendChat);
+  $("chatOverlay").addEventListener("click", (e) => {
+    if (e.target === $("chatOverlay")) closeChat();
+  });
+  $("msgProfileBtn").addEventListener("click", () => {
+    if (!viewingUserId) return;
+    $("chatOverlay").classList.remove("hidden");
+    openChat(viewingUserId, viewingName);
   });
   $("followProfileBtn").addEventListener("click", async () => {
     if (!viewingUserId) return;

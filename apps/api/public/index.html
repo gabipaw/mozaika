@@ -33,6 +33,15 @@
           <span id="helloName"></span>
         </button>
         <button
+          id="msgBtn"
+          class="icon-btn notif-btn"
+          type="button"
+          data-i18n-title="messages"
+          title="Wiadomości"
+        >
+          💬<span id="msgBadge" class="notif-badge hidden">0</span>
+        </button>
+        <button
           id="notifBtn"
           class="icon-btn notif-btn"
           type="button"
@@ -266,9 +275,19 @@
                 <input id="avatarFile" type="file" accept="image/*" class="hidden" />
                 <div class="profile-id">
                   <h1 id="profileName"></h1>
-                  <button id="followProfileBtn" class="follow-btn hidden" type="button">
-                    Obserwuj
-                  </button>
+                  <div class="profile-actions">
+                    <button id="followProfileBtn" class="follow-btn hidden" type="button">
+                      Obserwuj
+                    </button>
+                    <button
+                      id="msgProfileBtn"
+                      class="follow-btn ghost hidden"
+                      type="button"
+                      data-i18n="writeMessage"
+                    >
+                      💬 Napisz
+                    </button>
+                  </div>
                   <div id="profileCounts" class="profile-counts"></div>
                 </div>
               </div>
@@ -423,6 +442,52 @@
             </button>
           </div>
           <div id="peopleList" class="friends-list"></div>
+        </div>
+      </div>
+
+      <!-- Nakładka „Wiadomości" — lista rozmów + widok czatu z jedną osobą -->
+      <div id="chatOverlay" class="overlay hidden">
+        <div class="overlay-card chat-card">
+          <!-- Widok listy rozmów -->
+          <div id="chatListView">
+            <div class="overlay-head">
+              <h2 data-i18n="messages">Wiadomości</h2>
+              <button id="chatClose" class="overlay-close" type="button" data-i18n="done">
+                ✕ Gotowe
+              </button>
+            </div>
+            <div id="convList" class="friends-list"></div>
+          </div>
+          <!-- Widok rozmowy z jedną osobą -->
+          <div id="chatThreadView" class="hidden">
+            <div class="overlay-head chat-thread-head">
+              <button id="chatBack" class="chat-back" type="button">←</button>
+              <h2 id="chatWith"></h2>
+              <button
+                id="chatClose2"
+                class="overlay-close"
+                type="button"
+                data-i18n="done"
+              >
+                ✕ Gotowe
+              </button>
+            </div>
+            <div id="chatMessages" class="chat-messages"></div>
+            <form id="chatForm" class="chat-form">
+              <input
+                id="chatText"
+                class="chat-input"
+                type="text"
+                autocomplete="off"
+                maxlength="2000"
+                data-i18n-ph="msgPlaceholder"
+                placeholder="Napisz wiadomość…"
+              />
+              <button id="chatSend" class="chat-send" type="submit" data-i18n="send">
+                Wyślij
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
