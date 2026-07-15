@@ -157,6 +157,14 @@ const I18N = {
     navHome: "Główna",
     navProfile: "Profil",
     deleteMsg: "Usuń",
+    editMsg: "Edytuj wiadomość",
+    react: "Reakcja",
+    edited: "edytowano",
+    shareBtn: "📨 Wyślij znajomemu",
+    shareTo: "Wyślij do…",
+    shared: "Wysłano do {name}",
+    noMutual: "Brak znajomych do wysłania (musicie się obserwować wzajemnie).",
+    photo: "Zdjęcie",
     msgDeletedMine: "Usunąłeś tę wiadomość",
     msgDeleted: "Wiadomość usunięta",
     follow: "Obserwuj",
@@ -351,6 +359,14 @@ const I18N = {
     navHome: "Home",
     navProfile: "Profile",
     deleteMsg: "Delete",
+    editMsg: "Edit message",
+    react: "React",
+    edited: "edited",
+    shareBtn: "📨 Send to a friend",
+    shareTo: "Send to…",
+    shared: "Sent to {name}",
+    noMutual: "No friends to send to (you must follow each other).",
+    photo: "Photo",
     msgDeletedMine: "You deleted this message",
     msgDeleted: "Message deleted",
     follow: "Follow",
@@ -1546,9 +1562,13 @@ async function loadConversations() {
     name.textContent = c.user.displayName;
     const preview = document.createElement("span");
     preview.className = "conv-preview muted small";
-    preview.textContent = c.lastDeleted
-      ? t("msgDeleted")
-      : (c.fromMe ? `${t("you")}: ` : "") + c.lastText;
+    let previewText;
+    if (c.lastDeleted) previewText = t("msgDeleted");
+    else if (c.lastImage) previewText = `📷 ${t("photo")}`;
+    else if (c.lastMediaTitle) previewText = `📎 ${c.lastMediaTitle}`;
+    else previewText = c.lastText;
+    preview.textContent =
+      (c.fromMe && !c.lastDeleted ? `${t("you")}: ` : "") + previewText;
     body.append(name, preview);
     row.append(av, body);
     if (c.unread > 0) {
@@ -1628,28 +1648,47 @@ async function loadThread(forceScroll = false) {
         bubble.classList.add("deleted");
         bubble.textContent = mine ? t("msgDeletedMine") : t("msgDeleted");
       } else {
-        bubble.textContent = m.text;
+        // Wiadomość może nieść: kartę tytułu, zdjęcie i/lub tekst.
+        if (m.imageUrl || m.media) bubble.classList.add("bubble-media");
+        if (m.media) bubble.append(buildMsgMediaCard(m.media));
+        if (m.imageUrl) {
+          const img = document.createElement("img");
+          img.className = "chat-image";
+          img.src = m.imageUrl;
+          img.loading = "lazy";
+          img.addEventListener("click", () => window.open(m.imageUrl, "_blank"));
+          bubble.append(img);
+        }
+        if (m.text) {
+          const tx = document.createElement("div");
+          tx.className = "chat-text-body";
+          tx.textContent = m.text;
+          bubble.append(tx);
+        }
       }
       col.append(bubble);
 
-      // Usuwać można tylko własne, jeszcze nieusunięte wiadomości.
-      if (mine && !m.deletedAt) {
-        const del = document.createElement("button");
-        del.type = "button";
-        del.className = "chat-del";
-        del.title = t("deleteMsg");
-        del.textContent = "🗑";
-        del.addEventListener("click", (e) => {
-          e.stopPropagation();
-          deleteMsg(m.id);
-        });
-        line.append(del);
+      // Reakcje pod dymkiem (emoji; podświetlone, jeśli to moja reakcja).
+      if (m.reactions && m.reactions.length) {
+        const rx = document.createElement("div");
+        rx.className = "chat-reactions";
+        for (const r of m.reactions) {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className =
+            "reaction-chip" + (r.userId === myProfile.user?.id ? " mine" : "");
+          chip.textContent = r.emoji;
+          chip.addEventListener("click", () => reactMsg(m.id, r.emoji));
+          rx.append(chip);
+        }
+        col.append(rx);
       }
 
       if (endOfGroup) {
         const meta = document.createElement("div");
         meta.className = "chat-meta";
         let txt = fmtMsgTime(m.createdAt);
+        if (m.editedAt && !m.deletedAt) txt += ` · ${t("edited")}`;
         if (mine && i === lastMineIdx) {
           txt += ` · ${m.readAt ? `✓✓ ${t("seen")}` : `✓ ${t("sent")}`}`;
         }
@@ -1658,6 +1697,19 @@ async function loadThread(forceScroll = false) {
       }
 
       line.append(col);
+
+      // Pasek akcji (na hover): reakcja / edycja / usuń.
+      if (!m.deletedAt) {
+        const actions = document.createElement("div");
+        actions.className = "chat-actions";
+        actions.append(mkAct("🙂", t("react"), (e) => openReactionPicker(e, m.id)));
+        if (mine && m.text && !m.imageUrl && !m.media) {
+          actions.append(mkAct("✏️", t("editMsg"), () => startEditMsg(m)));
+        }
+        if (mine) actions.append(mkAct("🗑", t("deleteMsg"), () => deleteMsg(m.id)));
+        line.append(actions);
+      }
+
       box.append(line);
     });
   }
@@ -1690,6 +1742,208 @@ async function deleteMsg(id) {
     await loadThread(false);
   } catch (e) {
     toast(e.message);
+  }
+}
+
+// Mały przycisk akcji przy dymku (reakcja/edycja/usuń).
+function mkAct(icon, title, onClick) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "chat-act";
+  b.title = title;
+  b.textContent = icon;
+  b.addEventListener("click", (e) => {
+    e.stopPropagation();
+    onClick(e);
+  });
+  return b;
+}
+
+// Karta udostępnionego tytułu w dymku — klik otwiera stronę tytułu.
+function buildMsgMediaCard(m) {
+  const card = document.createElement("button");
+  card.type = "button";
+  card.className = "msg-media-card";
+  const poster = document.createElement("div");
+  poster.className = "msg-media-poster";
+  if (m.posterUrl) {
+    const img = document.createElement("img");
+    img.src = m.posterUrl;
+    img.alt = "";
+    poster.append(img);
+  } else {
+    poster.textContent = "🎬";
+  }
+  const info = document.createElement("div");
+  info.className = "msg-media-info";
+  const title = document.createElement("div");
+  title.className = "msg-media-title";
+  title.textContent = m.title;
+  const sub = document.createElement("div");
+  sub.className = "msg-media-sub muted small";
+  sub.textContent = m.year ? String(m.year) : "";
+  info.append(title, sub);
+  card.append(poster, info);
+  card.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeChat();
+    openDetail(toDetail(m, m.type, m.id));
+  });
+  return card;
+}
+
+async function reactMsg(id, emoji) {
+  try {
+    await api(`/me/message/${id}/reaction`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ emoji }),
+    });
+    await loadThread(false);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+const REACT_EMOJIS = ["❤️", "😂", "👍", "👎", "😮", "😢"];
+
+function closeReactionPicker() {
+  const p = document.getElementById("reactionPicker");
+  if (p) p.remove();
+}
+
+function openReactionPicker(e, id) {
+  closeReactionPicker();
+  const pick = document.createElement("div");
+  pick.className = "reaction-picker";
+  pick.id = "reactionPicker";
+  for (const em of REACT_EMOJIS) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = em;
+    b.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      reactMsg(id, em);
+      closeReactionPicker();
+    });
+    pick.append(b);
+  }
+  document.body.append(pick);
+  const x = Math.min(e.clientX, window.innerWidth - 230);
+  const y = Math.max(e.clientY - 52, 10);
+  pick.style.left = `${Math.max(x, 10)}px`;
+  pick.style.top = `${y}px`;
+  // zamknij przy następnym kliknięciu gdziekolwiek
+  setTimeout(
+    () => document.addEventListener("click", closeReactionPicker, { once: true }),
+    0,
+  );
+}
+
+async function startEditMsg(m) {
+  const nt = prompt(t("editMsg"), m.text);
+  if (nt === null) return;
+  const text = nt.trim();
+  if (!text) return;
+  try {
+    await api(`/me/message/${m.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    await loadThread(false);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// Kompresja obrazu (zachowuje proporcje, max ~1200px, JPEG) → data:image.
+function compressImage(file, max = 1200) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    const img = new Image();
+    reader.onload = () => (img.src = String(reader.result));
+    reader.onerror = () => reject(new Error("Nie udało się wczytać pliku."));
+    img.onload = () => {
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => reject(new Error("Nieprawidłowy obraz."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function onChatImage(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (!file || !chatWithId) return;
+  try {
+    const imageUrl = await compressImage(file);
+    await api("/me/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ toUserId: chatWithId, imageUrl }),
+    });
+    await loadThread(true);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// Znajomi = wzajemna obserwacja (część wspólna following ∩ followers).
+async function getMutualFriends() {
+  const [following, followers] = await Promise.all([
+    api("/me/following"),
+    api("/me/followers"),
+  ]);
+  const followerIds = new Set(followers.map((u) => u.id));
+  return following.filter((u) => followerIds.has(u.id));
+}
+
+// „Wyślij znajomemu" z detalu — wybór znajomego → wysyła kartę tytułu do czatu.
+async function shareMediaPick(mediaId) {
+  $("peopleTitle").textContent = t("shareTo");
+  const list = $("peopleList");
+  list.innerHTML = `<p class="muted small">…</p>`;
+  $("peopleOverlay").classList.remove("hidden");
+  try {
+    const friends = await getMutualFriends();
+    list.innerHTML = "";
+    if (!friends.length) {
+      list.innerHTML = `<p class="muted small">${t("noMutual")}</p>`;
+      return;
+    }
+    for (const u of friends) {
+      const row = document.createElement("div");
+      row.className = "friend-row conv-row";
+      const av = avatarEl(u);
+      const name = document.createElement("span");
+      name.className = "friend-name";
+      name.textContent = u.displayName;
+      row.append(av, name);
+      row.addEventListener("click", async () => {
+        try {
+          await api("/me/messages", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ toUserId: u.id, mediaId }),
+          });
+          closePeople();
+          toast(t("shared", { name: u.displayName }));
+        } catch (e) {
+          toast(e.message);
+        }
+      });
+      list.append(row);
+    }
+  } catch (e) {
+    list.innerHTML = `<p class="muted small">${e.message}</p>`;
   }
 }
 
@@ -2303,6 +2557,8 @@ async function openDetail(item) {
   }
 
   detailStars.set(item.myRating ?? 0);
+  // „Wyślij znajomemu" tylko dla tytułów już w bazie (mają mediaId).
+  $("shareBtn").classList.toggle("hidden", !item.mediaId);
   $("detailComment").value = "";
   $("detailDesc").textContent = t("loadingDesc");
   $("detailReviews").innerHTML = "";
@@ -2805,6 +3061,9 @@ async function init() {
   $("avatarFile").addEventListener("change", onAvatarPick);
   $("favBtn").addEventListener("click", toggleFavorite);
   $("watchBtn").addEventListener("click", toggleWatchlist);
+  $("shareBtn").addEventListener("click", () => {
+    if (detailCtx?.mediaId) shareMediaPick(detailCtx.mediaId);
+  });
   $("deleteBtn").addEventListener("click", deleteDetailReview);
   $("search").addEventListener("input", onSearchInput);
   $("typeFilm").addEventListener("click", () => setSearchType("film"));
@@ -2855,6 +3114,8 @@ async function init() {
   });
   $("chatForm").addEventListener("submit", sendChat);
   $("chatText").addEventListener("input", pingTyping);
+  $("chatImageBtn").addEventListener("click", () => $("chatImageFile").click());
+  $("chatImageFile").addEventListener("change", onChatImage);
   $("chatOverlay").addEventListener("click", (e) => {
     if (e.target === $("chatOverlay")) closeChat();
   });

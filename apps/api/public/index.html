@@ -237,6 +237,9 @@
               <div class="detail-actions">
                 <button id="favBtn" type="button" class="chip">☆ TOP 4</button>
                 <button id="watchBtn" type="button" class="chip">＋ Do listy</button>
+                <button id="shareBtn" type="button" class="chip" data-i18n="shareBtn">
+                  📨 Wyślij znajomemu
+                </button>
                 <button id="deleteBtn" type="button" class="chip danger hidden">
                   🗑 Usuń ocenę
                 </button>
@@ -514,6 +517,15 @@
             <div id="chatMessages" class="chat-messages"></div>
             <div id="chatTyping" class="chat-typing hidden"></div>
             <form id="chatForm" class="chat-form">
+              <button
+                id="chatImageBtn"
+                class="chat-imgbtn"
+                type="button"
+                title="Wyślij zdjęcie"
+              >
+                📷
+              </button>
+              <input id="chatImageFile" type="file" accept="image/*" class="hidden" />
               <input
                 id="chatText"
                 class="chat-input"

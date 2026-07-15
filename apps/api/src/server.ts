@@ -34,6 +34,8 @@ import {
   conversation,
   conversations,
   deleteMessage,
+  editMessage,
+  reactToMessage,
   sendMessage,
 } from "./logic/messages.js";
 import { recommendations } from "./logic/recommendations.js";
@@ -330,7 +332,7 @@ api.get("/me/messages/:id", requireAuth, async (c) => {
   return c.json(await conversation(c.get("userId"), otherId));
 });
 
-// Wyślij wiadomość do znajomego → powiadomienie push do odbiorcy.
+// Wyślij wiadomość do znajomego (tekst / zdjęcie / tytuł) → push do odbiorcy.
 api.post("/me/messages", requireAuth, async (c) => {
   const meId = c.get("userId");
   const body = await c.req.json();
@@ -338,14 +340,28 @@ api.post("/me/messages", requireAuth, async (c) => {
   if (!Number.isInteger(toId) || toId <= 0) {
     throw new ValidationError("Nieprawidłowy odbiorca.");
   }
-  const msg = await sendMessage(meId, toId, String(body.text ?? ""));
+  const mediaId =
+    body.mediaId === undefined || body.mediaId === null ? null : Number(body.mediaId);
+  const msg = await sendMessage(meId, toId, {
+    text: body.text === undefined ? "" : String(body.text),
+    imageUrl: body.imageUrl ? String(body.imageUrl) : null,
+    mediaId,
+  });
   const me = await prisma.user.findUnique({
     where: { id: meId },
     select: { displayName: true },
   });
+  // Treść powiadomienia zależy od typu wiadomości.
+  const preview = msg.imageUrl
+    ? "📷 Zdjęcie"
+    : msg.media
+      ? `📎 ${msg.media.title}`
+      : msg.text.length > 120
+        ? `${msg.text.slice(0, 117)}…`
+        : msg.text;
   sendPushToUser(toId, {
     title: me?.displayName ?? "Nowa wiadomość",
-    body: msg.text.length > 120 ? `${msg.text.slice(0, 117)}…` : msg.text,
+    body: preview,
     url: "/",
   }).catch((e) => console.error("push (message) nie wyszedl:", e));
   return c.json(msg, 201);
@@ -355,6 +371,20 @@ api.post("/me/messages", requireAuth, async (c) => {
 api.delete("/me/message/:id", requireAuth, async (c) => {
   const msgId = intParam(c.req.param("id"), "id");
   return c.json(await deleteMessage(c.get("userId"), msgId));
+});
+
+// Edytuj treść własnej wiadomości.
+api.patch("/me/message/:id", requireAuth, async (c) => {
+  const msgId = intParam(c.req.param("id"), "id");
+  const body = await c.req.json();
+  return c.json(await editMessage(c.get("userId"), msgId, String(body.text ?? "")));
+});
+
+// Reakcja emoji na wiadomość (toggle).
+api.post("/me/message/:id/reaction", requireAuth, async (c) => {
+  const msgId = intParam(c.req.param("id"), "id");
+  const body = await c.req.json();
+  return c.json(await reactToMessage(c.get("userId"), msgId, String(body.emoji ?? "")));
 });
 
 // --- Wskaźnik pisania (ulotny, w pamięci serwera; TTL kilka sekund) ---

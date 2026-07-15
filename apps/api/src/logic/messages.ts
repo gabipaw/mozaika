@@ -1,12 +1,14 @@
 /**
  * Czat 1:1. Zasada: pisać można TYLKO ze znajomymi = userami, którzy obserwują
  * się WZAJEMNIE. Sprawdzenie wzajemności jest przy każdej operacji (nie ufamy
- * frontowi). Push o nowej wiadomości wysyła warstwa trasy (server.ts).
+ * frontowi). Wiadomość może nieść: tekst, zdjęcie (imageUrl) i/lub udostępniony
+ * tytuł (mediaId). Do tego reakcje emoji i edycja. Push wysyła warstwa trasy.
  */
 import { prisma } from "../db.js";
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors.js";
 
 const NOT_FRIENDS = "Możesz pisać tylko ze znajomymi — musicie się obserwować wzajemnie.";
+const EMOJIS = ["❤️", "😂", "👍", "👎", "😮", "😢"];
 
 /** Czy A i B to znajomi = obserwują się wzajemnie (dwa wpisy Follow w obie strony). */
 export async function areFriends(a: number, b: number): Promise<boolean> {
@@ -25,11 +27,18 @@ export async function areFriends(a: number, b: number): Promise<boolean> {
 const msgSelect = {
   id: true,
   text: true,
+  imageUrl: true,
   createdAt: true,
   readAt: true,
   deletedAt: true,
+  editedAt: true,
   senderId: true,
   receiverId: true,
+  mediaId: true,
+  media: {
+    select: { id: true, title: true, type: true, year: true, posterUrl: true },
+  },
+  reactions: { select: { emoji: true, userId: true } },
 } as const;
 
 /** Historia rozmowy (rosnąco) + oznaczenie wiadomości OD drugiej strony jako przeczytane. */
@@ -52,20 +61,43 @@ export async function conversation(meId: number, otherId: number) {
   return messages;
 }
 
-/** Wyślij wiadomość (zwraca utworzoną). Waliduje treść i wzajemność. */
-export async function sendMessage(meId: number, toId: number, textRaw: string) {
-  const text = textRaw.trim();
-  if (!text) throw new ValidationError("Pusta wiadomość.");
-  if (text.length > 2000)
+/**
+ * Wyślij wiadomość: tekst i/lub zdjęcie i/lub udostępniony tytuł.
+ * Waliduje treść i wzajemność. Zwraca utworzoną wiadomość.
+ */
+export async function sendMessage(
+  meId: number,
+  toId: number,
+  opts: { text?: string; imageUrl?: string | null; mediaId?: number | null },
+) {
+  const text = (opts.text ?? "").trim();
+  const imageUrl = opts.imageUrl ?? null;
+  const mediaId = opts.mediaId ?? null;
+
+  if (text.length > 2000) {
     throw new ValidationError("Wiadomość za długa (max 2000 znaków).");
+  }
+  if (imageUrl) {
+    if (!imageUrl.startsWith("data:image/") || imageUrl.length > 2_000_000) {
+      throw new ValidationError("Nieprawidłowe zdjęcie (data:image, do ~1.5 MB).");
+    }
+  }
+  if (mediaId !== null) {
+    const exists = await prisma.media.count({ where: { id: mediaId } });
+    if (!exists) throw new ValidationError("Nie ma takiego tytułu.");
+  }
+  if (!text && !imageUrl && mediaId === null) {
+    throw new ValidationError("Pusta wiadomość.");
+  }
   if (!(await areFriends(meId, toId))) throw new ForbiddenError(NOT_FRIENDS);
+
   return prisma.message.create({
-    data: { senderId: meId, receiverId: toId, text },
+    data: { senderId: meId, receiverId: toId, text, imageUrl, mediaId },
     select: msgSelect,
   });
 }
 
-/** Miękkie usunięcie wiadomości — tylko własnej. Czyścimy treść, zostaje „tombstone". */
+/** Miękkie usunięcie wiadomości — tylko własnej. Czyścimy treść/zdjęcie/tytuł. */
 export async function deleteMessage(meId: number, msgId: number) {
   const msg = await prisma.message.findUnique({
     where: { id: msgId },
@@ -77,9 +109,59 @@ export async function deleteMessage(meId: number, msgId: number) {
   }
   return prisma.message.update({
     where: { id: msgId },
-    data: { deletedAt: new Date(), text: "" },
+    data: { deletedAt: new Date(), text: "", imageUrl: null, mediaId: null },
     select: msgSelect,
   });
+}
+
+/** Edycja treści własnej (nieusuniętej) wiadomości → ustawia editedAt. */
+export async function editMessage(meId: number, msgId: number, textRaw: string) {
+  const text = textRaw.trim();
+  if (!text) throw new ValidationError("Pusta wiadomość.");
+  if (text.length > 2000) {
+    throw new ValidationError("Wiadomość za długa (max 2000 znaków).");
+  }
+  const msg = await prisma.message.findUnique({
+    where: { id: msgId },
+    select: { senderId: true, deletedAt: true },
+  });
+  if (!msg) throw new NotFoundError("Nie ma takiej wiadomości.");
+  if (msg.senderId !== meId) {
+    throw new ForbiddenError("Możesz edytować tylko swoje wiadomości.");
+  }
+  if (msg.deletedAt)
+    throw new ValidationError("Nie można edytować usuniętej wiadomości.");
+  return prisma.message.update({
+    where: { id: msgId },
+    data: { text, editedAt: new Date() },
+    select: msgSelect,
+  });
+}
+
+/** Reakcja emoji (jedna na usera): ten sam emoji ponownie = zdejmij; inny = zamień. */
+export async function reactToMessage(meId: number, msgId: number, emoji: string) {
+  if (!EMOJIS.includes(emoji)) throw new ValidationError("Niedozwolona reakcja.");
+  const msg = await prisma.message.findUnique({
+    where: { id: msgId },
+    select: { senderId: true, receiverId: true },
+  });
+  if (!msg) throw new NotFoundError("Nie ma takiej wiadomości.");
+  if (meId !== msg.senderId && meId !== msg.receiverId) {
+    throw new ForbiddenError("To nie Twoja rozmowa.");
+  }
+  const existing = await prisma.messageReaction.findUnique({
+    where: { messageId_userId: { messageId: msgId, userId: meId } },
+  });
+  if (existing && existing.emoji === emoji) {
+    await prisma.messageReaction.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.messageReaction.upsert({
+      where: { messageId_userId: { messageId: msgId, userId: meId } },
+      update: { emoji },
+      create: { messageId: msgId, userId: meId, emoji },
+    });
+  }
+  return prisma.message.findUnique({ where: { id: msgId }, select: msgSelect });
 }
 
 /** Lista rozmów: dla każdego rozmówcy ostatnia wiadomość + liczba nieprzeczytanych. */
@@ -99,6 +181,8 @@ export async function conversations(meId: number) {
       user: { id: number; displayName: string; avatarUrl: string | null };
       lastText: string;
       lastDeleted: boolean;
+      lastImage: boolean;
+      lastMediaTitle: string | null;
       lastAt: Date;
       fromMe: boolean;
       unread: number;
@@ -113,6 +197,8 @@ export async function conversations(meId: number) {
         user: other,
         lastText: m.text,
         lastDeleted: m.deletedAt !== null,
+        lastImage: m.imageUrl !== null,
+        lastMediaTitle: m.media?.title ?? null,
         lastAt: m.createdAt,
         fromMe: m.senderId === meId,
         unread: 0,

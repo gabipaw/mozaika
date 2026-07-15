@@ -1579,23 +1579,152 @@ h2 {
   color: var(--muted);
   border: 1px dashed var(--line);
 }
-/* Przycisk „usuń" przy własnym dymku — pojawia się na hover wiersza. */
-.chat-del {
+/* Pasek akcji przy dymku (reakcja/edycja/usuń) — pojawia się na hover wiersza. */
+.chat-actions {
   flex: 0 0 auto;
   align-self: center;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.chat-line:hover .chat-actions {
+  opacity: 1;
+}
+.chat-act {
   background: none;
   border: none;
   color: var(--muted);
   cursor: pointer;
-  font-size: 0.8rem;
-  opacity: 0;
-  transition: opacity 0.12s;
+  font-size: 0.85rem;
+  padding: 2px;
+  border-radius: 6px;
 }
-.chat-line:hover .chat-del {
-  opacity: 0.65;
+.chat-act:hover {
+  background: var(--card);
 }
-.chat-del:hover {
-  opacity: 1;
+
+/* Dymek z samą kartą tytułu / zdjęciem — bez tła/paddingu. */
+.chat-bubble.bubble-media {
+  background: none !important;
+  border: none !important;
+  padding: 0;
+}
+.chat-bubble.bubble-media.me {
+  color: inherit;
+}
+.chat-image {
+  display: block;
+  max-width: 220px;
+  max-height: 260px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.chat-text-body {
+  white-space: pre-wrap;
+}
+.chat-bubble.bubble-media .chat-text-body {
+  margin-top: 6px;
+}
+
+/* Karta udostępnionego tytułu. */
+.msg-media-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  width: 240px;
+  max-width: 100%;
+  padding: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--text); /* nie dziedzicz ciemnego koloru z dymka „me" */
+}
+.msg-media-card:hover {
+  border-color: var(--accent);
+}
+.msg-media-poster {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 68px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-2);
+  display: grid;
+  place-items: center;
+}
+.msg-media-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.msg-media-info {
+  min-width: 0;
+}
+.msg-media-title {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Reakcje pod dymkiem. */
+.chat-reactions {
+  display: flex;
+  gap: 3px;
+  margin-top: 2px;
+}
+.reaction-chip {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.reaction-chip.mine {
+  border-color: var(--accent);
+}
+
+/* Pływający wybór emoji (reakcja). */
+.reaction-picker {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  gap: 2px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 6px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+.reaction-picker button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.3rem;
+  padding: 2px 4px;
+  border-radius: 8px;
+}
+.reaction-picker button:hover {
+  background: var(--card);
+  transform: scale(1.15);
+}
+
+/* Przycisk „zdjęcie" w polu czatu. */
+.chat-imgbtn {
+  flex: 0 0 auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 8px 12px;
 }
 /* „X pisze …" z animowanymi kropkami */
 .chat-typing {

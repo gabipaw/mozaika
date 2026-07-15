@@ -40,23 +40,45 @@ model User {
   reactions   ReviewReaction[] // moje reakcje na cudze recenzje
   sentMessages     Message[] @relation("sentMessages")
   receivedMessages Message[] @relation("receivedMessages")
+  messageReactions MessageReaction[]
 }
 
 /// Wiadomość 1:1 w czacie. API pozwala pisać tylko przy WZAJEMNEJ obserwacji.
 model Message {
   id         Int       @id @default(autoincrement())
-  text       String
+  text       String    @default("") // może być puste, gdy wiadomość to zdjęcie/karta tytułu
+  imageUrl   String? // zdjęcie jako data:image (skompresowane po stronie klienta)
   createdAt  DateTime  @default(now())
   readAt     DateTime? // null = jeszcze nieprzeczytana przez odbiorcę
   deletedAt  DateTime? // null = normalna; ustawione = usunięta (miękko, treść czyścimy)
+  editedAt   DateTime? // ustawione = wiadomość edytowana
 
   sender     User @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   senderId   Int
   receiver   User @relation("receivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   receiverId Int
+  media      Media? @relation(fields: [mediaId], references: [id], onDelete: SetNull) // udostępniony tytuł
+  mediaId    Int?
+  reactions  MessageReaction[]
 
   @@index([senderId, receiverId, createdAt])
   @@index([receiverId, readAt])
+  @@index([mediaId])
+}
+
+/// Reakcja emoji na wiadomość (jedna na użytkownika na wiadomość).
+model MessageReaction {
+  id        Int      @id @default(autoincrement())
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+
+  @@unique([messageId, userId])
+  @@index([messageId])
 }
 
 /// Subskrypcja Web Push (jedna na urządzenie/przeglądarkę — user może mieć kilka).
@@ -102,6 +124,7 @@ model Media {
 
   reviews   Review[]
   watchlist WatchlistItem[]
+  messages  Message[] // udostępnienia tego tytułu w czacie
 
   // Ten sam tytuł z tego samego źródła nie może istnieć dwa razy.
   @@unique([type, externalId])
