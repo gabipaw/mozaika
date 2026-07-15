@@ -1,5 +1,5 @@
 // Service worker Mozaiki — cache'uje „powłokę" aplikacji (offline + instalowalność PWA).
-const CACHE = "mozaika-v117";
+const CACHE = "mozaika-v118";
 const SHELL = [
   "/",
   "/index.html",
@@ -34,8 +34,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   // Powłoka: najpierw sieć (świeży front gdy online), cache tylko jako fallback offline.
+  // cache: "no-store" — OMIJAMY HTTP-cache przeglądarki. Bez tego fetch() potrafił
+  // oddać starą wersję app.js/styles.css/index.html z dysku i front zostawał na
+  // starym mimo deployu (mieszanka nowych i starych plików).
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: "no-store" })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((cache) => cache.put(request, copy));
