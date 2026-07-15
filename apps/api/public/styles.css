@@ -528,12 +528,17 @@ h2 {
     padding-bottom: 84px;
   }
 
-  /* Wiadomości (czat) na CAŁY ekran na telefonie — nie modal na środku. */
+  /* Wiadomości (czat) na CAŁY ekran na telefonie — nie modal na środku.
+     max-height:none jest KLUCZOWE — bazowe .overlay-card ma 85vh, przez co
+     karta była wyśrodkowana i u góry/dołu prześwitywało tło. */
   #chatOverlay {
     padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
   }
   #chatOverlay .chat-card {
     max-width: none;
+    max-height: none;
     width: 100%;
     height: 100dvh;
     border: none;
