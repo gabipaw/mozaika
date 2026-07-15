@@ -639,15 +639,19 @@ h2 {
 /* Top 4: jeden rząd 4 plakatów, proporcja 2:3, naturalna wysokość.
    Siatka 2×2 (z pustymi ramkami na wolne miejsca) była tu wcześniej, ale w kolumnie
    300px rozdymała plakat z ~68px do ~145px — za duże, stąd powrót do rzędu. */
+/* Siatka 2×2 o STAŁEJ szerokości kolumn — dzięki temu 1 ulubione zajmuje jedną
+   komórkę (mały plakat w rogu), a nie rozdyma się na całą szerokość jak przy
+   flex-grow. Kolumny 108px = ten sam rozmiar co paski na telefonie. */
 #topMedia {
   flex: 0 0 auto;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 108px);
   gap: 10px;
-  align-items: flex-start;
+  justify-content: start;
+  align-items: start;
 }
 
 #topMedia .card {
-  flex: 1 1 0;
   min-width: 0;
   height: auto;
 }
@@ -986,6 +990,12 @@ h2 {
    Guzik ma siedzieć tuż pod „Wasz gust”, więc ścieśniamy też odstęp nagłówka. */
 #togetherBtn {
   margin-top: 0;
+}
+
+/* Slot na procent dopasowania — nad przyciskiem. Naturalna wysokość:
+   NIE może mieć flex:1 (jak .feed-list), bo pusty rozpychałby kolumnę. */
+#compareScore {
+  flex: 0 0 auto;
 }
 
 #comparePanel .feed-head {
