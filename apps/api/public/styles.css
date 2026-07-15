@@ -490,7 +490,7 @@ h2 {
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 30; /* pod nakładkami (overlay=40), nad treścią */
+    z-index: 50; /* nad wszystkim (też nad czatem) — pasek zawsze widoczny */
     justify-content: space-around;
     background: var(--bg-2);
     border-top: 1px solid var(--line);
@@ -543,7 +543,29 @@ h2 {
     height: 100dvh;
     border: none;
     border-radius: 0;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    /* Zostaw miejsce na dolny pasek (~58px), żeby pole pisania nie było za nim. */
+    padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Profil na telefonie: awatar jako KÓŁKO na środku u góry, imię/liczniki pod.
+     Prefiks #profileView podbija specyficzność (bazowe .profile-head/.profile-id
+     są NIŻEJ w pliku i inaczej by wygrały). */
+  #profileView .profile-head {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  #profileView .profile-head .avatar {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+  }
+  #profileView .profile-id {
+    align-items: center;
+  }
+  #profileView .profile-actions,
+  #profileView .profile-counts {
+    justify-content: center;
   }
 }
 

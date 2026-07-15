@@ -2640,6 +2640,7 @@ function closeDetail() {
 function showProfileShell() {
   closeSeeAll();
   closeFriends();
+  closeChat();
   $("searchbar").classList.add("hidden");
   $("searchResults").classList.add("hidden");
   $("browse").classList.add("hidden");
@@ -2679,6 +2680,7 @@ function closeProfile() {
 function goHome() {
   viewingUserId = null;
   closeFriends();
+  closeChat();
   $("profileView").classList.add("hidden");
   $("detailView").classList.add("hidden");
   $("searchResults").classList.add("hidden");
