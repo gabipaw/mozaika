@@ -527,6 +527,19 @@ h2 {
   .page-inner {
     padding-bottom: 84px;
   }
+
+  /* Wiadomości (czat) na CAŁY ekran na telefonie — nie modal na środku. */
+  #chatOverlay {
+    padding: 0;
+  }
+  #chatOverlay .chat-card {
+    max-width: none;
+    width: 100%;
+    height: 100dvh;
+    border: none;
+    border-radius: 0;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* Gwiazdki 0.5–10 (półgwiazdki) */
