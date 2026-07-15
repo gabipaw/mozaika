@@ -518,6 +518,10 @@ h2 {
   #appView {
     padding-bottom: 74px;
   }
+  /* „← Wróć" niepotrzebny na telefonie — nawigacja jest w dolnym pasku (🏠). */
+  .topback {
+    display: none !important;
+  }
 }
 
 /* Gwiazdki 0.5–10 (półgwiazdki) */
