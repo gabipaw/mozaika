@@ -154,6 +154,8 @@ const I18N = {
     seen: "Zobaczone",
     sent: "Wysłano",
     typing: "pisze",
+    navHome: "Główna",
+    navProfile: "Profil",
     deleteMsg: "Usuń",
     msgDeletedMine: "Usunąłeś tę wiadomość",
     msgDeleted: "Wiadomość usunięta",
@@ -346,6 +348,8 @@ const I18N = {
     seen: "Seen",
     sent: "Sent",
     typing: "typing",
+    navHome: "Home",
+    navProfile: "Profile",
     deleteMsg: "Delete",
     msgDeletedMine: "You deleted this message",
     msgDeleted: "Message deleted",
@@ -1774,9 +1778,13 @@ function stopChatPoll() {
 }
 
 function updateMsgBadge(n) {
-  const b = $("msgBadge");
-  b.textContent = n > 9 ? "9+" : String(n);
-  b.classList.toggle("hidden", !n);
+  const txt = n > 9 ? "9+" : String(n);
+  for (const id of ["msgBadge", "navMsgBadge"]) {
+    const b = $(id);
+    if (!b) continue;
+    b.textContent = txt;
+    b.classList.toggle("hidden", !n);
+  }
 }
 
 async function refreshMsgBadge() {
@@ -2666,6 +2674,18 @@ function closeProfile() {
   $("browse").classList.remove("hidden");
 }
 
+// Powrót na stronę główną (dolny pasek na telefonie). Chowa profil/szczegóły/wyniki.
+function goHome() {
+  viewingUserId = null;
+  $("profileView").classList.add("hidden");
+  $("detailView").classList.add("hidden");
+  $("searchResults").classList.add("hidden");
+  $("topBack").classList.add("hidden");
+  $("searchbar").classList.remove("hidden");
+  $("browse").classList.remove("hidden");
+  window.scrollTo(0, 0);
+}
+
 // --- Widoki: logowanie vs aplikacja ---
 function showAuth() {
   me = null;
@@ -2814,6 +2834,10 @@ async function init() {
   $("notifOverlay").addEventListener("click", (e) => {
     if (e.target === $("notifOverlay")) closeNotif();
   });
+  // Dolny pasek nawigacji (telefon)
+  $("navHome").addEventListener("click", goHome);
+  $("navMsg").addEventListener("click", openMessages);
+  $("navProfile").addEventListener("click", openProfile);
   // Czat
   $("msgBtn").addEventListener("click", openMessages);
   $("chatClose").addEventListener("click", closeChat);
