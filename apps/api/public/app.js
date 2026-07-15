@@ -1668,8 +1668,8 @@ async function loadThread(forceScroll = false) {
       }
       col.append(bubble);
 
-      // Reakcje pod dymkiem (emoji; podświetlone, jeśli to moja reakcja).
-      if (m.reactions && m.reactions.length) {
+      // Reakcje NA rogu dymka (emoji; podświetlone, jeśli to moja reakcja).
+      if (!m.deletedAt && m.reactions && m.reactions.length) {
         const rx = document.createElement("div");
         rx.className = "chat-reactions";
         for (const r of m.reactions) {
@@ -1681,7 +1681,7 @@ async function loadThread(forceScroll = false) {
           chip.addEventListener("click", () => reactMsg(m.id, r.emoji));
           rx.append(chip);
         }
-        col.append(rx);
+        bubble.append(rx); // absolutnie pozycjonowane w rogu dymka
       }
 
       if (endOfGroup) {
@@ -1702,7 +1702,7 @@ async function loadThread(forceScroll = false) {
       if (!m.deletedAt) {
         const actions = document.createElement("div");
         actions.className = "chat-actions";
-        actions.append(mkAct("🙂", t("react"), (e) => openReactionPicker(e, m.id)));
+        actions.append(mkAct("＋", t("react"), (e) => openReactionPicker(e, m.id)));
         if (mine && m.text && !m.imageUrl && !m.media) {
           actions.append(mkAct("✏️", t("editMsg"), () => startEditMsg(m)));
         }

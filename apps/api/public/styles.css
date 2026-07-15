@@ -1547,6 +1547,7 @@ h2 {
   align-items: flex-end;
 }
 .chat-bubble {
+  position: relative; /* kotwica dla reakcji w rogu */
   padding: 8px 12px;
   border-radius: 14px;
   line-height: 1.35;
@@ -1672,14 +1673,14 @@ h2 {
   -webkit-box-orient: vertical;
 }
 
-/* Reakcje wciągnięte na PRAWY DOLNY RÓG dymka (styl Messenger). */
+/* Reakcje NA prawym dolnym rogu dymka (styl Messenger). */
 .chat-reactions {
+  position: absolute;
+  right: -6px;
+  bottom: -10px;
+  z-index: 2;
   display: flex;
   gap: 3px;
-  align-self: flex-end;
-  margin: -13px 8px 0 0;
-  position: relative;
-  z-index: 1;
 }
 .reaction-chip {
   background: var(--bg-2);
