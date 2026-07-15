@@ -468,6 +468,14 @@ h2 {
   font-size: 0.9rem;
 }
 
+/* Desktop: rezerwa miejsca z lewej na panel nawigacji, żeby nie zasłaniał treści
+   (panel jest position:fixed, więc bez tego wchodzi na zawartość na węższych ekranach). */
+@media (min-width: 641px) {
+  main {
+    padding-left: 140px;
+  }
+}
+
 /* Panel nawigacji. Desktop: pionowy, przyklejony z LEWEJ (wyśrodkowany w pionie).
    Telefon: poziomy pasek na dole (patrz media query). Pokazywany tylko po
    zalogowaniu (jest w #appView, które na ekranie logowania ma display:none). */
@@ -1681,6 +1689,14 @@ h2 {
   z-index: 2;
   display: flex;
   gap: 3px;
+}
+/* Moja wiadomość: avatar jest po PRAWEJ, więc reakcja siada wewnątrz rogu,
+   żeby nie wchodzić na avatar. Miejsce pod reakcję, żeby nie kryła „Zobaczone". */
+.chat-line.me .chat-reactions {
+  right: 8px;
+}
+.chat-bubble.has-reaction {
+  margin-bottom: 10px;
 }
 .reaction-chip {
   background: var(--bg-2);

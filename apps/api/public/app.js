@@ -1681,6 +1681,7 @@ async function loadThread(forceScroll = false) {
           chip.addEventListener("click", () => reactMsg(m.id, r.emoji));
           rx.append(chip);
         }
+        bubble.classList.add("has-reaction");
         bubble.append(rx); // absolutnie pozycjonowane w rogu dymka
       }
 
