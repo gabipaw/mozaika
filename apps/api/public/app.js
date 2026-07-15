@@ -153,6 +153,10 @@ const I18N = {
     chatEmpty: "Zacznijcie rozmowę — napisz pierwszy!",
     seen: "Zobaczone",
     sent: "Wysłano",
+    typing: "pisze",
+    deleteMsg: "Usuń",
+    msgDeletedMine: "Usunąłeś tę wiadomość",
+    msgDeleted: "Wiadomość usunięta",
     follow: "Obserwuj",
     following: "Obserwujesz",
     noFollows: "Nie obserwujesz jeszcze nikogo — dodaj znajomych przyciskiem „＋ Dodaj”.",
@@ -341,6 +345,10 @@ const I18N = {
     chatEmpty: "Start the conversation — say hi!",
     seen: "Seen",
     sent: "Sent",
+    typing: "typing",
+    deleteMsg: "Delete",
+    msgDeletedMine: "You deleted this message",
+    msgDeleted: "Message deleted",
     follow: "Follow",
     following: "Following",
     noFollows: "You're not following anyone yet — add friends with the “＋ Add” button.",
@@ -1477,6 +1485,9 @@ function closePeople() {
 let chatWithId = null; // z kim mamy otwartą rozmowę (null = widok listy)
 let chatWithUser = null; // pełny obiekt rozmówcy {id, displayName, avatarUrl} — do awatara
 let chatPollTimer = null; // odświeżanie otwartej rozmowy co kilka sekund
+let typingPollTimer = null; // sprawdzanie „czy rozmówca pisze"
+let typingDotsTimer = null; // animacja kropek 0→1→2→3→0
+let lastTypingPing = 0; // throttle pingów „piszę" (ms)
 
 // Godzina wiadomości (HH:MM) w lokalnej strefie/locale przeglądarki.
 function fmtMsgTime(iso) {
@@ -1530,7 +1541,9 @@ async function loadConversations() {
     name.textContent = c.user.displayName;
     const preview = document.createElement("span");
     preview.className = "conv-preview muted small";
-    preview.textContent = (c.fromMe ? `${t("you")}: ` : "") + c.lastText;
+    preview.textContent = c.lastDeleted
+      ? t("msgDeleted")
+      : (c.fromMe ? `${t("you")}: ` : "") + c.lastText;
     body.append(name, preview);
     row.append(av, body);
     if (c.unread > 0) {
@@ -1602,8 +1615,28 @@ async function loadThread(forceScroll = false) {
       col.className = "chat-col";
       const bubble = document.createElement("div");
       bubble.className = `chat-bubble ${mine ? "me" : "them"}`;
-      bubble.textContent = m.text;
+      if (m.deletedAt) {
+        // „Tombstone" — treść usunięta, pokazujemy kto usunął.
+        bubble.classList.add("deleted");
+        bubble.textContent = mine ? t("msgDeletedMine") : t("msgDeleted");
+      } else {
+        bubble.textContent = m.text;
+      }
       col.append(bubble);
+
+      // Usuwać można tylko własne, jeszcze nieusunięte wiadomości.
+      if (mine && !m.deletedAt) {
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "chat-del";
+        del.title = t("deleteMsg");
+        del.textContent = "🗑";
+        del.addEventListener("click", (e) => {
+          e.stopPropagation();
+          deleteMsg(m.id);
+        });
+        line.append(del);
+      }
 
       if (endOfGroup) {
         const meta = document.createElement("div");
@@ -1643,11 +1676,89 @@ async function sendChat(ev) {
   }
 }
 
+async function deleteMsg(id) {
+  try {
+    await api(`/me/message/${id}`, { method: "DELETE" });
+    await loadThread(false);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// Ping „piszę do rozmówcy" — throttled do 1 na 2 s (front woła przy każdym znaku).
+async function pingTyping() {
+  if (!chatWithId) return;
+  const now = performance.now();
+  if (now - lastTypingPing < 2000) return;
+  lastTypingPing = now;
+  try {
+    await api("/me/typing", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ toUserId: chatWithId }),
+    });
+  } catch {
+    /* ping to detal — cicho */
+  }
+}
+
+// Pokazuje/chowa „X pisze …" z animowanymi kropkami.
+function showTyping(on) {
+  const el = $("chatTyping");
+  if (!on || !chatWithUser) {
+    el.classList.add("hidden");
+    el.innerHTML = "";
+    stopTypingDots();
+    return;
+  }
+  if (!el.classList.contains("hidden")) return; // już pokazany — nie przebudowuj
+  el.classList.remove("hidden");
+  el.innerHTML = "";
+  const av = avatarEl(chatWithUser);
+  av.classList.add("chat-avatar");
+  const bubble = document.createElement("div");
+  bubble.className = "chat-bubble them typing-bubble";
+  const name = document.createElement("span");
+  name.textContent = `${chatWithUser.displayName} ${t("typing")}`;
+  const dots = document.createElement("span");
+  dots.className = "typing-dots";
+  dots.id = "typingDots";
+  bubble.append(name, dots);
+  el.append(av, bubble);
+  startTypingDots();
+}
+
+function startTypingDots() {
+  stopTypingDots();
+  let n = 0;
+  typingDotsTimer = setInterval(() => {
+    n = (n + 1) % 4; // 1,2,3,0,1,2,3,0 … (rośnie do 3, wraca do 0)
+    const d = $("typingDots");
+    if (d) d.textContent = ".".repeat(n);
+  }, 400);
+}
+
+function stopTypingDots() {
+  if (typingDotsTimer) {
+    clearInterval(typingDotsTimer);
+    typingDotsTimer = null;
+  }
+}
+
 function startChatPoll() {
   stopChatPoll();
   chatPollTimer = setInterval(() => {
     if (chatWithId && !$("chatOverlay").classList.contains("hidden")) loadThread(false);
   }, 4000);
+  typingPollTimer = setInterval(async () => {
+    if (!chatWithId || $("chatOverlay").classList.contains("hidden")) return;
+    try {
+      const r = await api(`/me/typing/${chatWithId}`);
+      showTyping(!!r.typing);
+    } catch {
+      /* cicho */
+    }
+  }, 1800);
 }
 
 function stopChatPoll() {
@@ -1655,6 +1766,11 @@ function stopChatPoll() {
     clearInterval(chatPollTimer);
     chatPollTimer = null;
   }
+  if (typingPollTimer) {
+    clearInterval(typingPollTimer);
+    typingPollTimer = null;
+  }
+  showTyping(false);
 }
 
 function updateMsgBadge(n) {
@@ -2707,6 +2823,7 @@ async function init() {
     loadConversations();
   });
   $("chatForm").addEventListener("submit", sendChat);
+  $("chatText").addEventListener("input", pingTyping);
   $("chatOverlay").addEventListener("click", (e) => {
     if (e.target === $("chatOverlay")) closeChat();
   });

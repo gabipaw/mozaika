@@ -30,7 +30,12 @@ import { checkPremieres, ensureReleaseDate, upcomingForUser } from "./logic/prem
 import { addReview, deleteReview } from "./logic/reviews.js";
 import { react, reactionScore, reactionSummary } from "./logic/reactions.js";
 import { profilePayload } from "./logic/profile.js";
-import { conversation, conversations, sendMessage } from "./logic/messages.js";
+import {
+  conversation,
+  conversations,
+  deleteMessage,
+  sendMessage,
+} from "./logic/messages.js";
 import { recommendations } from "./logic/recommendations.js";
 import { tasteMatch } from "./logic/tasteMatch.js";
 import { togetherPicks } from "./logic/together.js";
@@ -344,6 +349,32 @@ api.post("/me/messages", requireAuth, async (c) => {
     url: "/",
   }).catch((e) => console.error("push (message) nie wyszedl:", e));
   return c.json(msg, 201);
+});
+
+// Usuń (miękko) własną wiadomość — zostaje „tombstone" (Usunięto wiadomość).
+api.delete("/me/message/:id", requireAuth, async (c) => {
+  const msgId = intParam(c.req.param("id"), "id");
+  return c.json(await deleteMessage(c.get("userId"), msgId));
+});
+
+// --- Wskaźnik pisania (ulotny, w pamięci serwera; TTL kilka sekund) ---
+const typingMap = new Map<string, number>(); // `${fromId}:${toId}` -> ms
+const TYPING_TTL = 6000;
+
+// Ping „piszę do X" — front woła co ~2 s, gdy user pisze w polu.
+api.post("/me/typing", requireAuth, async (c) => {
+  const me = c.get("userId");
+  const to = Number((await c.req.json()).toUserId);
+  if (Number.isInteger(to) && to > 0) typingMap.set(`${me}:${to}`, Date.now());
+  return c.json({ ok: true });
+});
+
+// Czy user :id pisze do mnie (w ostatnich TYPING_TTL ms)?
+api.get("/me/typing/:id", requireAuth, (c) => {
+  const me = c.get("userId");
+  const other = intParam(c.req.param("id"), "id");
+  const ts = typingMap.get(`${other}:${me}`) ?? 0;
+  return c.json({ typing: Date.now() - ts < TYPING_TTL });
 });
 
 // Feed aktywności obserwowanych — ostatnie oceny (kto, co, ile, kiedy).

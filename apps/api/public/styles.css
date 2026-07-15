@@ -1410,6 +1410,47 @@ h2 {
   margin: auto;
   text-align: center;
 }
+/* Usunięta wiadomość — „tombstone". */
+.chat-bubble.deleted {
+  font-style: italic;
+  background: transparent !important;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+}
+/* Przycisk „usuń" przy własnym dymku — pojawia się na hover wiersza. */
+.chat-del {
+  flex: 0 0 auto;
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.chat-line:hover .chat-del {
+  opacity: 0.65;
+}
+.chat-del:hover {
+  opacity: 1;
+}
+/* „X pisze …" z animowanymi kropkami */
+.chat-typing {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 2px 4px 6px;
+}
+.typing-bubble {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.typing-dots {
+  display: inline-block;
+  min-width: 1.4em;
+  letter-spacing: 2px;
+}
 .chat-form {
   display: flex;
   gap: 8px;

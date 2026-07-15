@@ -48,6 +48,7 @@ model Message {
   text       String
   createdAt  DateTime  @default(now())
   readAt     DateTime? // null = jeszcze nieprzeczytana przez odbiorcę
+  deletedAt  DateTime? // null = normalna; ustawione = usunięta (miękko, treść czyścimy)
 
   sender     User @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   senderId   Int

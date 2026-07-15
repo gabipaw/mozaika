@@ -4,7 +4,7 @@
  * frontowi). Push o nowej wiadomości wysyła warstwa trasy (server.ts).
  */
 import { prisma } from "../db.js";
-import { ForbiddenError, ValidationError } from "../errors.js";
+import { ForbiddenError, NotFoundError, ValidationError } from "../errors.js";
 
 const NOT_FRIENDS = "Możesz pisać tylko ze znajomymi — musicie się obserwować wzajemnie.";
 
@@ -27,6 +27,7 @@ const msgSelect = {
   text: true,
   createdAt: true,
   readAt: true,
+  deletedAt: true,
   senderId: true,
   receiverId: true,
 } as const;
@@ -64,6 +65,23 @@ export async function sendMessage(meId: number, toId: number, textRaw: string) {
   });
 }
 
+/** Miękkie usunięcie wiadomości — tylko własnej. Czyścimy treść, zostaje „tombstone". */
+export async function deleteMessage(meId: number, msgId: number) {
+  const msg = await prisma.message.findUnique({
+    where: { id: msgId },
+    select: { senderId: true },
+  });
+  if (!msg) throw new NotFoundError("Nie ma takiej wiadomości.");
+  if (msg.senderId !== meId) {
+    throw new ForbiddenError("Możesz usuwać tylko swoje wiadomości.");
+  }
+  return prisma.message.update({
+    where: { id: msgId },
+    data: { deletedAt: new Date(), text: "" },
+    select: msgSelect,
+  });
+}
+
 /** Lista rozmów: dla każdego rozmówcy ostatnia wiadomość + liczba nieprzeczytanych. */
 export async function conversations(meId: number) {
   const rows = await prisma.message.findMany({
@@ -80,6 +98,7 @@ export async function conversations(meId: number) {
     {
       user: { id: number; displayName: string; avatarUrl: string | null };
       lastText: string;
+      lastDeleted: boolean;
       lastAt: Date;
       fromMe: boolean;
       unread: number;
@@ -93,6 +112,7 @@ export async function conversations(meId: number) {
       entry = {
         user: other,
         lastText: m.text,
+        lastDeleted: m.deletedAt !== null,
         lastAt: m.createdAt,
         fromMe: m.senderId === meId,
         unread: 0,
