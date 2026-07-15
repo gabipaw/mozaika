@@ -639,15 +639,14 @@ h2 {
 /* Top 4: jeden rząd 4 plakatów, proporcja 2:3, naturalna wysokość.
    Siatka 2×2 (z pustymi ramkami na wolne miejsca) była tu wcześniej, ale w kolumnie
    300px rozdymała plakat z ~68px do ~145px — za duże, stąd powrót do rzędu. */
-/* Siatka 2×2 o STAŁEJ szerokości kolumn — dzięki temu 1 ulubione zajmuje jedną
-   komórkę (mały plakat w rogu), a nie rozdyma się na całą szerokość jak przy
-   flex-grow. Kolumny 108px = ten sam rozmiar co paski na telefonie. */
+/* Rząd 4 kolumn (prosta linia jak na własnym profilu). Grid, nie flex-grow:
+   dzięki temu 1 ulubione zajmuje jedną komórkę (mały plakat po lewej), a nie
+   rozdyma się na całą szerokość. Puste komórki 2–4 zostają puste. */
 #topMedia {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(2, 108px);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  justify-content: start;
   align-items: start;
 }
 
