@@ -138,6 +138,11 @@ const I18N = {
     notifFollowed: "zaczął(-ęła) Cię obserwować",
     noNotif: "Brak powiadomień. Gdy ktoś Cię zaobserwuje, pojawi się tu.",
     counts: "{fo} obserwujących · {fw} obserwowanych",
+    followersLink: "{n} obserwujących",
+    followingLink: "{n} obserwowanych",
+    followersTitle: "Obserwujący",
+    followingTitle: "Obserwowani",
+    peopleEmpty: "Nikogo tu jeszcze nie ma.",
     follow: "Obserwuj",
     following: "Obserwujesz",
     noFollows: "Nie obserwujesz jeszcze nikogo — dodaj znajomych przyciskiem „＋ Dodaj”.",
@@ -312,6 +317,11 @@ const I18N = {
     notifFollowed: "started following you",
     noNotif: "No notifications. When someone follows you, it'll show up here.",
     counts: "{fo} followers · {fw} following",
+    followersLink: "{n} followers",
+    followingLink: "{n} following",
+    followersTitle: "Followers",
+    followingTitle: "Following",
+    peopleEmpty: "No one here yet.",
     follow: "Follow",
     following: "Following",
     noFollows: "You're not following anyone yet — add friends with the “＋ Add” button.",
@@ -1397,6 +1407,53 @@ function closeFriends() {
   $("friendsOverlay").classList.add("hidden");
 }
 
+// --- Lista osób (klik w licznik „obserwujących / obserwowanych" na profilu) ---
+// kind: "followers" | "following". Źródło zależy od tego, czyj profil oglądamy.
+async function openPeople(kind) {
+  const base = viewingUserId ? `/users/${viewingUserId}` : "/me";
+  $("peopleTitle").textContent = t(
+    kind === "followers" ? "followersTitle" : "followingTitle",
+  );
+  const list = $("peopleList");
+  list.innerHTML = `<p class="muted small">…</p>`;
+  $("peopleOverlay").classList.remove("hidden");
+  try {
+    renderPeople(await api(`${base}/${kind}`));
+  } catch (e) {
+    list.innerHTML = `<p class="muted small">${e.message}</p>`;
+  }
+}
+
+function renderPeople(users) {
+  const list = $("peopleList");
+  list.innerHTML = "";
+  if (!users.length) {
+    list.innerHTML = `<p class="muted small">${t("peopleEmpty")}</p>`;
+    return;
+  }
+  for (const u of users) {
+    const row = document.createElement("div");
+    row.className = "friend-row";
+    const av = avatarEl(u);
+    av.style.cursor = "pointer";
+    const go = () => {
+      closePeople();
+      openUserProfile(u.id);
+    };
+    av.addEventListener("click", go);
+    const name = document.createElement("span");
+    name.className = "friend-name friend-link";
+    name.textContent = u.displayName;
+    name.addEventListener("click", go);
+    row.append(av, name);
+    list.append(row);
+  }
+}
+
+function closePeople() {
+  $("peopleOverlay").classList.add("hidden");
+}
+
 // Renderuje dane profilu — własnego (readOnly=false) lub cudzego (readOnly=true).
 function renderProfileData(data, readOnly) {
   // Nagłówek: zdjęcie profilowe + imię.
@@ -1418,10 +1475,23 @@ function renderProfileData(data, readOnly) {
   $("avatarBtn").title = readOnly ? "" : t("changePhoto");
   $("followProfileBtn").classList.toggle("hidden", !readOnly);
 
-  // Liczniki obserwacji pod imieniem.
+  // Liczniki obserwacji pod imieniem — KLIKALNE: pokazują listę osób.
   const fo = data.followersCount ?? 0;
   const fw = data.followingCount ?? 0;
-  $("profileCounts").textContent = t("counts", { fo, fw });
+  const counts = $("profileCounts");
+  counts.innerHTML = "";
+  const mkLink = (label, kind) => {
+    const s = document.createElement("span");
+    s.className = "count-link";
+    s.textContent = label;
+    s.addEventListener("click", () => openPeople(kind));
+    return s;
+  };
+  counts.append(
+    mkLink(t("followersLink", { n: fo }), "followers"),
+    document.createTextNode(" · "),
+    mkLink(t("followingLink", { n: fw }), "following"),
+  );
 
   // 3. kolumna: własny profil = portret gustu + feed znajomych, cudzy = porównanie.
   $("profileFeed").classList.toggle("hidden", readOnly);
@@ -2397,6 +2467,10 @@ async function init() {
   $("togetherBtn").addEventListener("click", openTogether);
   $("friendsClose").addEventListener("click", closeFriends);
   $("friendsSearch").addEventListener("input", drawFriends);
+  $("peopleClose").addEventListener("click", closePeople);
+  $("peopleOverlay").addEventListener("click", (e) => {
+    if (e.target === $("peopleOverlay")) closePeople();
+  });
   $("notifBtn").addEventListener("click", openNotif);
   $("notifClose").addEventListener("click", closeNotif);
   $("notifOverlay").addEventListener("click", (e) => {

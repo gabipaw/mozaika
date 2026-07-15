@@ -481,6 +481,32 @@ api.get("/users/:id/profile", async (c) => {
   return c.json(await profilePayload(id, await userIdFromHeader(c)));
 });
 
+// Kto obserwuje danego usera (lista) — publiczne, do klikalnych liczników na profilu.
+api.get("/users/:id/followers", async (c) => {
+  const id = intParam(c.req.param("id"), "id");
+  const rows = await prisma.follow.findMany({
+    where: { followedId: id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      follower: { select: { id: true, displayName: true, avatarUrl: true } },
+    },
+  });
+  return c.json(rows.map((r) => r.follower));
+});
+
+// Kogo dany user obserwuje (lista) — publiczne.
+api.get("/users/:id/following", async (c) => {
+  const id = intParam(c.req.param("id"), "id");
+  const rows = await prisma.follow.findMany({
+    where: { followerId: id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      followed: { select: { id: true, displayName: true, avatarUrl: true } },
+    },
+  });
+  return c.json(rows.map((r) => r.followed));
+});
+
 // Porównanie gustu z zalogowanym userem: % dopasowania + wspólnie ocenione tytuły.
 api.get("/users/:id/compare", requireAuth, async (c) => {
   const meId = c.get("userId");
