@@ -741,7 +741,10 @@ function openSettings() {
   for (const b of document.querySelectorAll(".acc-body")) b.classList.add("hidden");
   for (const h of document.querySelectorAll(".acc-head")) h.classList.remove("open");
   renderPushSettings(); // decyduje, czy sekcja push w ogóle się pokazuje
-  $("settingsOverlay").classList.remove("hidden");
+  // .open uruchamia animację wjazdu drawera (panel jest zawsze w DOM, nie display:none,
+  // żeby transform się animował). Reset scrolla panelu przy każdym otwarciu.
+  $("settingsDrawer").scrollTop = 0;
+  $("settingsOverlay").classList.add("open");
 }
 
 // Rozwija/zwija sekcję. Single-open: otwarcie jednej zamyka pozostałe.
@@ -901,7 +904,7 @@ async function renderBlockedList() {
   }
 }
 function closeSettings() {
-  $("settingsOverlay").classList.add("hidden");
+  $("settingsOverlay").classList.remove("open");
 }
 
 const getToken = () => localStorage.getItem("mozaika_token");
@@ -3597,9 +3600,9 @@ function renderHello() {
 }
 
 function logout() {
-  // „Wyloguj" siedzi teraz w nakładce Ustawień — zamknij ją, inaczej zostałaby
-  // otwarta nad ekranem logowania.
-  $("settingsOverlay").classList.add("hidden");
+  // „Wyloguj" siedzi teraz w panelu Ustawień — zamknij go, inaczej zostałby
+  // otwarty nad ekranem logowania.
+  $("settingsOverlay").classList.remove("open");
   clearToken();
   showAuth();
 }
@@ -3766,6 +3769,10 @@ async function init() {
   $("pushToggle").addEventListener("click", togglePush);
   $("pushTest").addEventListener("click", testPush);
   $("settingsClose").addEventListener("click", closeSettings);
+  // Klik w przyciemnione tło (poza panelem) zamyka ustawienia.
+  $("settingsOverlay").addEventListener("click", (e) => {
+    if (e.target === $("settingsOverlay")) closeSettings();
+  });
   wireAccountSettings();
   wireAccordion();
   $("friendsBtn").addEventListener("click", openFriends);
@@ -3854,7 +3861,7 @@ async function init() {
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!$("settingsOverlay").classList.contains("hidden")) closeSettings();
+    if ($("settingsOverlay").classList.contains("open")) closeSettings();
     else if (!$("notifOverlay").classList.contains("hidden")) closeNotif();
     else if (!$("friendsOverlay").classList.contains("hidden")) closeFriends();
     else if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
