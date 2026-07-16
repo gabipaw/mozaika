@@ -217,6 +217,12 @@ const I18N = {
     minAgo: "{n} min temu",
     hAgo: "{n} godz. temu",
     dAgo: "{n} dni temu",
+    // Zwięzłe formy na listę rozmów — obok podglądu wiadomości „temu" się nie mieści.
+    shortNow: "teraz",
+    shortMin: "{n} min",
+    shortH: "{n} godz",
+    shortD: "{n} dni",
+    shortW: "{n} tyg",
   },
   en: {
     back: "← Back",
@@ -422,6 +428,11 @@ const I18N = {
     minAgo: "{n} min ago",
     hAgo: "{n} h ago",
     dAgo: "{n} d ago",
+    shortNow: "now",
+    shortMin: "{n}m",
+    shortH: "{n}h",
+    shortD: "{n}d",
+    shortW: "{n}w",
   },
 };
 
@@ -1208,6 +1219,16 @@ function timeAgo(iso) {
   return t("dAgo", { n: Math.floor(s / 86400) });
 }
 
+/** Zwięzły wiek wiadomości na listę rozmów: „teraz", „3 min", „2 godz", „5 dni", „6 tyg". */
+function timeAgoShort(iso) {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 60) return t("shortNow");
+  if (s < 3600) return t("shortMin", { n: Math.floor(s / 60) });
+  if (s < 86400) return t("shortH", { n: Math.floor(s / 3600) });
+  if (s < 604800) return t("shortD", { n: Math.floor(s / 86400) });
+  return t("shortW", { n: Math.floor(s / 604800) });
+}
+
 // Kółko z avatarem usera (zdjęcie albo inicjał).
 function avatarEl(user) {
   const el = document.createElement("div");
@@ -1620,7 +1641,15 @@ async function loadConversations() {
     else previewText = c.lastText;
     preview.textContent =
       (c.fromMe && !c.lastDeleted ? `${t("you")}: ` : "") + previewText;
-    body.append(name, preview);
+    // Podgląd i wiek wiadomości w jednej linii pod imieniem (jak na Instagramie):
+    // skraca się sam podgląd, czas zostaje w całości.
+    const sub = document.createElement("span");
+    sub.className = "conv-sub";
+    const time = document.createElement("span");
+    time.className = "conv-time";
+    time.textContent = `· ${timeAgoShort(c.lastAt)}`;
+    sub.append(preview, time);
+    body.append(name, sub);
     row.append(av, body);
     if (c.unread > 0) {
       const badge = document.createElement("span");

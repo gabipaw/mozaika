@@ -1819,10 +1819,57 @@ h2 {
   color: var(--text);
   font-weight: 600;
 }
+
+/* --- Lista rozmów w stylu Instagrama ---
+   Zawężone do #convList, bo klasy .conv-row / .friends-list dzieli z listą
+   znajomych przy „nowej wiadomości", której ten wygląd nie dotyczy. */
+#convList {
+  gap: 0; /* wiersze stykają się — rytm robi padding, nie przerwy */
+  max-height: none;
+}
+#convList .conv-row {
+  gap: 12px;
+  padding: 8px 6px;
+  border-radius: 10px;
+}
+/* Duży awatar — na liście rozmów to główny punkt zaczepienia dla oka. */
+#convList .feed-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 1.3rem;
+}
+/* Imię schodzi z pogrubienia: na nieprzeczytanej rozmowie ma je odzyskać. */
+#convList .friend-name {
+  font-weight: 400;
+  flex: none;
+}
+#convList .conv-row.unread .friend-name {
+  font-weight: 700;
+}
+/* Podgląd + czas w jednej linii; skraca się tylko podgląd. */
+.conv-sub {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  align-items: baseline;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.conv-sub .conv-preview {
+  min-width: 0;
+  flex: 0 1 auto;
+  font-size: inherit;
+}
+.conv-time {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+/* Licznik nieprzeczytanych. Instagram ma w tym miejscu samą kropkę, ale liczba
+   niesie informację, której kropka nie odda — zostaje, tylko w kolorze dymków. */
 .conv-unread {
   flex: 0 0 auto;
-  background: var(--accent);
-  color: #05221d;
+  background: linear-gradient(135deg, #5b51d8, #b83a95);
+  color: #fff;
   border-radius: 999px;
   min-width: 20px;
   height: 20px;
