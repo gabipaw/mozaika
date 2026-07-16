@@ -2296,6 +2296,129 @@ h2 {
   margin-top: 6px;
 }
 
+/* --- Komentarze pod recenzją --- */
+.comments {
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+.comments-toggle {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 2px 0;
+}
+.comments-toggle:hover {
+  color: var(--text);
+}
+.comments-body {
+  margin-top: 6px;
+}
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.comment {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.comment-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+  flex: 0 0 auto;
+}
+.comment-main {
+  flex: 1;
+  min-width: 0;
+}
+.comment-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.comment-author {
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+.comment-time {
+  font-size: 0.7rem;
+}
+.comment-text {
+  font-size: 0.88rem;
+  line-height: 1.35;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  margin-top: 1px;
+}
+.comment-text.deleted {
+  font-style: italic;
+  color: var(--muted);
+}
+.comment-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
+.comment-act {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.comment-act:hover {
+  color: var(--text);
+}
+.comment-act.danger:hover {
+  color: var(--accent-2);
+}
+/* Odpowiedzi — wcięte, oddzielone cienką kreską po lewej. */
+.comment-replies {
+  margin-top: 8px;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.comment-form {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.comment-form input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+.comment-form button {
+  flex: 0 0 auto;
+  background: var(--accent);
+  color: #05221d;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.comment-form button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .like-btn {
   display: inline-flex;
   align-items: center;
@@ -2484,6 +2607,27 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Lista zablokowanych w ustawieniach. */
+.blocked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.blocked-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.blocked-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .lang-btn {

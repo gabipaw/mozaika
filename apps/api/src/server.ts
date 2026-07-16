@@ -20,6 +20,8 @@ import {
 } from "./errors.js";
 import { login, register } from "./logic/auth.js";
 import { rateLimit, rateLimitReset } from "./logic/rateLimit.js";
+import { blockUser, unblockUser, listBlocked } from "./logic/blocks.js";
+import { listComments, addComment, deleteComment } from "./logic/comments.js";
 import { addBookFromOpenLibrary, searchBooks } from "./logic/books.js";
 import { getDescription, getTrailer } from "./logic/details.js";
 import { addGameFromRawg, searchGames } from "./logic/games.js";
@@ -388,6 +390,30 @@ api.delete("/me/follow/:id", requireAuth, async (c) => {
   return c.json({ ok: true });
 });
 
+// --- Blokowanie ---
+
+// Kogo zablokowałem (ekran „Zablokowani").
+api.get("/me/blocks", requireAuth, async (c) =>
+  c.json(await listBlocked(c.get("userId"))),
+);
+
+// Zablokuj użytkownika — zrywa też wzajemną obserwację (koniec czatu).
+api.post("/me/block/:id", requireAuth, async (c) => {
+  const meId = c.get("userId");
+  const targetId = intParam(c.req.param("id"), "id");
+  if (targetId === meId) {
+    throw new ValidationError("Nie możesz zablokować samego siebie.");
+  }
+  await blockUser(meId, targetId);
+  return c.json({ ok: true });
+});
+
+// Odblokuj — obserwacji NIE przywracamy (trzeba zaobserwować od nowa).
+api.delete("/me/block/:id", requireAuth, async (c) => {
+  await unblockUser(c.get("userId"), intParam(c.req.param("id"), "id"));
+  return c.json({ ok: true });
+});
+
 // --- Czat (tylko między wzajemnymi znajomymi) ---
 
 // Lista rozmów: rozmówca + ostatnia wiadomość + liczba nieprzeczytanych.
@@ -624,6 +650,38 @@ api.delete("/reviews/:id", requireAuth, async (c) => {
   const result = await deleteReview(userId, id);
   invalidateDiscoveryCache(userId); // mniej ocen → inny gust → odśwież pulę discovery
   return c.json(result);
+});
+
+// --- Komentarze pod recenzjami ---
+
+// Komentarze recenzji (drzewo: wpisy + odpowiedzi). Publiczne; token doprecyzowuje
+// widoczność (kryje komentarze zablokowanych), więc czytamy go miękko.
+api.get("/reviews/:id/comments", async (c) => {
+  const id = intParam(c.req.param("id"), "id");
+  return c.json(await listComments(id, await userIdFromHeader(c)));
+});
+
+// Dodaj komentarz albo odpowiedź (parentId). Body: { text, parentId? }.
+api.post("/reviews/:id/comments", requireAuth, async (c) => {
+  const id = intParam(c.req.param("id"), "id");
+  const body = await c.req.json();
+  const parentId =
+    body.parentId === undefined || body.parentId === null
+      ? null
+      : intParam(String(body.parentId), "parentId");
+  const comment = await addComment(
+    c.get("userId"),
+    id,
+    String(body.text ?? ""),
+    parentId,
+  );
+  return c.json(comment, 201);
+});
+
+// Usuń WŁASNY komentarz (miękko — węzeł zostaje dla odpowiedzi).
+api.delete("/me/comment/:id", requireAuth, async (c) => {
+  const id = intParam(c.req.param("id"), "id");
+  return c.json(await deleteComment(c.get("userId"), id));
 });
 
 // Dopasowanie gustu między dwoma użytkownikami.

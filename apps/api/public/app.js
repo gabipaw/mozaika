@@ -140,7 +140,26 @@ const I18N = {
     notifLiked: "polubił(-a) Twoją recenzję",
     notifRated: "ocenił(-a) tytuł z Twojej listy",
     notifPremiere: "jest już dostępne — masz to na liście do obejrzenia",
+    notifComment: "skomentował(-a) Twoją recenzję",
+    notifReply: "odpowiedział(-a) na Twój komentarz",
     noNotif: "Brak powiadomień. Gdy ktoś Cię zaobserwuje, pojawi się tu.",
+    // Blokowanie
+    block: "Zablokuj",
+    unblock: "Odblokuj",
+    blocked: "Zablokowano",
+    blockConfirm: "Zablokować tę osobę? Zniknie wzajemna obserwacja i czat.",
+    blockedList: "Zablokowani",
+    noBlocked: "Nie zablokowałeś nikogo.",
+    // Komentarze (klucz `comments` już istnieje wyżej — „Komentarze")
+    commentPlaceholder: "Napisz komentarz…",
+    replyPlaceholder: "Napisz odpowiedź…",
+    addComment: "Skomentuj",
+    reply: "Odpowiedz",
+    commentDeleted: "Komentarz usunięty",
+    deleteComment: "Usuń komentarz",
+    noCommentsYet: "Brak komentarzy. Bądź pierwszy!",
+    showReplies: "Pokaż odpowiedzi ({n})",
+    hideReplies: "Ukryj odpowiedzi",
     counts: "{fo} obserwujących · {fw} obserwowanych",
     followersLink: "{n} obserwujących",
     followingLink: "{n} obserwowanych",
@@ -351,7 +370,26 @@ const I18N = {
     notifLiked: "liked your review",
     notifRated: "rated a title from your watchlist",
     notifPremiere: "is out now — it's on your watchlist",
+    notifComment: "commented on your review",
+    notifReply: "replied to your comment",
     noNotif: "No notifications. When someone follows you, it'll show up here.",
+    // Blocking
+    block: "Block",
+    unblock: "Unblock",
+    blocked: "Blocked",
+    blockConfirm: "Block this person? Mutual follow and chat will be removed.",
+    blockedList: "Blocked",
+    noBlocked: "You haven't blocked anyone.",
+    // Comments (`comments` key already defined above — "Comments")
+    commentPlaceholder: "Write a comment…",
+    replyPlaceholder: "Write a reply…",
+    addComment: "Comment",
+    reply: "Reply",
+    commentDeleted: "Comment deleted",
+    deleteComment: "Delete comment",
+    noCommentsYet: "No comments yet. Be the first!",
+    showReplies: "Show replies ({n})",
+    hideReplies: "Hide replies",
     counts: "{fo} followers · {fw} following",
     followersLink: "{n} followers",
     followingLink: "{n} following",
@@ -635,7 +673,56 @@ async function testPush() {
 function openSettings() {
   renderLangList();
   renderPushSettings();
+  renderBlockedList();
   $("settingsOverlay").classList.remove("hidden");
+}
+
+// Lista zablokowanych z przyciskiem „Odblokuj" — jedyne miejsce, gdzie da się
+// odblokować kogoś, kogo już nie widać w wynikach (bo blokada go ukrywa).
+async function renderBlockedList() {
+  const box = $("blockedList");
+  const group = box.parentElement;
+  let blocked;
+  try {
+    blocked = await api("/me/blocks");
+  } catch {
+    group.classList.add("hidden");
+    return;
+  }
+  group.classList.toggle("hidden", false);
+  box.innerHTML = "";
+  if (!blocked.length) {
+    box.innerHTML = `<p class="muted small">${t("noBlocked")}</p>`;
+    return;
+  }
+  for (const u of blocked) {
+    const row = document.createElement("div");
+    row.className = "blocked-row";
+    const av = avatarEl(u);
+    av.classList.add("comment-avatar");
+    const name = document.createElement("span");
+    name.className = "blocked-name";
+    name.textContent = u.displayName;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "linkbtn";
+    btn.textContent = t("unblock");
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      try {
+        await api(`/me/block/${u.id}`, { method: "DELETE" });
+        row.remove();
+        if (!box.querySelector(".blocked-row")) {
+          box.innerHTML = `<p class="muted small">${t("noBlocked")}</p>`;
+        }
+      } catch (e) {
+        toast(e.message);
+        btn.disabled = false;
+      }
+    });
+    row.append(av, name, btn);
+    box.append(row);
+  }
 }
 function closeSettings() {
   $("settingsOverlay").classList.add("hidden");
@@ -1426,6 +1513,8 @@ function notifVerb(type) {
   if (type === "like") return t("notifLiked");
   if (type === "watchlist_rated") return t("notifRated");
   if (type === "premiere") return t("notifPremiere");
+  if (type === "comment") return t("notifComment");
+  if (type === "reply") return t("notifReply");
   return t("notifFollowed");
 }
 
@@ -1461,7 +1550,12 @@ function renderNotifList() {
     // ma czego pokazać, więc ją pomijamy zamiast rysować pusty wiersz.
     if (isPremiere && !n.media) continue;
     const toMedia =
-      n.media && (isPremiere || n.type === "like" || n.type === "watchlist_rated");
+      n.media &&
+      (isPremiere ||
+        n.type === "like" ||
+        n.type === "watchlist_rated" ||
+        n.type === "comment" ||
+        n.type === "reply");
     const row = document.createElement("div");
     row.className = "friend-row notif-row";
     if (!n.readAt) row.classList.add("new");
@@ -2195,6 +2289,8 @@ function renderProfileData(data, readOnly) {
   $("followProfileBtn").classList.toggle("hidden", !readOnly);
   // „Napisz" tylko na cudzym profilu i tylko gdy jesteście znajomymi (wzajemnie).
   $("msgProfileBtn").classList.toggle("hidden", !(readOnly && data.mutualFriend));
+  // „Zablokuj" tylko na cudzym profilu (stan ustawia setBlockBtn po pobraniu blokad).
+  $("blockProfileBtn").classList.toggle("hidden", !readOnly);
 
   // Liczniki obserwacji pod imieniem — KLIKALNE: pokazują listę osób.
   const fo = data.followersCount ?? 0;
@@ -2419,14 +2515,16 @@ function renderPortrait(p) {
 }
 
 async function loadUserProfile(id) {
-  const [data, following] = await Promise.all([
+  const [data, following, blocks] = await Promise.all([
     api(`/users/${id}/profile`),
     api("/me/following").catch(() => []),
+    api("/me/blocks").catch(() => []),
   ]);
   viewingName = data.user.displayName;
   viewingUser = data.user;
   renderProfileData(data, true);
   setFollowBtn(following.some((u) => u.id === id));
+  setBlockBtn(blocks.some((u) => u.id === id));
   loadCompare(id);
 }
 
@@ -2434,6 +2532,17 @@ function setFollowBtn(on) {
   const btn = $("followProfileBtn");
   btn.classList.toggle("active", on);
   btn.textContent = on ? t("following") : t("follow");
+}
+
+// Zablokowanemu chowamy „Obserwuj"/„Napisz" — z blokadą i tak nie zadziałają.
+function setBlockBtn(blocked) {
+  const btn = $("blockProfileBtn");
+  btn.classList.toggle("active", blocked);
+  btn.textContent = blocked ? t("unblock") : t("block");
+  if (blocked) {
+    $("followProfileBtn").classList.add("hidden");
+    $("msgProfileBtn").classList.add("hidden");
+  }
 }
 
 // „Co obejrzeć razem" — tytuły trafiające w gust WASZEJ DWÓJKI, których żadne
@@ -2857,6 +2966,7 @@ async function loadDetailReviews(mediaId) {
         el.append(txt);
       }
       el.append(likeControl(r, r.user.id));
+      el.append(buildCommentsSection(r.id));
       box.append(el);
     }
   } catch {
@@ -2957,6 +3067,193 @@ async function sendReaction(review, foot, clicked) {
     toast(e.message);
   } finally {
     btns.forEach((b) => (b.disabled = false));
+  }
+}
+
+// --- Komentarze pod recenzją (z jednym poziomem odpowiedzi) ---
+
+/**
+ * Zwijana sekcja komentarzy pod recenzją. Ładujemy je leniwie — dopiero po
+ * rozwinięciu, żeby otwarcie tytułu z wieloma recenzjami nie strzelało od razu
+ * po komentarze do każdej z nich.
+ */
+function buildCommentsSection(reviewId) {
+  const wrap = document.createElement("div");
+  wrap.className = "comments";
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "comments-toggle";
+  toggle.textContent = `💬 ${t("comments")}`;
+  const body = document.createElement("div");
+  body.className = "comments-body hidden";
+  let loaded = false;
+  toggle.addEventListener("click", async () => {
+    body.classList.toggle("hidden");
+    if (!loaded && !body.classList.contains("hidden")) {
+      loaded = true;
+      await renderComments(reviewId, body);
+    }
+  });
+  wrap.append(toggle, body);
+  return wrap;
+}
+
+/** Pobiera komentarze i buduje listę + pole dodawania. */
+async function renderComments(reviewId, body) {
+  body.innerHTML = `<p class="muted small">…</p>`;
+  let tree;
+  try {
+    tree = await api(`/reviews/${reviewId}/comments`);
+  } catch {
+    body.innerHTML = `<p class="muted small">${t("apiError")}</p>`;
+    return;
+  }
+  body.innerHTML = "";
+  const list = document.createElement("div");
+  list.className = "comment-list";
+  if (!tree.length) {
+    list.innerHTML = `<p class="muted small">${t("noCommentsYet")}</p>`;
+  } else {
+    for (const node of tree) list.append(commentEl(node, reviewId));
+  }
+  body.append(list);
+  if (me) body.append(commentForm(reviewId, null, body));
+}
+
+/** Pojedynczy komentarz + (opcjonalnie) jego odpowiedzi pod spodem. */
+function commentEl(node, reviewId, isReply = false) {
+  const el = document.createElement("div");
+  el.className = "comment" + (isReply ? " reply" : "");
+  const av = avatarEl(node.author);
+  av.classList.add("comment-avatar");
+  const main = document.createElement("div");
+  main.className = "comment-main";
+
+  const head = document.createElement("div");
+  head.className = "comment-head";
+  const who = document.createElement("span");
+  who.className = "comment-author";
+  who.textContent = node.author.displayName;
+  const time = document.createElement("span");
+  time.className = "comment-time muted";
+  time.textContent = timeAgoShort(node.createdAt);
+  head.append(who, time);
+
+  const text = document.createElement("div");
+  text.className = "comment-text" + (node.deleted ? " deleted" : "");
+  text.textContent = node.deleted ? t("commentDeleted") : node.text;
+
+  main.append(head, text);
+
+  // Akcje: odpowiedz (każdy zalogowany), usuń (tylko autor, nieusunięty).
+  if (!node.deleted && me) {
+    const actions = document.createElement("div");
+    actions.className = "comment-actions";
+    const replyBtn = document.createElement("button");
+    replyBtn.type = "button";
+    replyBtn.className = "comment-act";
+    replyBtn.textContent = t("reply");
+    replyBtn.addEventListener("click", () => {
+      // Formularz odpowiedzi tuż pod komentarzem; drugi klik go chowa.
+      const existing = main.querySelector(":scope > .comment-form");
+      if (existing) {
+        existing.remove();
+        return;
+      }
+      main.append(commentForm(reviewId, node.id, null, replyBtn));
+    });
+    actions.append(replyBtn);
+    if (node.author.id === me.id) {
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "comment-act danger";
+      del.textContent = t("deleteComment");
+      del.addEventListener("click", () => deleteCommentUI(node.id, el, text, actions));
+      actions.append(del);
+    }
+    main.append(actions);
+  }
+
+  // Odpowiedzi (jeden poziom).
+  if (node.replies && node.replies.length) {
+    const rep = document.createElement("div");
+    rep.className = "comment-replies";
+    for (const child of node.replies) rep.append(commentEl(child, reviewId, true));
+    main.append(rep);
+  }
+
+  el.append(av, main);
+  return el;
+}
+
+/**
+ * Formularz dodawania komentarza/odpowiedzi. parentId=null → nowy komentarz pod
+ * recenzją; inaczej odpowiedź. Po wysłaniu dopina świeży węzeł bez przeładowania
+ * całej listy. `body` podajemy tylko dla komentarzy najwyższego poziomu (dopina
+ * do listy); dla odpowiedzi węzeł ląduje w kontenerze odpowiedzi komentarza.
+ */
+function commentForm(reviewId, parentId, body, replyBtn) {
+  const form = document.createElement("form");
+  form.className = "comment-form";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.maxLength = 1000;
+  input.placeholder = parentId ? t("replyPlaceholder") : t("commentPlaceholder");
+  const send = document.createElement("button");
+  send.type = "submit";
+  send.textContent = parentId ? t("reply") : t("addComment");
+  form.append(input, send);
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    send.disabled = true;
+    try {
+      const node = await api(`/reviews/${reviewId}/comments`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text, parentId: parentId ?? undefined }),
+      });
+      if (parentId) {
+        // Odpowiedź: dopnij do kontenera odpowiedzi rodzica (utwórz, jeśli brak).
+        const main = form.parentElement;
+        let rep = main.querySelector(":scope > .comment-replies");
+        if (!rep) {
+          rep = document.createElement("div");
+          rep.className = "comment-replies";
+          main.append(rep);
+        }
+        rep.append(commentEl(node, reviewId, true));
+        form.remove();
+        if (replyBtn) replyBtn.blur();
+      } else {
+        // Komentarz najwyższego poziomu: usuń „brak komentarzy" i dopnij na koniec.
+        const list = body.querySelector(".comment-list");
+        const empty = list.querySelector(".muted");
+        if (empty) empty.remove();
+        list.append(commentEl(node, reviewId));
+        input.value = "";
+      }
+    } catch (err) {
+      toast(err.message);
+    } finally {
+      send.disabled = false;
+    }
+  });
+  setTimeout(() => input.focus(), 0);
+  return form;
+}
+
+/** Usuwa własny komentarz — zamienia treść na „usunięty", zdejmuje akcje. */
+async function deleteCommentUI(id, el, textEl, actions) {
+  try {
+    await api(`/me/comment/${id}`, { method: "DELETE" });
+    textEl.textContent = t("commentDeleted");
+    textEl.classList.add("deleted");
+    actions.remove();
+  } catch (e) {
+    toast(e.message);
   }
 }
 
@@ -3294,6 +3591,27 @@ async function init() {
         });
       }
       setFollowBtn(!on);
+    } catch (e) {
+      toast(e.message);
+    }
+  });
+  $("blockProfileBtn").addEventListener("click", async () => {
+    if (!viewingUserId) return;
+    const blocked = $("blockProfileBtn").classList.contains("active");
+    if (!blocked && !confirm(t("blockConfirm"))) return;
+    try {
+      await api(`/me/block/${viewingUserId}`, {
+        method: blocked ? "DELETE" : "POST",
+      });
+      if (blocked) {
+        // Po odblokowaniu wracają zwykłe akcje; stan obserwacji odświeży wejście na profil.
+        setBlockBtn(false);
+        $("followProfileBtn").classList.remove("hidden");
+      } else {
+        // Zablokowanie zerwało obserwację — odśwież profil, żeby liczniki się zgadzały.
+        setBlockBtn(true);
+        setFollowBtn(false);
+      }
     } catch (e) {
       toast(e.message);
     }

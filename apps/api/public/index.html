@@ -290,6 +290,13 @@
                     >
                       💬 Napisz
                     </button>
+                    <button
+                      id="blockProfileBtn"
+                      class="follow-btn ghost danger hidden"
+                      type="button"
+                    >
+                      Zablokuj
+                    </button>
                   </div>
                   <div id="profileCounts" class="profile-counts"></div>
                 </div>
@@ -424,6 +431,11 @@
               Wyślij testowe
             </button>
             <p id="pushHint" class="muted small"></p>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-label" data-i18n="blockedList">Zablokowani</div>
+            <div id="blockedList" class="blocked-list"></div>
           </div>
 
           <button id="logout" class="logout-btn" type="button" data-i18n="logout">

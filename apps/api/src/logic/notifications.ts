@@ -4,8 +4,10 @@
  *  - "like"            — ktoś polubił Twoją recenzję
  *  - "watchlist_rated" — obserwowany ocenił tytuł z Twojej listy „do obejrzenia"
  *  - "premiere"        — tytuł z Twojej listy „do obejrzenia" właśnie wyszedł
- * Powiadomienia tworzą hooki przy follow/reakcji/ocenie (nie ufamy frontowi);
- * premiery dorzuca nocny przebieg crona (patrz `premieres.ts`).
+ *  - "comment"         — ktoś skomentował Twoją recenzję
+ *  - "reply"           — ktoś odpowiedział na Twój komentarz
+ * Powiadomienia tworzą hooki przy follow/reakcji/ocenie/komentarzu (nie ufamy
+ * frontowi); premiery dorzuca nocny przebieg crona (patrz `premieres.ts`).
  */
 import { prisma } from "../db.js";
 
@@ -68,6 +70,26 @@ export async function notifyWatchlistWatchers(raterId: number, mediaId: number) 
  */
 export function notifyPremiere(userId: number, mediaId: number) {
   return create(userId, null, "premiere", { mediaId });
+}
+
+/** Komentarz pod recenzją → powiadomienie dla autora recenzji. */
+export function notifyComment(
+  reviewOwnerId: number,
+  actorId: number,
+  reviewId: number,
+  mediaId: number,
+) {
+  return create(reviewOwnerId, actorId, "comment", { reviewId, mediaId });
+}
+
+/** Odpowiedź na komentarz → powiadomienie dla autora komentarza nadrzędnego. */
+export function notifyReply(
+  parentAuthorId: number,
+  actorId: number,
+  reviewId: number,
+  mediaId: number,
+) {
+  return create(parentAuthorId, actorId, "reply", { reviewId, mediaId });
 }
 
 /** Lista powiadomień odbiorcy (najnowsze pierwsze) z danymi sprawcy i tytułu. */

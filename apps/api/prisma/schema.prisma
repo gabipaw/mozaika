@@ -43,12 +43,53 @@ model User {
   messageReactions MessageReaction[]
   notifications    Notification[] @relation("notifRecipient") // powiadomienia dla mnie
   actedNotifs      Notification[] @relation("notifActor") // powiadomienia, które wywołałem
+  reviewComments   ReviewComment[] // moje komentarze pod recenzjami
+  blocking         Block[]        @relation("blocker") // kogo ja zablokowałem
+  blockedBy        Block[]        @relation("blocked") // kto zablokował mnie
+}
+
+/// Blokada: `blocker` nie chce mieć nic wspólnego z `blocked`. Blokada jest
+/// jednokierunkowa w zapisie, ale skutki liczymy obustronnie (patrz isBlocked):
+/// zrywa wzajemną obserwację (koniec czatu) i odbiera prawo do komentowania.
+model Block {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  blocker   User @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockerId Int
+  blocked   User @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  blockedId Int
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+/// Komentarz pod recenzją. `parentId != null` = odpowiedź na inny komentarz
+/// (jeden poziom zagnieżdżenia — odpowiedzi lecą pod komentarzem nadrzędnym).
+/// Usunięcie miękkie (deletedAt), żeby odpowiedzi pod usuniętym nie znikały.
+model ReviewComment {
+  id        Int       @id @default(autoincrement())
+  text      String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   Int
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId Int
+
+  parent   ReviewComment?  @relation("replies", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId Int?
+  replies  ReviewComment[] @relation("replies")
+
+  @@index([reviewId])
+  @@index([parentId])
 }
 
 /// Powiadomienie w centrum powiadomień (follow / polubienie recenzji / ocena z listy).
 model Notification {
   id        Int       @id @default(autoincrement())
-  type      String // "follow" | "like" | "watchlist_rated" | "premiere"
+  type      String // "follow" | "like" | "watchlist_rated" | "premiere" | "comment" | "reply"
   createdAt DateTime  @default(now())
   readAt    DateTime?
   reviewId  Int? // dla type=like (bez FK — recenzja bywa usuwana, powiadomienie zostaje)
@@ -167,6 +208,7 @@ model Review {
   mediaId Int
 
   reactions ReviewReaction[]
+  comments  ReviewComment[]
 
   // Jeden użytkownik = jedna ocena danego tytułu.
   @@unique([userId, mediaId])
