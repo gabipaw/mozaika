@@ -1693,6 +1693,10 @@ async function loadThread(forceScroll = false) {
   if (!chatWithId) return;
   const box = $("chatMessages");
   const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  // Zapamiętujemy pozycję: po przebudowie listy (innerHTML="") mobilne silniki
+  // zerują scroll do 0 = na samą górę. Gdy user czyta starsze (nie jest na dole),
+  // przywracamy jego miejsce zamiast wyrzucać go na górę przy każdym pollingu.
+  const prevScrollTop = box.scrollTop;
   let msgs;
   try {
     msgs = await api(`/me/messages/${chatWithId}`);
@@ -1828,6 +1832,7 @@ async function loadThread(forceScroll = false) {
     });
   }
   if (forceScroll || atBottom) scrollChatToBottom();
+  else box.scrollTop = prevScrollTop; // czytającego starsze zostawiamy tam, gdzie był
   refreshMsgBadge(); // przeczytanie zmniejsza licznik
 }
 
@@ -3172,18 +3177,20 @@ async function submitAuth(ev) {
 function watchKeyboard() {
   const vv = window.visualViewport;
   if (!vv) return; // brak wsparcia (stare przeglądarki) — pasek po prostu zostaje
+  let kbdOpen = false;
   const apply = () => {
     // Klawiatura zjada zwykle 250–350px. 150px to próg z zapasem, powyżej pasków
     // adresu, które też potrafią lekko zmienić wysokość widoku.
-    const klawiatura = window.innerHeight - vv.height > 150;
-    document.body.classList.toggle("keyboard-open", klawiatura);
-    // Klawiatura skraca widok, ale scrollTop zostaje — bez tego wyjscie klawiatury
-    // zostawialoby watek nad dolem (o jej wysokosc) i najnowsza wiadomosc znikala.
-    // Wracamy na dol tylko, gdy user tam byl — czytajacego starsze nie wyrywamy.
-    if (chatWithId !== null && chatAtBottom) {
-      // Po zmianie klasy layout przelicza sie dopiero w kolejnej klatce.
-      requestAnimationFrame(scrollChatToBottom);
+    const teraz = window.innerHeight - vv.height > 150;
+    document.body.classList.toggle("keyboard-open", teraz);
+    // Na dół przewijamy TYLKO w momencie OTWARCIA klawiatury (zamknięta→otwarta).
+    // Wcześniej leciało to na każdą zmianę visualViewport — a ta na telefonie
+    // zmienia się bez przerwy (pasek adresu, pasek podpowiedzi), przez co widok
+    // szarpał w kółko. I tylko, gdy user był na dole — czytającego starsze nie ruszamy.
+    if (teraz && !kbdOpen && chatWithId !== null && chatAtBottom) {
+      requestAnimationFrame(scrollChatToBottom); // layout po zmianie klasy — w kolejnej klatce
     }
+    kbdOpen = teraz;
   };
   vv.addEventListener("resize", apply);
   apply();
