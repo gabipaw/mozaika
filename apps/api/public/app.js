@@ -3766,9 +3766,6 @@ async function init() {
   $("pushToggle").addEventListener("click", togglePush);
   $("pushTest").addEventListener("click", testPush);
   $("settingsClose").addEventListener("click", closeSettings);
-  $("settingsOverlay").addEventListener("click", (e) => {
-    if (e.target === $("settingsOverlay")) closeSettings();
-  });
   wireAccountSettings();
   wireAccordion();
   $("friendsBtn").addEventListener("click", openFriends);

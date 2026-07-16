@@ -2578,6 +2578,12 @@ h2 {
   max-width: 340px;
 }
 
+/* Ustawienia jako pełna strona (page-view) — węższa kolumna niż domyślne 900px
+   strony Znajomi, żeby lista sekcji była czytelna, nie rozjechana na całą szerokość. */
+.settings-inner {
+  max-width: 560px;
+}
+
 /* „Wyloguj" w Ustawieniach — akcja odsunięta od reszty i wyraźnie odróżniona
    od przycisków wyboru języka. */
 .logout-btn {
