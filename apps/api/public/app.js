@@ -1564,6 +1564,9 @@ function closePeople() {
 let chatWithId = null; // z kim mamy otwartą rozmowę (null = widok listy)
 let chatWithUser = null; // pełny obiekt rozmówcy {id, displayName, avatarUrl} — do awatara
 let chatPollTimer = null; // odświeżanie otwartej rozmowy co kilka sekund
+// Czy wątek jest przewinięty na sam dół. Trzymamy to na bieżąco, bo gdy klawiatura
+// skurczy widok, jest już za późno, żeby to policzyć — clientHeight zdążył się zmienić.
+let chatAtBottom = true;
 let typingPollTimer = null; // sprawdzanie „czy rozmówca pisze"
 let typingDotsTimer = null; // animacja kropek 0→1→2→3→0
 let lastTypingPing = 0; // throttle pingów „piszę" (ms)
@@ -1675,6 +1678,13 @@ async function openChat(user) {
   await loadThread(true);
   $("chatText").focus();
   startChatPoll();
+}
+
+/** Przewija wątek na sam dół i zapamiętuje, że tam jesteśmy. */
+function scrollChatToBottom() {
+  const box = $("chatMessages");
+  box.scrollTop = box.scrollHeight;
+  chatAtBottom = true;
 }
 
 // forceScroll: true = zawsze na dół (otwarcie/wysłanie); false = tylko gdy user
@@ -1817,7 +1827,7 @@ async function loadThread(forceScroll = false) {
       box.append(line);
     });
   }
-  if (forceScroll || atBottom) box.scrollTop = box.scrollHeight;
+  if (forceScroll || atBottom) scrollChatToBottom();
   refreshMsgBadge(); // przeczytanie zmniejsza licznik
 }
 
@@ -3167,6 +3177,13 @@ function watchKeyboard() {
     // adresu, które też potrafią lekko zmienić wysokość widoku.
     const klawiatura = window.innerHeight - vv.height > 150;
     document.body.classList.toggle("keyboard-open", klawiatura);
+    // Klawiatura skraca widok, ale scrollTop zostaje — bez tego wyjscie klawiatury
+    // zostawialoby watek nad dolem (o jej wysokosc) i najnowsza wiadomosc znikala.
+    // Wracamy na dol tylko, gdy user tam byl — czytajacego starsze nie wyrywamy.
+    if (chatWithId !== null && chatAtBottom) {
+      // Po zmianie klasy layout przelicza sie dopiero w kolejnej klatce.
+      requestAnimationFrame(scrollChatToBottom);
+    }
   };
   vv.addEventListener("resize", apply);
   apply();
@@ -3240,6 +3257,11 @@ async function init() {
     loadConversations();
   });
   $("chatForm").addEventListener("submit", sendChat);
+  // Na bieżąco: czy user jest na dole wątku (patrz chatAtBottom / watchKeyboard).
+  $("chatMessages").addEventListener("scroll", () => {
+    const box = $("chatMessages");
+    chatAtBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  });
   $("chatText").addEventListener("input", pingTyping);
   $("chatImageBtn").addEventListener("click", () => $("chatImageFile").click());
   $("chatImageFile").addEventListener("change", onChatImage);
