@@ -722,14 +722,53 @@ async function testPush() {
   }
 }
 
+// Która funkcja wypełnia treść danej sekcji akordeonu (ładowana leniwie —
+// dopiero przy pierwszym rozwinięciu, żeby nie strzelać po API do sekcji,
+// których użytkownik nie otwiera).
+const ACC_RENDER = {
+  account: renderAccountSettings,
+  notifPrefs: renderNotifPrefs,
+  language: renderLangList,
+  blocked: renderBlockedList,
+  about: renderAbout,
+  push: () => {}, // treść push jest statyczna; widoczność sekcji robi renderPushSettings
+};
+let accLoaded = new Set();
+
 function openSettings() {
-  renderLangList();
-  renderPushSettings();
-  renderBlockedList();
-  renderAccountSettings();
-  renderNotifPrefs();
-  renderAbout();
+  // Świeże otwarcie: zwiń wszystkie sekcje i wyczyść pamięć „co już wczytane".
+  accLoaded = new Set();
+  for (const b of document.querySelectorAll(".acc-body")) b.classList.add("hidden");
+  for (const h of document.querySelectorAll(".acc-head")) h.classList.remove("open");
+  renderPushSettings(); // decyduje, czy sekcja push w ogóle się pokazuje
   $("settingsOverlay").classList.remove("hidden");
+}
+
+// Rozwija/zwija sekcję. Single-open: otwarcie jednej zamyka pozostałe.
+async function toggleAcc(head) {
+  const body = head.parentElement.querySelector(".acc-body");
+  const opening = body.classList.contains("hidden");
+  for (const b of document.querySelectorAll(".acc-body")) {
+    if (b !== body) b.classList.add("hidden");
+  }
+  for (const h of document.querySelectorAll(".acc-head")) {
+    if (h !== head) h.classList.remove("open");
+  }
+  body.classList.toggle("hidden", !opening);
+  head.classList.toggle("open", opening);
+  if (opening) {
+    const key = head.dataset.acc;
+    if (!accLoaded.has(key)) {
+      accLoaded.add(key);
+      await ACC_RENDER[key]?.();
+    }
+  }
+}
+
+function wireAccordion() {
+  for (const head of document.querySelectorAll(".acc-head")) {
+    head.addEventListener("click", () => toggleAcc(head));
+  }
 }
 
 // Wypełnia pole nazwy bieżącą wartością i chowa (zwinięty) formularz hasła.
@@ -3731,6 +3770,7 @@ async function init() {
     if (e.target === $("settingsOverlay")) closeSettings();
   });
   wireAccountSettings();
+  wireAccordion();
   $("friendsBtn").addEventListener("click", openFriends);
   $("feedMore").addEventListener("click", toggleFeed);
   $("commentsMore").addEventListener("click", toggleComments);

@@ -412,70 +412,106 @@
               ✕ Zamknij
             </button>
           </div>
-          <!-- Konto: nazwa wyświetlana + zmiana hasła -->
-          <div class="settings-group">
-            <div class="settings-label" data-i18n="account">Konto</div>
-            <form id="nameForm" class="settings-form">
-              <input id="nameInput" type="text" maxlength="40" autocomplete="off" />
-              <button type="submit" data-i18n="save">Zapisz</button>
-            </form>
-            <button id="pwToggle" class="linkbtn" type="button" data-i18n="changePw">
-              Zmień hasło
-            </button>
-            <form id="pwForm" class="settings-form col hidden">
-              <input
-                id="pwCurrent"
-                type="password"
-                autocomplete="current-password"
-                data-i18n-ph="currentPw"
-                placeholder="Obecne hasło"
-              />
-              <input
-                id="pwNew"
-                type="password"
-                autocomplete="new-password"
-                data-i18n-ph="newPw"
-                placeholder="Nowe hasło"
-              />
-              <button type="submit" data-i18n="savePw">Zmień hasło</button>
-            </form>
-          </div>
+          <!-- Ustawienia jako rozwijane sekcje (akordeon): klik nagłówka rozwija
+               jedną sekcję, reszta się zwija. -->
+          <div class="settings-acc">
+            <!-- Konto -->
+            <div class="acc-item">
+              <button class="acc-head" type="button" data-acc="account">
+                <span data-i18n="account">Konto</span><span class="acc-chevron">›</span>
+              </button>
+              <div class="acc-body hidden">
+                <form id="nameForm" class="settings-form">
+                  <input id="nameInput" type="text" maxlength="40" autocomplete="off" />
+                  <button type="submit" data-i18n="save">Zapisz</button>
+                </form>
+                <button id="pwToggle" class="linkbtn" type="button" data-i18n="changePw">
+                  Zmień hasło
+                </button>
+                <form id="pwForm" class="settings-form col hidden">
+                  <input
+                    id="pwCurrent"
+                    type="password"
+                    autocomplete="current-password"
+                    data-i18n-ph="currentPw"
+                    placeholder="Obecne hasło"
+                  />
+                  <input
+                    id="pwNew"
+                    type="password"
+                    autocomplete="new-password"
+                    data-i18n-ph="newPw"
+                    placeholder="Nowe hasło"
+                  />
+                  <button type="submit" data-i18n="savePw">Zmień hasło</button>
+                </form>
+              </div>
+            </div>
 
-          <div class="settings-group">
-            <div class="settings-label" data-i18n="language">Język</div>
-            <div id="langList" class="lang-list"></div>
-          </div>
+            <!-- Powiadomienia w aplikacji -->
+            <div class="acc-item">
+              <button class="acc-head" type="button" data-acc="notifPrefs">
+                <span data-i18n="notifPrefs">Powiadomienia w aplikacji</span
+                ><span class="acc-chevron">›</span>
+              </button>
+              <div class="acc-body hidden">
+                <div id="notifPrefs" class="notif-prefs"></div>
+              </div>
+            </div>
 
-          <!-- Które powiadomienia w aplikacji chcę dostawać -->
-          <div class="settings-group">
-            <div class="settings-label" data-i18n="notifPrefs">Powiadomienia w aplikacji</div>
-            <div id="notifPrefs" class="notif-prefs"></div>
-          </div>
+            <!-- Powiadomienia push (nagłówek chowany, gdy brak wsparcia) -->
+            <div class="acc-item hidden" id="pushGroup">
+              <button class="acc-head" type="button" data-acc="push">
+                <span data-i18n="pushLabel">Powiadomienia push</span
+                ><span class="acc-chevron">›</span>
+              </button>
+              <div class="acc-body hidden">
+                <button id="pushToggle" class="lang-btn" type="button">
+                  Włącz powiadomienia na telefon
+                </button>
+                <button
+                  id="pushTest"
+                  class="linkbtn push-test hidden"
+                  type="button"
+                  data-i18n="pushTest"
+                >
+                  Wyślij testowe
+                </button>
+                <p id="pushHint" class="muted small"></p>
+              </div>
+            </div>
 
-          <div class="settings-group hidden" id="pushGroup">
-            <div class="settings-label" data-i18n="pushLabel">Powiadomienia push</div>
-            <button id="pushToggle" class="lang-btn" type="button">
-              Włącz powiadomienia na telefon
-            </button>
-            <button
-              id="pushTest"
-              class="linkbtn push-test hidden"
-              type="button"
-              data-i18n="pushTest"
-            >
-              Wyślij testowe
-            </button>
-            <p id="pushHint" class="muted small"></p>
-          </div>
+            <!-- Język -->
+            <div class="acc-item">
+              <button class="acc-head" type="button" data-acc="language">
+                <span data-i18n="language">Język</span><span class="acc-chevron">›</span>
+              </button>
+              <div class="acc-body hidden">
+                <div id="langList" class="lang-list"></div>
+              </div>
+            </div>
 
-          <div class="settings-group">
-            <div class="settings-label" data-i18n="blockedList">Zablokowani</div>
-            <div id="blockedList" class="blocked-list"></div>
-          </div>
+            <!-- Zablokowani -->
+            <div class="acc-item">
+              <button class="acc-head" type="button" data-acc="blocked">
+                <span data-i18n="blockedList">Zablokowani</span
+                ><span class="acc-chevron">›</span>
+              </button>
+              <div class="acc-body hidden">
+                <div id="blockedList" class="blocked-list"></div>
+              </div>
+            </div>
 
-          <div class="settings-group">
-            <div class="settings-label" data-i18n="about">O aplikacji</div>
-            <p id="aboutVersion" class="muted small"></p>
+            <!-- O aplikacji -->
+            <div class="acc-item">
+              <button class="acc-head" type="button" data-acc="about">
+                <span data-i18n="about">O aplikacji</span
+                ><span class="acc-chevron">›</span>
+              </button>
+              <div class="acc-body hidden">
+                <p id="aboutVersion" class="muted small"></p>
+              </div>
+            </div>
           </div>
 
           <button id="logout" class="logout-btn" type="button" data-i18n="logout">
@@ -484,7 +520,12 @@
 
           <!-- Strefa nieodwracalna -->
           <div class="settings-group danger-zone">
-            <button id="deleteAccountBtn" class="danger-btn" type="button" data-i18n="deleteAccount">
+            <button
+              id="deleteAccountBtn"
+              class="danger-btn"
+              type="button"
+              data-i18n="deleteAccount"
+            >
               Usuń konto
             </button>
           </div>

@@ -2608,6 +2608,47 @@ h2 {
   margin-bottom: 18px;
 }
 
+/* Akordeon ustawień — rozwijane sekcje. */
+.settings-acc {
+  margin-bottom: 16px;
+  border-top: 1px solid var(--line);
+}
+.acc-item {
+  border-bottom: 1px solid var(--line);
+}
+.acc-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  padding: 14px 2px;
+  cursor: pointer;
+}
+.acc-head:hover {
+  color: var(--accent);
+}
+.acc-chevron {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.acc-head.open .acc-chevron {
+  transform: rotate(90deg);
+  color: var(--accent);
+}
+.acc-body {
+  padding: 2px 2px 16px;
+}
+
 /* Formularze konta: nazwa (rząd), hasło (kolumna). */
 .settings-form {
   display: flex;
