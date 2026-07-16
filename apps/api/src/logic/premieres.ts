@@ -17,6 +17,7 @@ import { MediaType, type Media } from "@prisma/client";
 import { prisma } from "../db.js";
 import { aniListReleaseDate } from "./anilist.js";
 import { gameReleaseDate } from "./games.js";
+import { notifyPremiere } from "./notifications.js";
 import { sendPushToUser } from "./push.js";
 import { tmdbReleaseDate } from "./tmdb.js";
 
@@ -148,6 +149,9 @@ export async function checkPremieres(now: Date = new Date()): Promise<PremiereRu
     if (!m?.releaseDate || m.releaseDate > now) continue; // data nieznana albo jeszcze przed premierą
 
     if (shouldAnnounce(it.createdAt, m.releaseDate, now)) {
+      // Wpis w centrum powiadomień leci ZAWSZE — push bywa niedostępny (brak zgody,
+      // wyłączony telefon), a bez śladu w aplikacji premiera przepadałaby bezpowrotnie.
+      await notifyPremiere(it.userId, it.mediaId);
       await sendPushToUser(it.userId, {
         title: "🍿 Premiera!",
         body: `„${m.title}" jest już dostępne — masz to na liście do obejrzenia.`,

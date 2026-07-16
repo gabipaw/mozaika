@@ -139,6 +139,7 @@ const I18N = {
     notifFollowed: "zaczął(-ęła) Cię obserwować",
     notifLiked: "polubił(-a) Twoją recenzję",
     notifRated: "ocenił(-a) tytuł z Twojej listy",
+    notifPremiere: "jest już dostępne — masz to na liście do obejrzenia",
     noNotif: "Brak powiadomień. Gdy ktoś Cię zaobserwuje, pojawi się tu.",
     counts: "{fo} obserwujących · {fw} obserwowanych",
     followersLink: "{n} obserwujących",
@@ -343,6 +344,7 @@ const I18N = {
     notifFollowed: "started following you",
     notifLiked: "liked your review",
     notifRated: "rated a title from your watchlist",
+    notifPremiere: "is out now — it's on your watchlist",
     noNotif: "No notifications. When someone follows you, it'll show up here.",
     counts: "{fo} followers · {fw} following",
     followersLink: "{n} followers",
@@ -1402,7 +1404,26 @@ function updateNotifBadge() {
 function notifVerb(type) {
   if (type === "like") return t("notifLiked");
   if (type === "watchlist_rated") return t("notifRated");
+  if (type === "premiere") return t("notifPremiere");
   return t("notifFollowed");
+}
+
+/**
+ * Ikonka premiery — plakat tytułu, a gdy go brak, 🍿. Powiadomienie o premierze
+ * nie ma sprawcy (przychodzi od systemu), więc nie ma tu czyjego awatara pokazać.
+ */
+function premiereIconEl(media) {
+  const el = document.createElement("div");
+  el.className = "feed-avatar";
+  if (media?.posterUrl) {
+    const img = document.createElement("img");
+    img.src = media.posterUrl;
+    img.alt = "";
+    el.append(img);
+  } else {
+    el.textContent = "🍿";
+  }
+  return el;
 }
 
 function renderNotifList() {
@@ -1413,16 +1434,22 @@ function renderNotifList() {
     return;
   }
   for (const n of notifCache) {
-    const toMedia = n.media && (n.type === "like" || n.type === "watchlist_rated");
+    // Premiera nie ma sprawcy — prowadzi do tytułu i zaczyna się od jego nazwy.
+    const isPremiere = n.type === "premiere";
+    // Usunięty tytuł zeruje mediaId (SetNull). Premiera bez tytułu i bez sprawcy nie
+    // ma czego pokazać, więc ją pomijamy zamiast rysować pusty wiersz.
+    if (isPremiere && !n.media) continue;
+    const toMedia =
+      n.media && (isPremiere || n.type === "like" || n.type === "watchlist_rated");
     const row = document.createElement("div");
     row.className = "friend-row notif-row";
     if (!n.readAt) row.classList.add("new");
-    const av = avatarEl(n.actor);
+    const av = isPremiere ? premiereIconEl(n.media) : avatarEl(n.actor);
     av.style.cursor = "pointer";
     const go = () => {
       closeNotif();
       if (toMedia) openDetail(toDetail(n.media, n.media.type, n.media.id));
-      else openUserProfile(n.actor.id);
+      else if (n.actor) openUserProfile(n.actor.id);
     };
     av.addEventListener("click", go);
     const body = document.createElement("div");
@@ -1430,9 +1457,9 @@ function renderNotifList() {
     const txt = document.createElement("span");
     txt.className = "friend-link";
     const b = document.createElement("b");
-    b.textContent = n.actor.displayName;
+    b.textContent = isPremiere ? `„${n.media.title}”` : n.actor.displayName;
     txt.append(b, ` ${notifVerb(n.type)}`);
-    if (toMedia) txt.append(`: „${n.media.title}”`);
+    if (toMedia && !isPremiere) txt.append(`: „${n.media.title}”`);
     txt.addEventListener("click", go);
     const time = document.createElement("span");
     time.className = "notif-time muted small";

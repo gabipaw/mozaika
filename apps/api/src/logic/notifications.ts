@@ -3,14 +3,19 @@
  *  - "follow"          — ktoś Cię zaobserwował
  *  - "like"            — ktoś polubił Twoją recenzję
  *  - "watchlist_rated" — obserwowany ocenił tytuł z Twojej listy „do obejrzenia"
- * Powiadomienia tworzą hooki przy follow/reakcji/ocenie (nie ufamy frontowi).
+ *  - "premiere"        — tytuł z Twojej listy „do obejrzenia" właśnie wyszedł
+ * Powiadomienia tworzą hooki przy follow/reakcji/ocenie (nie ufamy frontowi);
+ * premiery dorzuca nocny przebieg crona (patrz `premieres.ts`).
  */
 import { prisma } from "../db.js";
 
-/** Tworzy powiadomienie (pomija, gdy odbiorca = sprawca — nie powiadamiamy siebie). */
+/**
+ * Tworzy powiadomienie (pomija, gdy odbiorca = sprawca — nie powiadamiamy siebie).
+ * `actorId === null` oznacza powiadomienie systemowe, bez sprawcy (premiera).
+ */
 async function create(
   userId: number,
-  actorId: number,
+  actorId: number | null,
   type: string,
   extra: { mediaId?: number; reviewId?: number } = {},
 ) {
@@ -55,6 +60,14 @@ export async function notifyWatchlistWatchers(raterId: number, mediaId: number) 
   await Promise.all(
     watchers.map((w) => create(w.userId, raterId, "watchlist_rated", { mediaId })),
   );
+}
+
+/**
+ * Premiera tytułu z listy „do obejrzenia" → powiadomienie dla właściciela listy.
+ * Bez sprawcy: to system zauważył premierę, nie żaden użytkownik.
+ */
+export function notifyPremiere(userId: number, mediaId: number) {
+  return create(userId, null, "premiere", { mediaId });
 }
 
 /** Lista powiadomień odbiorcy (najnowsze pierwsze) z danymi sprawcy i tytułu. */

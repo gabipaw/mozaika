@@ -48,15 +48,15 @@ model User {
 /// Powiadomienie w centrum powiadomień (follow / polubienie recenzji / ocena z listy).
 model Notification {
   id        Int       @id @default(autoincrement())
-  type      String // "follow" | "like" | "watchlist_rated"
+  type      String // "follow" | "like" | "watchlist_rated" | "premiere"
   createdAt DateTime  @default(now())
   readAt    DateTime?
   reviewId  Int? // dla type=like (bez FK — recenzja bywa usuwana, powiadomienie zostaje)
 
   user    User @relation("notifRecipient", fields: [userId], references: [id], onDelete: Cascade)
   userId  Int // odbiorca
-  actor   User @relation("notifActor", fields: [actorId], references: [id], onDelete: Cascade)
-  actorId Int // kto wywołał
+  actor   User? @relation("notifActor", fields: [actorId], references: [id], onDelete: Cascade)
+  actorId Int? // kto wywołał; null = powiadomienie systemowe (premiera)
   media   Media? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
   mediaId Int?
 
