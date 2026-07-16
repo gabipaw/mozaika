@@ -563,6 +563,16 @@ h2 {
     padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
   }
 
+  /* Klawiatura otwarta (klasę ustawia watchKeyboard): pasek nawigacji schodzi z
+     drogi, a pole pisania odzyskuje jego miejsce i siada tuż nad klawiaturą.
+     Pasek wraca sam, gdy tylko klawiatura się schowa. */
+  body.keyboard-open .bottom-nav {
+    display: none;
+  }
+  body.keyboard-open #chatOverlay .chat-card {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
   /* Profil na telefonie: awatar jako KÓŁKO na środku u góry, imię/liczniki pod.
      Prefiks #profileView podbija specyficzność (bazowe .profile-head/.profile-id
      są NIŻEJ w pliku i inaczej by wygrały). */

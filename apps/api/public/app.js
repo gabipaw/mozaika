@@ -3151,6 +3151,27 @@ async function submitAuth(ev) {
   }
 }
 
+/**
+ * Chowa dolny pasek nawigacji na czas, gdy klawiatura telefonu jest otwarta —
+ * inaczej wisi nad nią i zabiera miejsce polu pisania (patrz .keyboard-open).
+ *
+ * Klawiaturę wykrywamy przez visualViewport, a nie przez focus/blur pola: dotknięcie
+ * „Wyślij" zabiera focus polu, więc na focus/blur pasek mrugałby przy każdym wysłaniu.
+ * visualViewport mówi wprost, ile ekranu realnie widać.
+ */
+function watchKeyboard() {
+  const vv = window.visualViewport;
+  if (!vv) return; // brak wsparcia (stare przeglądarki) — pasek po prostu zostaje
+  const apply = () => {
+    // Klawiatura zjada zwykle 250–350px. 150px to próg z zapasem, powyżej pasków
+    // adresu, które też potrafią lekko zmienić wysokość widoku.
+    const klawiatura = window.innerHeight - vv.height > 150;
+    document.body.classList.toggle("keyboard-open", klawiatura);
+  };
+  vv.addEventListener("resize", apply);
+  apply();
+}
+
 async function init() {
   $("switchBtn").addEventListener("click", () =>
     setAuthMode(authMode === "login" ? "register" : "login"),
@@ -3205,6 +3226,7 @@ async function init() {
   $("notifOverlay").addEventListener("click", (e) => {
     if (e.target === $("notifOverlay")) closeNotif();
   });
+  watchKeyboard();
   // Dolny pasek nawigacji (telefon)
   $("navHome").addEventListener("click", goHome);
   $("navMsg").addEventListener("click", openMessages);
