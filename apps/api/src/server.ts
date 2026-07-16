@@ -22,6 +22,13 @@ import { login, register } from "./logic/auth.js";
 import { rateLimit, rateLimitReset } from "./logic/rateLimit.js";
 import { blockUser, unblockUser, listBlocked } from "./logic/blocks.js";
 import { listComments, addComment, deleteComment } from "./logic/comments.js";
+import {
+  updateDisplayName,
+  changePassword,
+  getNotifPrefs,
+  setNotifPrefs,
+  deleteAccount,
+} from "./logic/account.js";
 import { addBookFromOpenLibrary, searchBooks } from "./logic/books.js";
 import { getDescription, getTrailer } from "./logic/details.js";
 import { addGameFromRawg, searchGames } from "./logic/games.js";
@@ -111,6 +118,10 @@ async function userIdFromHeader(c: Context<Vars>): Promise<number | null> {
 const requireAuth: MiddlewareHandler<Vars> = async (c, next) => {
   const userId = await userIdFromHeader(c);
   if (userId === null) return c.json({ error: "Wymagane logowanie." }, 401);
+  // Token bywa ważny kryptograficznie, ale konto mogło zniknąć (usunięte). Bez tej
+  // kontroli martwy token dawał 500 (zapytania po nieistniejącym userze) zamiast 401.
+  const exists = await prisma.user.count({ where: { id: userId } });
+  if (!exists) return c.json({ error: "Wymagane logowanie." }, 401);
   c.set("userId", userId);
   await next();
 };
@@ -158,6 +169,37 @@ api.post("/auth/login", async (c) => {
   const user = await login(await c.req.json());
   rateLimitReset(key); // udane logowanie nie ma karać kolejnych prób
   return c.json({ token: await makeToken(user.id), user });
+});
+
+// --- Ustawienia konta ---
+
+// Zmiana nazwy wyświetlanej.
+api.patch("/me/profile", requireAuth, async (c) => {
+  const body = await c.req.json();
+  return c.json(await updateDisplayName(c.get("userId"), body.displayName));
+});
+
+// Zmiana hasła (wymaga podania obecnego).
+api.post("/me/password", requireAuth, async (c) => {
+  const body = await c.req.json();
+  return c.json(
+    await changePassword(c.get("userId"), body.currentPassword, body.newPassword),
+  );
+});
+
+// Preferencje powiadomień: które typy są wyciszone.
+api.get("/me/notif-prefs", requireAuth, async (c) =>
+  c.json(await getNotifPrefs(c.get("userId"))),
+);
+api.patch("/me/notif-prefs", requireAuth, async (c) => {
+  const body = await c.req.json();
+  return c.json(await setNotifPrefs(c.get("userId"), body.muted));
+});
+
+// Trwałe usunięcie własnego konta (potwierdzone hasłem).
+api.delete("/me", requireAuth, async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  return c.json(await deleteAccount(c.get("userId"), body.password));
 });
 
 // Profil zalogowanego użytkownika + jego oceny i statystyki.

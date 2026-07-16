@@ -22,6 +22,12 @@ async function create(
   extra: { mediaId?: number; reviewId?: number } = {},
 ) {
   if (userId === actorId) return;
+  // Odbiorca mógł wyciszyć ten typ w ustawieniach — wtedy nie tworzymy wpisu.
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { mutedNotifs: true },
+  });
+  if (user?.mutedNotifs.includes(type)) return;
   await prisma.notification
     .create({ data: { userId, actorId, type, ...extra } })
     .catch((e) => console.error("notif create nie wyszlo:", e));

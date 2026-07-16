@@ -150,6 +150,32 @@ const I18N = {
     blockConfirm: "Zablokować tę osobę? Zniknie wzajemna obserwacja i czat.",
     blockedList: "Zablokowani",
     noBlocked: "Nie zablokowałeś nikogo.",
+    // Ustawienia — konto
+    account: "Konto",
+    save: "Zapisz",
+    nameSaved: "Nazwa zapisana",
+    changePw: "Zmień hasło",
+    currentPw: "Obecne hasło",
+    newPw: "Nowe hasło (min. 6 znaków)",
+    savePw: "Zmień hasło",
+    pwSaved: "Hasło zmienione",
+    // Ustawienia — preferencje powiadomień
+    notifPrefs: "Powiadomienia w aplikacji",
+    notifPrefsHint: "Wyłącz typy, o których nie chcesz wiedzieć.",
+    ntFollow: "Nowi obserwujący",
+    ntLike: "Polubienia recenzji",
+    ntComment: "Komentarze do recenzji",
+    ntReply: "Odpowiedzi na komentarze",
+    ntWatchlist: "Oceny tytułów z listy",
+    ntPremiere: "Premiery z listy",
+    // Ustawienia — o aplikacji / usuwanie konta
+    about: "O aplikacji",
+    aboutText: "Mozaika — oceniaj wszystko, co oglądasz i czytasz. Wersja {v}.",
+    deleteAccount: "Usuń konto",
+    deleteConfirm:
+      "Na pewno usunąć konto? Tego NIE DA SIĘ cofnąć — znikną Twoje recenzje, wiadomości i obserwacje.",
+    deletePwPrompt: "Podaj hasło, aby potwierdzić usunięcie konta:",
+    accountDeleted: "Konto usunięte.",
     // Komentarze (klucz `comments` już istnieje wyżej — „Komentarze")
     commentPlaceholder: "Napisz komentarz…",
     replyPlaceholder: "Napisz odpowiedź…",
@@ -380,6 +406,32 @@ const I18N = {
     blockConfirm: "Block this person? Mutual follow and chat will be removed.",
     blockedList: "Blocked",
     noBlocked: "You haven't blocked anyone.",
+    // Settings — account
+    account: "Account",
+    save: "Save",
+    nameSaved: "Name saved",
+    changePw: "Change password",
+    currentPw: "Current password",
+    newPw: "New password (min. 6 chars)",
+    savePw: "Change password",
+    pwSaved: "Password changed",
+    // Settings — notification preferences
+    notifPrefs: "In-app notifications",
+    notifPrefsHint: "Turn off the types you don't want to hear about.",
+    ntFollow: "New followers",
+    ntLike: "Review likes",
+    ntComment: "Comments on reviews",
+    ntReply: "Replies to comments",
+    ntWatchlist: "Ratings of watchlisted titles",
+    ntPremiere: "Premieres from your list",
+    // Settings — about / delete account
+    about: "About",
+    aboutText: "Mozaika — rate everything you watch and read. Version {v}.",
+    deleteAccount: "Delete account",
+    deleteConfirm:
+      "Delete your account for good? This CANNOT be undone — your reviews, messages and follows will be gone.",
+    deletePwPrompt: "Enter your password to confirm account deletion:",
+    accountDeleted: "Account deleted.",
     // Comments (`comments` key already defined above — "Comments")
     commentPlaceholder: "Write a comment…",
     replyPlaceholder: "Write a reply…",
@@ -674,7 +726,92 @@ function openSettings() {
   renderLangList();
   renderPushSettings();
   renderBlockedList();
+  renderAccountSettings();
+  renderNotifPrefs();
+  renderAbout();
   $("settingsOverlay").classList.remove("hidden");
+}
+
+// Wypełnia pole nazwy bieżącą wartością i chowa (zwinięty) formularz hasła.
+function renderAccountSettings() {
+  $("nameInput").value = me?.displayName ?? "";
+  $("pwForm").classList.add("hidden");
+  $("pwCurrent").value = "";
+  $("pwNew").value = "";
+}
+
+// Typy powiadomień jako przełączniki. Zaznaczony = dostaję; odznaczony = wyciszony.
+const NOTIF_PREF_TYPES = [
+  { type: "follow", label: "ntFollow" },
+  { type: "like", label: "ntLike" },
+  { type: "comment", label: "ntComment" },
+  { type: "reply", label: "ntReply" },
+  { type: "watchlist_rated", label: "ntWatchlist" },
+  { type: "premiere", label: "ntPremiere" },
+];
+
+async function renderNotifPrefs() {
+  const box = $("notifPrefs");
+  box.innerHTML = `<p class="muted small">…</p>`;
+  let muted;
+  try {
+    muted = (await api("/me/notif-prefs")).muted ?? [];
+  } catch {
+    box.innerHTML = "";
+    return;
+  }
+  box.innerHTML = `<p class="muted small pref-hint">${t("notifPrefsHint")}</p>`;
+  for (const { type, label } of NOTIF_PREF_TYPES) {
+    const row = document.createElement("label");
+    row.className = "pref-row";
+    const span = document.createElement("span");
+    span.textContent = t(label);
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !muted.includes(type); // zaznaczony = włączony
+    cb.addEventListener("change", () => toggleNotifPref(type, cb));
+    row.append(span, cb);
+    box.append(row);
+  }
+}
+
+// Przełącza jeden typ i zapisuje CAŁĄ listę wyciszonych (serwer = źródło prawdy).
+async function toggleNotifPref(type, cb) {
+  // Pozbieraj wszystkie ODZNACZONE typy w sekcji — to jest lista wyciszonych.
+  const off = [...$("notifPrefs").querySelectorAll(".pref-row")]
+    .map((row, i) => ({
+      type: NOTIF_PREF_TYPES[i].type,
+      on: row.querySelector("input").checked,
+    }))
+    .filter((x) => !x.on)
+    .map((x) => x.type);
+  cb.disabled = true;
+  try {
+    await api("/me/notif-prefs", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ muted: off }),
+    });
+  } catch (e) {
+    toast(e.message);
+    cb.checked = !cb.checked; // cofnij wizualnie, gdy zapis padł
+  } finally {
+    cb.disabled = false;
+  }
+}
+
+// „O aplikacji": numer wersji z /api/health (SHA commita, skrócony).
+async function renderAbout() {
+  const el = $("aboutVersion");
+  let v = "dev";
+  try {
+    const h = await api("/health").catch(() => null);
+    // /api/health nie wymaga auth; api() dokleja token, ale to nie przeszkadza.
+    if (h?.commit) v = h.commit === "dev" ? "dev" : h.commit.slice(0, 7);
+  } catch {
+    /* wersja opcjonalna */
+  }
+  el.textContent = t("aboutText", { v });
 }
 
 // Lista zablokowanych z przyciskiem „Odblokuj" — jedyne miejsce, gdzie da się
@@ -3428,6 +3565,67 @@ function logout() {
   showAuth();
 }
 
+// Podpina formularze konta raz przy starcie (nie przy każdym otwarciu ustawień).
+function wireAccountSettings() {
+  $("nameForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const displayName = $("nameInput").value.trim();
+    try {
+      const res = await api("/me/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ displayName }),
+      });
+      if (me) me.displayName = res.displayName;
+      if (myProfile?.user) myProfile.user.displayName = res.displayName;
+      toast(t("nameSaved"));
+    } catch (err) {
+      toast(err.message);
+    }
+  });
+
+  $("pwToggle").addEventListener("click", () => {
+    $("pwForm").classList.toggle("hidden");
+  });
+
+  $("pwForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/me/password", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: $("pwCurrent").value,
+          newPassword: $("pwNew").value,
+        }),
+      });
+      $("pwCurrent").value = "";
+      $("pwNew").value = "";
+      $("pwForm").classList.add("hidden");
+      toast(t("pwSaved"));
+    } catch (err) {
+      toast(err.message);
+    }
+  });
+
+  $("deleteAccountBtn").addEventListener("click", async () => {
+    if (!confirm(t("deleteConfirm"))) return;
+    // Konto z hasłem musi je podać; puste też wysyłamy (konta demo bez hasła).
+    const password = prompt(t("deletePwPrompt")) ?? "";
+    try {
+      await api("/me", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      toast(t("accountDeleted"));
+      logout();
+    } catch (err) {
+      toast(err.message);
+    }
+  });
+}
+
 function setAuthMode(mode) {
   authMode = mode;
   const login = mode === "login";
@@ -3532,6 +3730,7 @@ async function init() {
   $("settingsOverlay").addEventListener("click", (e) => {
     if (e.target === $("settingsOverlay")) closeSettings();
   });
+  wireAccountSettings();
   $("friendsBtn").addEventListener("click", openFriends);
   $("feedMore").addEventListener("click", toggleFeed);
   $("commentsMore").addEventListener("click", toggleComments);

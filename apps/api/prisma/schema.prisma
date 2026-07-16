@@ -30,6 +30,7 @@ model User {
   displayName  String
   passwordHash String? // scrypt: "salt:hash"; null dla starych kont demo
   avatarUrl    String? // zdjęcie profilowe jako data:image (skompresowane ~256px)
+  mutedNotifs  String[] @default([]) // wyciszone typy powiadomień (np. "like","follow")
   createdAt    DateTime @default(now())
 
   reviews     Review[]
