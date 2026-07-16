@@ -1552,6 +1552,19 @@ function fmtMsgTime(iso) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+// Przerwa w rozmowie, po której wstawiamy nagłówek z czasem (jak na Instagramie —
+// czas nie wisi przy każdej wiadomości, tylko oddziela bloki rozmowy).
+const CHAT_SEP_GAP_MS = 60 * 60 * 1000;
+
+/** Nagłówek bloku: dziś sama godzina, starsze — z datą. */
+function fmtMsgSep(iso) {
+  const d = new Date(iso);
+  const today = new Date().toDateString() === d.toDateString();
+  if (today) return fmtMsgTime(iso);
+  const date = d.toLocaleDateString([], { day: "numeric", month: "short" });
+  return `${date}, ${fmtMsgTime(iso)}`;
+}
+
 function openMessages() {
   closeFriends();
   $("chatOverlay").classList.remove("hidden");
@@ -1658,29 +1671,50 @@ async function loadThread(forceScroll = false) {
     msgs.forEach((m, i) => {
       if (m.senderId !== chatWithId) lastMineIdx = i;
     });
+    const czas = (m) => new Date(m.createdAt).getTime();
     msgs.forEach((m, i) => {
       const mine = m.senderId !== chatWithId;
-      // Awatar/meta tylko na końcu serii wiadomości od tej samej osoby (mniej szumu).
-      const endOfGroup = i === msgs.length - 1 || msgs[i + 1].senderId !== m.senderId;
+      const prev = i > 0 ? msgs[i - 1] : null;
+      const next = i < msgs.length - 1 ? msgs[i + 1] : null;
+      // Dłuższa cisza rozbija rozmowę na bloki — nowy blok zawsze zaczyna serię.
+      const newBlock = !prev || czas(m) - czas(prev) > CHAT_SEP_GAP_MS;
+      const startOfGroup = newBlock || prev.senderId !== m.senderId;
+      const endOfGroup =
+        !next || next.senderId !== m.senderId || czas(next) - czas(m) > CHAT_SEP_GAP_MS;
+
+      // Nagłówek z czasem między blokami (zamiast godziny przy każdej serii).
+      if (newBlock) {
+        const sep = document.createElement("div");
+        sep.className = "chat-sep";
+        sep.textContent = fmtMsgSep(m.createdAt);
+        box.append(sep);
+      }
 
       const line = document.createElement("div");
       line.className = `chat-line ${mine ? "me" : "them"}`;
+      if (startOfGroup) line.classList.add("grp-start");
 
-      // Awatar (albo pusta przestrzeń dla wyrównania w środku serii).
-      if (endOfGroup) {
-        const av = avatarEl(mine ? myProfile.user : chatWithUser);
-        av.classList.add("chat-avatar");
-        line.append(av);
-      } else {
-        const spacer = document.createElement("div");
-        spacer.className = "chat-avatar spacer";
-        line.append(spacer);
+      // Awatar tylko przy rozmówcy i tylko na końcu jego serii — przy moich
+      // wiadomościach go nie ma (wiadomo, że są moje: są po prawej).
+      if (!mine) {
+        if (endOfGroup) {
+          const av = avatarEl(chatWithUser);
+          av.classList.add("chat-avatar");
+          line.append(av);
+        } else {
+          const spacer = document.createElement("div");
+          spacer.className = "chat-avatar spacer";
+          line.append(spacer);
+        }
       }
 
       const col = document.createElement("div");
       col.className = "chat-col";
       const bubble = document.createElement("div");
       bubble.className = `chat-bubble ${mine ? "me" : "them"}`;
+      // Serię wiadomości spinamy wizualnie: stykające się rogi są przycięte.
+      if (startOfGroup) bubble.classList.add("grp-start");
+      if (endOfGroup) bubble.classList.add("grp-end");
       if (m.deletedAt) {
         // „Tombstone" — treść usunięta, pokazujemy kto usunął.
         bubble.classList.add("deleted");
@@ -1723,15 +1757,17 @@ async function loadThread(forceScroll = false) {
         bubble.append(rx); // absolutnie pozycjonowane w rogu dymka
       }
 
-      if (endOfGroup) {
+      // Pod dymkiem zostaje tylko to, co naprawdę wnosi treść: status ostatniej
+      // mojej wiadomości i znacznik edycji. Godzina jest w nagłówku bloku.
+      const edited = m.editedAt && !m.deletedAt;
+      const status = mine && i === lastMineIdx;
+      if (edited || status) {
         const meta = document.createElement("div");
         meta.className = "chat-meta";
-        let txt = fmtMsgTime(m.createdAt);
-        if (m.editedAt && !m.deletedAt) txt += ` · ${t("edited")}`;
-        if (mine && i === lastMineIdx) {
-          txt += ` · ${m.readAt ? `✓✓ ${t("seen")}` : `✓ ${t("sent")}`}`;
-        }
-        meta.textContent = txt;
+        const czesci = [];
+        if (edited) czesci.push(t("edited"));
+        if (status) czesci.push(m.readAt ? t("seen") : t("sent"));
+        meta.textContent = czesci.join(" · ");
         col.append(meta);
       }
 

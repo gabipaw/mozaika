@@ -1494,8 +1494,16 @@ h2 {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 4px 4px 10px;
+  gap: 2px; /* ciasno w obrębie serii; odstęp między seriami daje .grp-start */
+  padding: 4px 8px 10px;
+}
+/* Nagłówek bloku rozmowy — wyśrodkowany czas oddzielający dłuższe przerwy. */
+.chat-sep {
+  align-self: center;
+  margin: 14px 0 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 /* Wiersz: awatar + kolumna z dymkiem. „me" = odwrócony (awatar po prawej). */
 .chat-line {
@@ -1503,6 +1511,13 @@ h2 {
   gap: 8px;
   align-items: flex-end;
   max-width: 82%;
+}
+/* Nowa seria = oddech nad nią. Po nagłówku bloku odstęp jest już w .chat-sep. */
+.chat-line.grp-start {
+  margin-top: 10px;
+}
+.chat-sep + .chat-line.grp-start {
+  margin-top: 0;
 }
 .chat-line.them {
   align-self: flex-start;
@@ -1529,23 +1544,42 @@ h2 {
 .chat-line.me .chat-col {
   align-items: flex-end;
 }
+/* Dymki jak na Instagramie: pigułka bez ogonka, seria spięta przyciętymi rogami. */
 .chat-bubble {
   position: relative; /* kotwica dla reakcji w rogu */
-  padding: 8px 12px;
-  border-radius: 14px;
+  padding: 8px 13px;
+  border-radius: 20px;
   line-height: 1.35;
   word-wrap: break-word;
   overflow-wrap: anywhere;
 }
 .chat-bubble.me {
-  background: var(--accent);
-  color: #05221d;
-  border-bottom-right-radius: 4px;
+  /* Gradient granat→fiolet→magenta — znak rozpoznawczy wiadomości na Instagramie.
+     Na IG gradient płynie przez całą rozmowę; tu liczy się per dymek, bo jedyny
+     sposób na ciągłość (background-attachment: fixed) psuje się na iOS Safari,
+     a to PWA otwierana z telefonu. Zakres jest zawężony, żeby krótkie dymki nie
+     wychodziły całkiem różowe obok długich. */
+  background: linear-gradient(135deg, #5b51d8 0%, #8f3ab4 60%, #b83a95 100%);
+  color: #fff;
 }
 .chat-bubble.them {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-bottom-left-radius: 4px;
+  background: #262631;
+  color: var(--text);
+}
+/* Rogi stykające się z sąsiadem w serii są przycięte — dymki tworzą jeden blok.
+   Tylko w wątku: dymek „pisze…" żyje poza .chat-line i nie należy do żadnej serii,
+   więc bez tego zawężenia dostałby przycięte OBA rogi naraz. */
+.chat-line .chat-bubble.me:not(.grp-start) {
+  border-top-right-radius: 6px;
+}
+.chat-line .chat-bubble.me:not(.grp-end) {
+  border-bottom-right-radius: 6px;
+}
+.chat-line .chat-bubble.them:not(.grp-start) {
+  border-top-left-radius: 6px;
+}
+.chat-line .chat-bubble.them:not(.grp-end) {
+  border-bottom-left-radius: 6px;
 }
 .chat-meta {
   font-size: 0.68rem;
@@ -1665,11 +1699,8 @@ h2 {
   display: flex;
   gap: 3px;
 }
-/* Moja wiadomość: avatar jest po PRAWEJ, więc reakcja siada wewnątrz rogu,
-   żeby nie wchodzić na avatar. Miejsce pod reakcję, żeby nie kryła „Zobaczone". */
-.chat-line.me .chat-reactions {
-  right: 8px;
-}
+/* Moje wiadomości nie mają już awatara (jak na Instagramie), więc reakcja może
+   siedzieć dokładnie na rogu — nie ma czego omijać. */
 .chat-bubble.has-reaction {
   margin-bottom: 10px;
 }
