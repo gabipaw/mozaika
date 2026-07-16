@@ -25,3 +25,11 @@ export class ForbiddenError extends Error {
     this.name = "ForbiddenError";
   }
 }
+
+/** Za dużo żądań w oknie czasu (np. próby logowania). Mapowane na HTTP 429. */
+export class TooManyRequestsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TooManyRequestsError";
+  }
+}

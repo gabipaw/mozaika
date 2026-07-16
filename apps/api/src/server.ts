@@ -12,8 +12,14 @@ import type { Context, MiddlewareHandler } from "hono";
 import { sign, verify } from "hono/jwt";
 
 import { prisma } from "./db.js";
-import { ForbiddenError, NotFoundError, ValidationError } from "./errors.js";
+import {
+  ForbiddenError,
+  NotFoundError,
+  TooManyRequestsError,
+  ValidationError,
+} from "./errors.js";
 import { login, register } from "./logic/auth.js";
+import { rateLimit, rateLimitReset } from "./logic/rateLimit.js";
 import { addBookFromOpenLibrary, searchBooks } from "./logic/books.js";
 import { getDescription, getTrailer } from "./logic/details.js";
 import { addGameFromRawg, searchGames } from "./logic/games.js";
@@ -51,7 +57,21 @@ import { tastePortrait } from "./logic/tasteProfile.js";
 import { invalidateDiscoveryCache, tasteDiscovery } from "./logic/discovery.js";
 import { addMediaFromTmdb, searchTmdb } from "./logic/tmdb.js";
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "mozaika-dev-secret-ustaw-JWT_SECRET";
+// Sekret do podpisu tokenów. Fallback istnieje TYLKO dla wygody lokalnej — na
+// produkcji jest zakazany: gdyby serwer podpisywal tokeny stringiem znanym z kodu,
+// kazdy moglby podrobic token dowolnego uzytkownika. Dlatego przy NODE_ENV=production
+// brak JWT_SECRET wywala start (fail-closed) zamiast po cichu uzyc fallbacku.
+const JWT_SECRET = (() => {
+  const fromEnv = process.env.JWT_SECRET;
+  if (fromEnv) return fromEnv;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "JWT_SECRET nie jest ustawiony — ustaw go w env produkcji (panel Render). " +
+        "Bez tego tokeny bylyby podpisane sekretem znanym z kodu.",
+    );
+  }
+  return "mozaika-dev-secret-ustaw-JWT_SECRET";
+})();
 const TOKEN_TTL = 60 * 60 * 24 * 30; // 30 dni
 
 type Vars = { Variables: { userId: number } };
@@ -102,13 +122,39 @@ api.get("/health", (c) =>
 );
 
 // --- Uwierzytelnianie ---
+
+/** Adres klienta zza proxy Rendera/Cloudflare (do kluczy limitera). */
+function clientIp(c: Context<Vars>): string {
+  const fwd = c.req.header("x-forwarded-for") ?? "";
+  return fwd.split(",")[0]?.trim() || "unknown";
+}
+
+/**
+ * Dławi próby logowania/rejestracji z jednego adresu — bez tego hasło da się
+ * zgadywać na siłę. 10 prób na 5 minut: człowiekowi z literówką nie przeszkadza,
+ * a atak słownikowy zatrzymuje. Po udanym logowaniu licznik kasujemy.
+ */
+const AUTH_MAX = 10;
+const AUTH_WINDOW_MS = 5 * 60 * 1000;
+function guardAuth(c: Context<Vars>): string {
+  const key = `auth:${clientIp(c)}`;
+  const { allowed, retryAfter } = rateLimit(key, AUTH_MAX, AUTH_WINDOW_MS);
+  if (!allowed) {
+    throw new TooManyRequestsError(`Za dużo prób. Spróbuj ponownie za ${retryAfter} s.`);
+  }
+  return key;
+}
+
 api.post("/auth/register", async (c) => {
+  guardAuth(c);
   const user = await register(await c.req.json());
   return c.json({ token: await makeToken(user.id), user }, 201);
 });
 
 api.post("/auth/login", async (c) => {
+  const key = guardAuth(c);
   const user = await login(await c.req.json());
+  rateLimitReset(key); // udane logowanie nie ma karać kolejnych prób
   return c.json({ token: await makeToken(user.id), user });
 });
 
@@ -494,7 +540,7 @@ async function addByType(type: string, externalId: string) {
   return addMediaFromTmdb(externalId);
 }
 
-api.post("/media", async (c) => {
+api.post("/media", requireAuth, async (c) => {
   const body = await c.req.json();
   const media = await addByType(String(body.type ?? ""), String(body.externalId ?? ""));
   return c.json(media, 201);
@@ -669,6 +715,7 @@ api.onError((err, c) => {
   if (err instanceof ValidationError) return c.json({ error: err.message }, 400);
   if (err instanceof ForbiddenError) return c.json({ error: err.message }, 403);
   if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
+  if (err instanceof TooManyRequestsError) return c.json({ error: err.message }, 429);
   console.error(err);
   return c.json({ error: "Wewnętrzny błąd serwera." }, 500);
 });

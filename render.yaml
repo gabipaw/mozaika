@@ -32,3 +32,6 @@ services:
         sync: false # np. mailto:twoj@email — wymagane przez bramki push
       - key: CRON_SECRET
         sync: false # sekret dla /api/cron/premieres — ten sam wpisz w GitHub → Secrets
+      - key: JWT_SECRET
+        sync: false # SEKRET do podpisu tokenow — WYMAGANY, bez niego serwer nie wstanie
+        # Wygeneruj np.: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
