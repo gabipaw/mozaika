@@ -1838,20 +1838,41 @@ function setLang(code) {
   refreshDynamic();
 }
 
-// Odświeża teksty ustawiane dynamicznie w bieżącym widoku po zmianie języka.
+// Odświeża teksty ustawiane dynamicznie po zmianie języka. Statyczne (data-i18n)
+// robi applyStaticI18n; tu odświeżamy to, co JS renderuje przez t() — inaczej
+// zostaje w starym języku (np. etykiety w otwartym panelu ustawień).
 function refreshDynamic() {
   setAuthMode(authMode);
   applySearchPlaceholder();
+
+  // Podkładowy widok.
   if (!$("profileView").classList.contains("hidden")) {
     if (viewingUserId) loadUserProfile(viewingUserId);
     else loadProfile();
   } else if (!$("detailView").classList.contains("hidden")) {
     updateDetailButtons();
+    if (detailCtx?.mediaId) loadDetailReviews(detailCtx.mediaId); // recenzje + komentarze
   } else if (me) {
     loadTasteRecommendations();
     loadRecommendations();
     loadCatalog();
   }
+
+  // Nakładki mogą być otwarte NAD widokiem — odświeżamy je niezależnie.
+  refreshSettingsLang();
+  if (!$("notifOverlay").classList.contains("hidden")) renderNotifList();
+  if (chatWithId && !$("chatOverlay").classList.contains("hidden")) loadThread();
+}
+
+// Ponownie renderuje dynamiczne sekcje otwartego panelu ustawień (te budowane
+// przez JS, nie przez data-i18n). Tylko sekcje faktycznie wczytane (accLoaded).
+function refreshSettingsLang() {
+  if (!$("settingsOverlay").classList.contains("open")) return;
+  renderPushSettings(); // tekst przycisku push
+  renderAccountSettings(); // etykiety formularza konta
+  if (accLoaded.has("notifPrefs")) renderNotifPrefs();
+  if (accLoaded.has("blocked")) renderBlockedList();
+  if (accLoaded.has("about")) renderAbout();
 }
 
 // --- Powiadomienia push (na telefon) ---
