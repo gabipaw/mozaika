@@ -93,7 +93,13 @@ const requireAuth: MiddlewareHandler<Vars> = async (c, next) => {
   await next();
 };
 
-api.get("/health", (c) => c.json({ status: "ok" }));
+// Health + wersja. `commit` odpowiada na pytanie „czy mój push już wszedł?" bez
+// zaglądania do panelu Render — inaczej jedynym sposobem jest porównywanie
+// zawartości plików z produkcji z lokalnymi. Render wystawia RENDER_GIT_COMMIT
+// sam; lokalnie zmiennej nie ma, więc leci "dev".
+api.get("/health", (c) =>
+  c.json({ status: "ok", commit: process.env.RENDER_GIT_COMMIT ?? "dev" }),
+);
 
 // --- Uwierzytelnianie ---
 api.post("/auth/register", async (c) => {
