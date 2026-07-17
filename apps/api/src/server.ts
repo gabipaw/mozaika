@@ -67,7 +67,8 @@ import { invalidateDiscoveryCache, tasteDiscovery } from "./logic/discovery.js";
 import { addMediaFromTmdb, searchTmdb, tmdbTitles } from "./logic/tmdb.js";
 import { currentLang, normalizeLang, withLang } from "./logic/lang.js";
 import { localizeTitles } from "./logic/localize.js";
-import { translate, translateEnabled } from "./logic/translate.js";
+import { localizeMessage, translate, translateEnabled } from "./logic/translate.js";
+import { MAX_FAVORITES, siblingTypes } from "./logic/categories.js";
 
 // Sekret do podpisu tokenów. Fallback istnieje TYLKO dla wygody lokalnej — na
 // produkcji jest zakazany: gdyby serwer podpisywal tokeny stringiem znanym z kodu,
@@ -119,12 +120,24 @@ async function userIdFromHeader(c: Context<Vars>): Promise<number | null> {
 
 /** Wymaga poprawnego tokenu JWT; zapisuje userId w kontekście. */
 const requireAuth: MiddlewareHandler<Vars> = async (c, next) => {
+  // 401 wraca stąd wprost, nie przez `throw`, więc onError go nie widzi — komunikat
+  // trzeba przetłumaczyć na miejscu, inaczej jako jedyny zostawałby po polsku.
+  const unauthorized = async () =>
+    c.json(
+      {
+        error: await localizeMessage(
+          "Wymagane logowanie.",
+          normalizeLang(c.req.header("X-Lang")),
+        ),
+      },
+      401,
+    );
   const userId = await userIdFromHeader(c);
-  if (userId === null) return c.json({ error: "Wymagane logowanie." }, 401);
+  if (userId === null) return unauthorized();
   // Token bywa ważny kryptograficznie, ale konto mogło zniknąć (usunięte). Bez tej
   // kontroli martwy token dawał 500 (zapytania po nieistniejącym userze) zamiast 401.
   const exists = await prisma.user.count({ where: { id: userId } });
-  if (!exists) return c.json({ error: "Wymagane logowanie." }, 401);
+  if (!exists) return unauthorized();
   c.set("userId", userId);
   await next();
 };
@@ -265,7 +278,7 @@ api.post("/me/avatar", requireAuth, async (c) => {
   return c.json({ avatarUrl });
 });
 
-// Przypnij/odepnij tytuł do TOP 4 (wymaga wcześniejszej oceny; max 4 ulubione).
+// Przypnij/odepnij tytuł do TOP 4 (wymaga wcześniejszej oceny; max 4 w kategorii).
 api.post("/me/favorite", requireAuth, async (c) => {
   const userId = c.get("userId");
   const body = await c.req.json();
@@ -273,14 +286,23 @@ api.post("/me/favorite", requireAuth, async (c) => {
   const favorite = Boolean(body.favorite);
   const review = await prisma.review.findUnique({
     where: { userId_mediaId: { userId, mediaId } },
+    include: { media: { select: { type: true } } },
   });
   if (!review) {
     throw new NotFoundError("Najpierw oceń ten tytuł, żeby dodać go do TOP 4.");
   }
+  // Limit obowiązuje W OBRĘBIE KATEGORII: cztery przypięte anime nie mogą zabierać
+  // miejsca filmom. Liczony globalnie sprawiał, że użytkownik z zapełnioną jedną półką
+  // słyszał „masz już 4 ulubione" przy tytule z kategorii, w której nie miał NIC.
   if (favorite && !review.favorite) {
-    const count = await prisma.review.count({ where: { userId, favorite: true } });
-    if (count >= 4) {
-      throw new ValidationError("Masz już 4 ulubione — najpierw odepnij inny tytuł.");
+    const types = siblingTypes(review.media.type);
+    const count = await prisma.review.count({
+      where: { userId, favorite: true, media: { type: { in: types } } },
+    });
+    if (count >= MAX_FAVORITES) {
+      throw new ValidationError(
+        `Masz już ${MAX_FAVORITES} ulubione w tej kategorii — najpierw odepnij inny tytuł.`,
+      );
     }
   }
   await prisma.review.update({
@@ -867,14 +889,23 @@ api.get("/users/:id/compare", requireAuth, async (c) => {
   });
 });
 
-// Błędy domenowe → kody HTTP.
-api.onError((err, c) => {
-  if (err instanceof ValidationError) return c.json({ error: err.message }, 400);
-  if (err instanceof ForbiddenError) return c.json({ error: err.message }, 403);
-  if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
-  if (err instanceof TooManyRequestsError) return c.json({ error: err.message }, 429);
+// Błędy domenowe → kody HTTP. Komunikat idzie w języku użytkownika: teksty błędów są
+// w kodzie po polsku, więc bez tego angielski użytkownik dostawał polski komunikat.
+// Język czytamy z nagłówka, a nie z AsyncLocalStorage — tu jesteśmy już poza `withLang`,
+// bo wyjątek przerwał jego `next()`.
+api.onError(async (err, c) => {
+  const lang = normalizeLang(c.req.header("X-Lang"));
+  const say = (m: string) => localizeMessage(m, lang);
+  if (err instanceof ValidationError)
+    return c.json({ error: await say(err.message) }, 400);
+  if (err instanceof ForbiddenError)
+    return c.json({ error: await say(err.message) }, 403);
+  if (err instanceof NotFoundError) return c.json({ error: await say(err.message) }, 404);
+  if (err instanceof TooManyRequestsError) {
+    return c.json({ error: await say(err.message) }, 429);
+  }
   console.error(err);
-  return c.json({ error: "Wewnętrzny błąd serwera." }, 500);
+  return c.json({ error: await say("Wewnętrzny błąd serwera.") }, 500);
 });
 
 app.route("/api", api);

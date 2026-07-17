@@ -12,7 +12,7 @@
 import { createHash } from "node:crypto";
 
 import { ValidationError } from "../errors.js";
-import { currentLang } from "./lang.js";
+import { currentLang, DEFAULT_LANG } from "./lang.js";
 
 /**
  * DeepL ma DWA adresy i wybór zależy od planu, nie od nas. Klucze planu free kończą
@@ -102,4 +102,24 @@ export async function translate(
   if (cache.size >= MAX_CACHE) cache.delete(cache.keys().next().value as string);
   cache.set(cacheKey, out);
   return out;
+}
+
+/**
+ * Komunikat błędu w języku użytkownika.
+ *
+ * Błędy domenowe są w kodzie po polsku (73 różne teksty, część z wstawkami w rodzaju
+ * „max 500 znaków"). Słownik znaczyłby ~500 ręcznie tłumaczonych stringów i pilnowanie
+ * go przy każdym nowym komunikacie — a mamy DeepL i te teksty są krótkie oraz stale
+ * te same, więc cache tłumaczy każdy z nich raz na język i tyle.
+ *
+ * Cokolwiek pójdzie nie tak (brak klucza, wyczerpany limit, padnięta sieć) — zostaje
+ * polski oryginał. Błąd ma dotrzeć do użytkownika zawsze; język jest dodatkiem.
+ */
+export async function localizeMessage(msg: string, lang: string): Promise<string> {
+  if (lang === DEFAULT_LANG || !translateEnabled() || !msg.trim()) return msg;
+  try {
+    return (await translate(msg, lang)).text;
+  } catch {
+    return msg;
+  }
 }

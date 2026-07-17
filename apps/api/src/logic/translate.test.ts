@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, test } from "node:test";
 
-import { translate, translateEnabled } from "./translate.js";
+import { localizeMessage, translate, translateEnabled } from "./translate.js";
 
 const realFetch = globalThis.fetch;
 
@@ -106,4 +106,33 @@ test("pusty tekst i przydługi tekst odrzucamy bez pytania DeepL-a", async () =>
   await assert.rejects(() => translate("   ", "pl"));
   await assert.rejects(() => translate("x".repeat(2001), "pl"), /za długi/i);
   assert.equal(calls.length, 0);
+});
+
+// --- komunikaty błędów ---
+
+test("po polsku komunikat idzie bez ruszania DeepL-a", async () => {
+  const calls: Call[] = [];
+  stubDeepl(calls);
+  const msg = "Masz już 4 ulubione w tej kategorii.";
+  assert.equal(await localizeMessage(msg, "pl"), msg);
+  assert.equal(calls.length, 0);
+});
+
+test("w innym języku komunikat jest tłumaczony", async () => {
+  stubDeepl([], 200, "You already have 4 favourites in this category.");
+  const out = await localizeMessage("Masz już 4 ulubione w tej kategorii.", "en");
+  assert.equal(out, "You already have 4 favourites in this category.");
+});
+
+test("awaria tłumaczenia NIE gubi błędu — zostaje polski oryginał", async () => {
+  const msg = "Nie ma takiego konta.";
+  // Padnięta sieć.
+  globalThis.fetch = (() => Promise.reject(new Error("ETIMEDOUT"))) as never;
+  assert.equal(await localizeMessage(msg, "en"), msg);
+  // Wyczerpany limit DeepL.
+  stubDeepl([], 456);
+  assert.equal(await localizeMessage(msg, "de"), msg);
+  // Brak klucza.
+  delete process.env.DEEPL_API_KEY;
+  assert.equal(await localizeMessage(msg, "ja"), msg);
 });
