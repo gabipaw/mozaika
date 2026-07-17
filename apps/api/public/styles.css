@@ -763,30 +763,27 @@ h2 {
   height: 100%;
 }
 
-/* Top 4: półka na kategorię (etykieta + do 4 plakatów), jedna pod drugą — limit
-   czterech liczy się osobno w każdej kategorii, więc każda dostaje własny rząd.
-   Układ rzędu i samych okładek bierzemy w całości z .cat-row/.cat-posters (ten sam
-   wzorzec co #ratedByCat): karty mają tam flex-basis 1/4 szerokości, więc jedno
-   przypięcie zajmuje jedną kolumnę zamiast rozdymać się na całą szerokość.
-   Bez własnej siatki — grid nad .cat-posters liczyłby ich `max-width` od komórki,
-   nie od rzędu, i ścinał okładki do kilku pikseli. */
+/* Top 4: jeden rząd 4 plakatów, proporcja 2:3, naturalna wysokość.
+   Siatka 2×2 (z pustymi ramkami na wolne miejsca) była tu wcześniej, ale w kolumnie
+   300px rozdymała plakat z ~68px do ~145px — za duże, stąd powrót do rzędu. */
+/* Rząd 4 kolumn (prosta linia jak na własnym profilu). Grid, nie flex-grow:
+   dzięki temu 1 ulubione zajmuje jedną komórkę (mały plakat po lewej), a nie
+   rozdyma się na całą szerokość. Puste komórki 2–4 zostają puste. */
 #topMedia {
   flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  align-items: start;
 }
 
-/* W wąskiej lewej kolumnie etykieta idzie NAD plakatami, nie obok: sztywne 100px
-   na podpis (jak w #ratedByCat, gdzie rząd jest szeroki) zostawiłoby okładkom ~185px,
-   czyli po ~40px na sztukę. Nad plakatami mają całą szerokość kolumny. */
-#topMedia .cat-row {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
+#topMedia .card {
+  min-width: 0;
+  height: auto;
 }
 
-#topMedia .cat-head {
-  flex: 0 0 auto;
+#topMedia .card .poster {
+  height: auto;
 }
 
 /* Watchlist: 3×2 wypełnia pozostałą wysokość lewej kolumny (dół w jednej linii
@@ -2149,11 +2146,9 @@ h2 {
     min-height: 0;
   }
 
-  /* Watchlista: poziomy pasek do przesuwania (jak kategorie). Top 4 zostaje kolumną
-     półek — przesuwa się każda z osobna, bo inaczej kategorie zlałyby się w jeden ciąg
-     plakatów i etykiety przestałyby cokolwiek znaczyć. */
-  #watchlist,
-  #topMedia .cat-posters {
+  /* Top 4 i watchlista: poziome paski do przesuwania (jak kategorie). */
+  #topMedia,
+  #watchlist {
     display: flex;
     flex-wrap: nowrap;
     overflow-x: auto;
