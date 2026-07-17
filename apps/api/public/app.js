@@ -136,7 +136,6 @@ const I18N = {
     edit: "Zmień",
     pickN: "Wybierz {max} ({n})",
     pickCovers: "{label} — wybierz do {max} okładek",
-    maxCovers: "Możesz wybrać maksymalnie {max} okładki.",
     friends: "Znajomi",
     add: "＋ Dodaj",
     searchFriends: "Szukaj znajomych…",
@@ -398,7 +397,6 @@ const I18N = {
     edit: "Edit",
     pickN: "Pick {max} ({n})",
     pickCovers: "{label} — pick up to {max} covers",
-    maxCovers: "You can pick at most {max} covers.",
     friends: "Friends",
     add: "＋ Add",
     searchFriends: "Search friends…",
@@ -662,7 +660,6 @@ const I18N = {
     edit: "Ändern",
     pickN: "Wähle {max} ({n})",
     pickCovers: "{label} — wähle bis zu {max} Cover",
-    maxCovers: "Du kannst höchstens {max} Cover wählen.",
     friends: "Freunde",
     add: "＋ Hinzufügen",
     searchFriends: "Freunde suchen…",
@@ -918,7 +915,6 @@ const I18N = {
     edit: "Cambiar",
     pickN: "Elige {max} ({n})",
     pickCovers: "{label} — elige hasta {max} portadas",
-    maxCovers: "Puedes elegir como máximo {max} portadas.",
     friends: "Amigos",
     add: "＋ Añadir",
     searchFriends: "Buscar amigos…",
@@ -1175,7 +1171,6 @@ const I18N = {
     edit: "Alterar",
     pickN: "Escolhe {max} ({n})",
     pickCovers: "{label} — escolhe até {max} capas",
-    maxCovers: "Podes escolher no máximo {max} capas.",
     friends: "Amigos",
     add: "＋ Adicionar",
     searchFriends: "Procurar amigos…",
@@ -1430,7 +1425,6 @@ const I18N = {
     edit: "修改",
     pickN: "选择 {max}（{n}）",
     pickCovers: "{label}——最多选 {max} 张封面",
-    maxCovers: "最多只能选 {max} 张封面。",
     friends: "好友",
     add: "＋ 添加",
     searchFriends: "搜索好友…",
@@ -1680,7 +1674,6 @@ const I18N = {
     edit: "変更",
     pickN: "{max} 個選ぶ（{n}）",
     pickCovers: "{label} — 最大 {max} 枚のカバーを選択",
-    maxCovers: "カバーは最大 {max} 枚まで選べます。",
     friends: "友だち",
     add: "＋ 追加",
     searchFriends: "友だちを検索…",
@@ -2751,11 +2744,11 @@ function renderCatPickGrid() {
       if (cur.includes(r.media.id)) {
         cur = cur.filter((id) => id !== r.media.id);
       } else {
-        if (cur.length >= MAX_COVERS) {
-          toast(t("maxCovers", { max: MAX_COVERS }));
-          return;
-        }
-        cur = [...cur, r.media.id];
+        // Komplet okładek: nowa wchodzi na miejsce NAJSTARSZEJ (numerki pokazują, co
+        // wypadło). Odmowa z komunikatem „maksymalnie 4" byłaby tu ślepym zaułkiem —
+        // picker otwiera się z czwórką widoczną w rzędzie, więc każde kliknięcie nowej
+        // okładki odbijałoby się od limitu i wybrać nie dałoby się nic.
+        cur = [...cur, r.media.id].slice(-MAX_COVERS);
       }
       setFeatured(group.key, cur);
       renderCatPickGrid();
