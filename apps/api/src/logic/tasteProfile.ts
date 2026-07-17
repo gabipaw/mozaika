@@ -187,7 +187,11 @@ export interface TastePortrait extends TasteProfile {
 
 /** Portret gustu użytkownika: profil (typy/dekady/gatunki) + średnia serwisu. */
 export async function tastePortrait(userId: number): Promise<TastePortrait> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  // Samo sprawdzenie istnienia — patrz komentarz w recommendations.ts.
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
   if (!user) throw new NotFoundError(`Użytkownik #${userId} nie istnieje.`);
 
   const [reviews, agg] = await Promise.all([

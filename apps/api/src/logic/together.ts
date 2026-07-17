@@ -102,8 +102,9 @@ export async function togetherPicks(
   if (userId === otherId) return [];
 
   const [ja, on] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId } }),
-    prisma.user.findUnique({ where: { id: otherId } }),
+    // Same sprawdzenia istnienia — patrz komentarz w recommendations.ts.
+    prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
+    prisma.user.findUnique({ where: { id: otherId }, select: { id: true } }),
   ]);
   if (!ja) throw new NotFoundError(`Użytkownik #${userId} nie istnieje.`);
   if (!on) throw new NotFoundError(`Użytkownik #${otherId} nie istnieje.`);

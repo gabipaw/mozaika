@@ -90,7 +90,12 @@ export async function recommendations(
   userId: number,
   limit: number = DEFAULT_LIMIT,
 ): Promise<RecommendationWithMedia[]> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  // Tylko sprawdzamy istnienie — bez `select` szedłby CAŁY wiersz użytkownika,
+  // razem z hashem hasła i avatarem (base64). Do „czy jest?" wystarczy id.
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
   if (!user) throw new NotFoundError(`Użytkownik #${userId} nie istnieje.`);
 
   const [targetReviews, otherUsers] = await Promise.all([

@@ -253,7 +253,11 @@ export async function tasteDiscovery(
   const allowed = typesForKey(typeKey);
   if (allowed.length === 0) return []; // np. książki / muzyka
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  // Samo sprawdzenie istnienia — patrz komentarz w recommendations.ts.
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
   if (!user) throw new NotFoundError(`Użytkownik #${userId} nie istnieje.`);
 
   const reviews = await prisma.review.findMany({

@@ -72,8 +72,9 @@ export async function tasteMatch(
   }
 
   const [a, b] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userAId } }),
-    prisma.user.findUnique({ where: { id: userBId } }),
+    // Same sprawdzenia istnienia — patrz komentarz w recommendations.ts.
+    prisma.user.findUnique({ where: { id: userAId }, select: { id: true } }),
+    prisma.user.findUnique({ where: { id: userBId }, select: { id: true } }),
   ]);
   if (!a) throw new NotFoundError(`Użytkownik #${userAId} nie istnieje.`);
   if (!b) throw new NotFoundError(`Użytkownik #${userBId} nie istnieje.`);
