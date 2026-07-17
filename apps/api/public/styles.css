@@ -2382,6 +2382,19 @@ h2 {
   gap: 10px;
   margin-top: 2px;
 }
+/* Tłumaczenie POD oryginałem (oryginał zostaje). Kreska z boku i lekkie wcięcie,
+   żeby na pierwszy rzut oka było jasne, że to to samo zdanie inaczej — a nie kolejna
+   wiadomość w rozmowie. */
+.translated-text {
+  margin-top: 6px;
+  padding-left: 8px;
+  border-left: 2px solid var(--accent);
+  color: var(--text);
+  font-size: 0.92em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* „Przetłumacz" pod cudzym tekstem — dyskretny link, nie kolejny gruby przycisk:
    pojawia się przy KAŻDEJ cudzej wiadomości i komentarzu, więc nie może krzyczeć. */
 .translate-btn {

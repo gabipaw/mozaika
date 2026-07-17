@@ -134,8 +134,8 @@ const I18N = {
     nothingRatedCat: "Nic tu jeszcze",
     translate: "Przetłumacz",
     translating: "Tłumaczę…",
-    showOriginal: "Pokaż oryginał",
-    showOriginalFrom: "Oryginał ({lang})",
+    hideTranslation: "Ukryj tłumaczenie",
+    hideTranslationFrom: "Ukryj tłumaczenie ({lang})",
     noCoversPicked: "Nie wybrano okładek",
     edit: "Zmień",
     pickN: "Wybierz {max} ({n})",
@@ -399,8 +399,8 @@ const I18N = {
     nothingRatedCat: "Nothing yet",
     translate: "Translate",
     translating: "Translating…",
-    showOriginal: "Show original",
-    showOriginalFrom: "Original ({lang})",
+    hideTranslation: "Hide translation",
+    hideTranslationFrom: "Hide translation ({lang})",
     noCoversPicked: "No covers picked",
     edit: "Edit",
     pickN: "Pick {max} ({n})",
@@ -666,8 +666,8 @@ const I18N = {
     nothingRatedCat: "Hier ist noch nichts",
     translate: "Übersetzen",
     translating: "Übersetze…",
-    showOriginal: "Original anzeigen",
-    showOriginalFrom: "Original ({lang})",
+    hideTranslation: "Übersetzung ausblenden",
+    hideTranslationFrom: "Übersetzung ausblenden ({lang})",
     noCoversPicked: "Keine Cover ausgewählt",
     edit: "Ändern",
     pickN: "Wähle {max} ({n})",
@@ -925,8 +925,8 @@ const I18N = {
     nothingRatedCat: "Aún no hay nada aquí",
     translate: "Traducir",
     translating: "Traduciendo…",
-    showOriginal: "Ver original",
-    showOriginalFrom: "Original ({lang})",
+    hideTranslation: "Ocultar traducción",
+    hideTranslationFrom: "Ocultar traducción ({lang})",
     noCoversPicked: "Sin portadas elegidas",
     edit: "Cambiar",
     pickN: "Elige {max} ({n})",
@@ -1185,8 +1185,8 @@ const I18N = {
     nothingRatedCat: "Ainda não há nada aqui",
     translate: "Traduzir",
     translating: "A traduzir…",
-    showOriginal: "Ver original",
-    showOriginalFrom: "Original ({lang})",
+    hideTranslation: "Ocultar tradução",
+    hideTranslationFrom: "Ocultar tradução ({lang})",
     noCoversPicked: "Nenhuma capa escolhida",
     edit: "Alterar",
     pickN: "Escolhe {max} ({n})",
@@ -1443,8 +1443,8 @@ const I18N = {
     nothingRatedCat: "这里还什么都没有",
     translate: "翻译",
     translating: "翻译中…",
-    showOriginal: "显示原文",
-    showOriginalFrom: "原文（{lang}）",
+    hideTranslation: "隐藏翻译",
+    hideTranslationFrom: "隐藏翻译（{lang}）",
     noCoversPicked: "未选择封面",
     edit: "修改",
     pickN: "选择 {max}（{n}）",
@@ -1696,8 +1696,8 @@ const I18N = {
     nothingRatedCat: "ここにはまだ何もありません",
     translate: "翻訳",
     translating: "翻訳中…",
-    showOriginal: "原文を表示",
-    showOriginalFrom: "原文（{lang}）",
+    hideTranslation: "翻訳を隠す",
+    hideTranslationFrom: "翻訳を隠す（{lang}）",
     noCoversPicked: "表紙が選ばれていません",
     edit: "変更",
     pickN: "{max} 個選ぶ（{n}）",
@@ -2285,28 +2285,68 @@ async function initTranslate() {
 }
 
 /**
- * Przycisk „Przetłumacz" pod CUDZYM tekstem: podmienia treść `el` na tłumaczenie
- * i wraca do oryginału drugim kliknięciem. Zwraca null, gdy nie ma czego/jak
- * tłumaczyć — wołający wtedy nic nie dokłada.
+ * Tłumaczenia trzymamy POZA drzewem DOM, bo listy są przebudowywane od zera:
+ * czat odpytuje serwer co 4 s i robi innerHTML="", komentarze przerysowują się po
+ * dodaniu wpisu. Tłumaczenie wpisane w DOM znikało przy najbliższym odświeżeniu —
+ * stąd pamięć per wpis (klucz to np. „msg:12") i odtwarzanie stanu przy renderze.
+ * `open` osobno od treści: zwinięcia też nie chcemy tracić przy odświeżeniu.
+ */
+const translationCache = new Map(); // klucz → { text, from }
+const translationOpen = new Set(); // klucze z rozwiniętym tłumaczeniem
+
+/**
+ * Blok „Przetłumacz" pod CUDZYM tekstem: tłumaczenie pokazuje się POD oryginałem
+ * (oryginał zostaje — łatwiej porównać i widać, że to nie podmiana treści).
+ * Zwraca null, gdy nie ma czego/jak tłumaczyć — wołający wtedy nic nie dokłada.
+ *
+ * `key` musi być stabilny między renderami (id wpisu), inaczej po odświeżeniu
+ * listy tłumaczenie nie odnajdzie się w pamięci.
  *
  * Języka źródłowego nie zgadujemy z góry (wykrywanie na froncie myli się na krótkich
  * tekstach, a „hey" wygląda tak samo w kilku językach) — mówi go DeepL przy okazji
  * tłumaczenia i dopiero wtedy piszemy, z czego przetłumaczyliśmy.
  */
-function translateControl(el, text) {
-  if (!translateOn || !me || !(text ?? "").trim()) return null;
+function translateControl(text, key) {
+  if (!translateOn || !me || !(text ?? "").trim() || !key) return null;
+
+  const wrap = document.createElement("div");
+  wrap.className = "translate-wrap";
+
+  const box = document.createElement("div");
+  box.className = "translated-text hidden";
 
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "translate-btn";
   btn.textContent = t("translate");
 
-  let original = null; // != null → pokazujemy tłumaczenie
+  const show = (tr) => {
+    box.textContent = tr.text;
+    box.classList.remove("hidden");
+    btn.textContent = tr.from
+      ? t("hideTranslationFrom", { lang: tr.from.toUpperCase() })
+      : t("hideTranslation");
+  };
+  const hide = () => {
+    box.classList.add("hidden");
+    btn.textContent = t("translate");
+  };
+
+  // Render po odświeżeniu listy: wracamy do tego, co user miał na ekranie.
+  const cached = translationCache.get(key);
+  if (cached && translationOpen.has(key)) show(cached);
+
   btn.addEventListener("click", async () => {
-    if (original !== null) {
-      el.textContent = original;
-      original = null;
-      btn.textContent = t("translate");
+    if (translationOpen.has(key)) {
+      translationOpen.delete(key);
+      hide();
+      return;
+    }
+    const hit = translationCache.get(key);
+    if (hit) {
+      // Raz przetłumaczone zostaje w pamięci — ponowne pytanie zjadałoby limit.
+      translationOpen.add(key);
+      show(hit);
       return;
     }
     btn.disabled = true;
@@ -2317,11 +2357,9 @@ function translateControl(el, text) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ text }),
       });
-      original = el.textContent;
-      el.textContent = r.text;
-      btn.textContent = r.from
-        ? t("showOriginalFrom", { lang: r.from.toUpperCase() })
-        : t("showOriginal");
+      translationCache.set(key, r);
+      translationOpen.add(key);
+      show(r);
     } catch (e) {
       toast(e.message);
       btn.textContent = t("translate");
@@ -2329,7 +2367,9 @@ function translateControl(el, text) {
       btn.disabled = false;
     }
   });
-  return btn;
+
+  wrap.append(box, btn);
+  return wrap;
 }
 
 function toast(msg) {
@@ -3507,7 +3547,7 @@ async function loadThread(forceScroll = false) {
           bubble.append(tx);
           // Tylko pod CUDZĄ wiadomością — własnej nie ma po co tłumaczyć.
           if (!mine) {
-            const tr = translateControl(tx, m.text);
+            const tr = translateControl(m.text, `msg:${m.id}`);
             if (tr) bubble.append(tr);
           }
         }
@@ -4052,7 +4092,7 @@ function renderMyComments(reviews, authorId, ownerName) {
     text.textContent = r.text;
     body.append(head, text);
     if (authorId !== me?.id) {
-      const tr = translateControl(text, r.text);
+      const tr = translateControl(r.text, `rev:${r.id}`);
       if (tr) body.append(tr);
     }
     body.append(likeControl(r, authorId));
@@ -4624,7 +4664,7 @@ async function loadDetailReviews(mediaId) {
         txt.textContent = r.text;
         el.append(txt);
         if (r.user.id !== me?.id) {
-          const tr = translateControl(txt, r.text);
+          const tr = translateControl(r.text, `rev:${r.id}`);
           if (tr) el.append(tr);
         }
       }
@@ -4808,7 +4848,7 @@ function commentEl(node, reviewId, isReply = false) {
 
   main.append(head, text);
   if (!node.deleted && node.author.id !== me?.id) {
-    const tr = translateControl(text, node.text);
+    const tr = translateControl(node.text, `cmt:${node.id}`);
     if (tr) main.append(tr);
   }
 
