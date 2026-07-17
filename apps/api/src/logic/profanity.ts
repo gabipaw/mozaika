@@ -27,18 +27,73 @@ const LEET: Record<string, string> = {
 };
 
 /**
- * Sprowadza słowo do postaci porównywalnej: bez wielkości liter, bez ogonków,
- * bez kropek/myślników w środku („k.u.r.w.a"), z rozwiniętym leetspeakiem
- * i bez rozciągania liter („kuuurwa" → „kurwa").
+ * Litery z innych alfabetów wyglądające IDENTYCZNIE jak łacińskie. Bez tego
+ * „кurwa" z cyrylickim „к" przechodziło jak gdyby nigdy nic — wygląda tak samo,
+ * a dla kodu to inny znak.
+ */
+const HOMOGLYPHS: Record<string, string> = {
+  а: "a",
+  е: "e",
+  о: "o",
+  с: "c",
+  р: "p",
+  х: "x",
+  у: "y",
+  к: "k",
+  м: "m",
+  т: "t",
+  в: "b",
+  н: "h",
+  і: "i",
+  ј: "j",
+  ѕ: "s",
+  ԁ: "d",
+  г: "r",
+  п: "n",
+  α: "a",
+  ο: "o",
+  ε: "e",
+  ι: "i",
+  κ: "k",
+  τ: "t",
+  ν: "v",
+  ρ: "p",
+  χ: "x",
+};
+
+/**
+ * Znaki niewidoczne (zero-width, soft hyphen, znaczniki kierunku) — wklejone w środek
+ * słowa rozbijały dopasowanie, a na ekranie nie widać ich wcale. Zapisane kodami,
+ * bo literalnie byłyby w pliku niewidzialne.
+ */
+const INVISIBLE = /[\u00AD\u200B-\u200F\u2060\uFEFF]/g;
+
+/**
+ * Sprowadza słowo do postaci porównywalnej: bez wielkości liter, bez ogonków
+ * i znaków łączących, bez kropek/myślników w środku („k.u.r.w.a"), bez znaków
+ * niewidocznych, z podmienionymi homoglifami i leetspeakiem, bez rozciągania
+ * liter („kuuurwa" → „kurwa"). Gwiazdki ZOSTAJĄ — obsługuje je dopasowanie.
  */
 function normalize(word: string): string {
-  const bare = word
-    .toLowerCase()
+  const bare = [...word.toLowerCase().replace(INVISIBLE, "")]
+    .map((c) => HOMOGLYPHS[c] ?? c)
+    .join("")
     .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/[^a-z0-9@$]/g, "");
+    // \p{M} zamiast \p{Diacritic}: kreska łącząca spod „K̲U̲R̲W̲A̲" to znak łączący,
+    // ale NIE diakrytyk — na samym \p{Diacritic} to obejście przechodziło.
+    .replace(/\p{M}/gu, "")
+    .replace(/[^a-z0-9@$*]/g, "");
   const deleet = [...bare].map((c) => LEET[c] ?? c).join("");
   return deleet.replace(/(.)\1{2,}/g, "$1");
+}
+
+/** Czy `word` pasuje do `pattern`, w którym „*" zastępuje dowolny znak. */
+function matches(pattern: string, word: string): boolean {
+  if (pattern.length !== word.length) return false;
+  for (let i = 0; i < word.length; i++) {
+    if (pattern[i] !== "*" && pattern[i] !== word[i]) return false;
+  }
+  return true;
 }
 
 /**
@@ -92,6 +147,13 @@ const EXACT = new Set([
   "pedaly",
   "fuck",
   "fack", // tu trafia „f@ck" i „f4ck" — @ i 4 czytamy jako „a", a „fack" nie jest słowem
+  // Formy bez samogłosek dopisane WYBIÓRCZO. Ogólne dopasowanie po szkielecie
+  // spółgłosek („fck" ≈ „fuck") łapałoby też zwykłe skróty, więc lepiej kilka
+  // konkretnych wpisów niż reguła tnąca niewinne słowa.
+  "fck",
+  "fuk",
+  "fuking",
+  "krwa",
   "fucking",
   "fucker",
   "motherfucker",
@@ -118,7 +180,15 @@ const EXACT = new Set([
 function isBad(word: string): boolean {
   const n = normalize(word);
   if (n.length < 3) return false; // za krótkie, żeby cokolwiek znaczyło
-  return EXACT.has(n) || ROOTS.some((r) => n.startsWith(r));
+  if (!n.includes("*")) {
+    return EXACT.has(n) || ROOTS.some((r) => n.startsWith(r));
+  }
+  // Z gwiazdką („f*ck", „ch*j") — gwiazdka zastępuje dowolną literę. Reszta liter
+  // musi się zgadzać co do jednej, więc zwykłe słowa z „*" nie wpadają przypadkiem.
+  return (
+    [...EXACT].some((w) => matches(n, w)) ||
+    ROOTS.some((r) => n.length >= r.length && matches(n.slice(0, r.length), r))
+  );
 }
 
 /**
@@ -126,12 +196,41 @@ function isBad(word: string): boolean {
  * Długość słowa zachowana — „****" zamiast „kurwa" nie zmienia układu zdania
  * ani nie omija limitu znaków.
  */
-export function censor(raw: string): string {
+/**
+ * Litery rozstrzelone spacjami („k u r w a"). To jedyne obejście, którego nie da się
+ * złapać patrząc na pojedyncze słowo — trzeba skleić ciąg pojedynczych znaków.
+ *
+ * Sklejamy TYLKO takie ciągi (pojedyncze litery oddzielone spacją/kropką/myślnikiem)
+ * i maskujemy dopiero, gdy sklejone faktycznie jest wulgaryzmem. Sklejanie CAŁEGO
+ * tekstu byłoby katastrofą: „cichu jasny" bez spacji zawiera „chuj".
+ */
+const SPACED =
+  /(?<![\p{L}\p{N}])(?:[\p{L}\p{N}@$*][ .\-_]+){2,}[\p{L}\p{N}@$*](?![\p{L}\p{N}])/gu;
+
+/**
+ * Dla sklejonego ciągu pytamy o ZAWIERANIE, nie o początek: dopasowanie wciąga też
+ * sąsiednią samotną literę („o k u r w a" → „okurwa"), więc sprawdzanie od początku
+ * by go nie złapało. Bezpieczne, bo dotyczy wyłącznie ciągów pojedynczych liter.
+ */
+function spacedIsBad(seq: string): boolean {
+  const n = normalize(seq.replace(/[ .\-_]/g, ""));
+  if (n.length < 3) return false;
+  return ROOTS.some((r) => n.includes(r)) || [...EXACT].some((w) => n.includes(w));
+}
+
+export function censor(input: string): string {
+  // Znaki niewidoczne lecą z CAŁEGO tekstu od razu: wklejone w środek słowa rozbijały
+  // je na kawałki jeszcze zanim normalizacja zdążyła cokolwiek zrobić („kur<zwsp>wa"
+  // to dla kodu „kur" + „wa"). W opisie czy recenzji nie mają żadnego zastosowania.
+  const raw = input.replace(INVISIBLE, "");
+  const bezRozstrzelonych = raw.replace(SPACED, (seq) =>
+    spacedIsBad(seq) ? "*".repeat(seq.length) : seq,
+  );
   // Token = słowo z ewentualnymi kropkami/myślnikami/podstawieniami w środku,
   // żeby „k.u.r.w.a" wpadło w jedno dopasowanie, a nie rozsypało się na litery.
   // Zaczynać się może też od „@" lub „$" — inaczej „@sshole" gubiło pierwszą
   // literę i przechodziło jako „sshole".
-  return raw.replace(/[\p{L}\p{N}@$][\p{L}\p{N}._\-*@$]*/gu, (word) =>
+  return bezRozstrzelonych.replace(/[\p{L}\p{N}@$][\p{L}\p{N}\p{M}._\-*@$]*/gu, (word) =>
     isBad(word) ? "*".repeat(word.length) : word,
   );
 }

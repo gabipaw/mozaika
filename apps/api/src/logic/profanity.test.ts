@@ -53,11 +53,47 @@ test("obejścia: wielkie litery, ogonki, leetspeak, kropki, rozciąganie", () =>
   }
 });
 
-test("słowa bez samogłosek (f*ck, fck) przechodzą — to świadomy kompromis", () => {
-  // Żeby je złapać, trzeba by traktować „*" jak dowolną literę i zgadywać samogłoski,
-  // a wtedy filtr tnie zwykłe wyrazy. Kto pisze „f*ck", ten już się ocenzurował sam.
-  assert.equal(censor("no f*ck wie"), "no f*ck wie");
-  assert.equal(censor("no fck wie"), "no fck wie");
+test("gwiazdka w środku słowa (f*ck, ch*j) zastępuje dowolną literę", () => {
+  assert.equal(hasProfanity("no f*ck wie"), true);
+  assert.equal(hasProfanity("no ch*j wie"), true);
+});
+
+test("formy bez samogłosek (fck, fuk) — dopisane wybiórczo do listy", () => {
+  assert.equal(hasProfanity("no fck wie"), true);
+  assert.equal(hasProfanity("no fuk wie"), true);
+});
+
+test("litery rozstrzelone spacjami (k u r w a) są sklejane i łapane", () => {
+  assert.equal(hasProfanity("ale k u r w a fajne"), true);
+  assert.equal(hasProfanity("ale f u c k fajne"), true);
+  assert.equal(hasProfanity("ale c z a r n u c h fajne"), true);
+});
+
+test("sklejanie NIE rusza zwykłych ciągów pojedynczych liter", () => {
+  // Kluczowe zabezpieczenie: sklejamy tylko po to, żeby SPRAWDZIĆ — maskujemy
+  // dopiero, gdy sklejone naprawdę jest wyzwiskiem.
+  for (const t of ["a b c", "I o U", "M A Z U R Y", "to jest o k", "A B B A"]) {
+    assert.equal(censor(t), t, `fałszywy alarm: ${t}`);
+  }
+});
+
+test("nie sklejamy CALEGO tekstu (cichu jasny bez spacji zawiera wulgaryzm)", () => {
+  assert.equal(censor("cichu jasny dzień"), "cichu jasny dzień");
+});
+
+test("znaki niewidoczne wklejone w słowo nie ratują wulgaryzmu", () => {
+  assert.equal(hasProfanity("ale kur​wa"), true); // zero-width space
+  assert.equal(hasProfanity("ale ku‍rwa"), true); // zero-width joiner
+  assert.equal(hasProfanity("ale kur­wa"), true); // soft hyphen
+});
+
+test("cyrylickie litery udające łacińskie (кurwa) też wpadają", () => {
+  assert.equal(hasProfanity("ale кurwa"), true); // к = cyrylickie „ka"
+  assert.equal(hasProfanity("ale сhuj"), true); // с = cyrylickie „es"
+});
+
+test("znaki łączące (K̲U̲R̲W̲A̲) nie rozbijają już słowa", () => {
+  assert.equal(hasProfanity("o K̲U̲R̲W̲A̲ tu"), true);
 });
 
 test("NIE łapie niewinnych słów zawierających podobne ciągi", () => {
