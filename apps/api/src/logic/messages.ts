@@ -165,16 +165,60 @@ export async function reactToMessage(meId: number, msgId: number, emoji: string)
 }
 
 /** Lista rozmów: dla każdego rozmówcy ostatnia wiadomość + liczba nieprzeczytanych. */
+/**
+ * Liczba nieprzeczytanych wiadomości — sam licznik przy ikonie czatu.
+ *
+ * Osobno od `conversations()`, bo front odpytuje go CO 30 SEKUND. Poprzednio szedł
+ * po pełną listę rozmów tylko po to, żeby zsumować jedną liczbę: baza wysyłała
+ * wtedy wszystkie zdjęcia (base64) i avatary. Tu leci jeden COUNT.
+ */
+export function unreadMessageCount(meId: number): Promise<number> {
+  return prisma.message.count({
+    where: { receiverId: meId, readAt: null, deletedAt: null },
+  });
+}
+
 export async function conversations(meId: number) {
+  const mine = { OR: [{ senderId: meId }, { receiverId: meId }] };
+  // Świadomie BEZ msgSelect: lista rozmów potrzebuje tylko metadanych ostatniej
+  // wiadomości. msgSelect niesie `imageUrl` (zdjęcie jako base64, do ~1,5 MB) oraz
+  // avatary nadawcy i odbiorcy PRZY KAŻDYM wierszu — czyli przy każdym otwarciu czatu
+  // baza wysyłała wszystkie zdjęcia, jakie kiedykolwiek poszły w rozmowach.
   const rows = await prisma.message.findMany({
-    where: { OR: [{ senderId: meId }, { receiverId: meId }] },
+    where: mine,
     orderBy: { createdAt: "desc" },
     select: {
-      ...msgSelect,
-      sender: { select: { id: true, displayName: true, avatarUrl: true } },
-      receiver: { select: { id: true, displayName: true, avatarUrl: true } },
+      id: true,
+      text: true,
+      createdAt: true,
+      readAt: true,
+      deletedAt: true,
+      senderId: true,
+      receiverId: true,
+      media: { select: { title: true } },
     },
   });
+
+  // Do listy wystarczy „czy była fotka" — pytamy więc o same ID, bez treści zdjęć.
+  const zeZdjeciem = new Set(
+    (
+      await prisma.message.findMany({
+        where: { ...mine, imageUrl: { not: null } },
+        select: { id: true },
+      })
+    ).map((m) => m.id),
+  );
+
+  // Rozmówcy jednym zapytaniem: avatar (też base64) ma przyjść RAZ na osobę,
+  // a nie przy każdej jej wiadomości.
+  const partnerzy = [
+    ...new Set(rows.map((m) => (m.senderId === meId ? m.receiverId : m.senderId))),
+  ];
+  const users = await prisma.user.findMany({
+    where: { id: { in: partnerzy } },
+    select: { id: true, displayName: true, avatarUrl: true },
+  });
+  const byId = new Map(users.map((u) => [u.id, u]));
   const map = new Map<
     number,
     {
@@ -189,7 +233,8 @@ export async function conversations(meId: number) {
     }
   >();
   for (const m of rows) {
-    const other = m.senderId === meId ? m.receiver : m.sender;
+    const other = byId.get(m.senderId === meId ? m.receiverId : m.senderId);
+    if (!other) continue; // konto rozmówcy zniknęło w międzyczasie
     let entry = map.get(other.id);
     if (!entry) {
       // rows są malejąco → pierwszy trafiony = najnowsza wiadomość rozmowy.
@@ -197,7 +242,7 @@ export async function conversations(meId: number) {
         user: other,
         lastText: m.text,
         lastDeleted: m.deletedAt !== null,
-        lastImage: m.imageUrl !== null,
+        lastImage: zeZdjeciem.has(m.id),
         lastMediaTitle: m.media?.title ?? null,
         lastAt: m.createdAt,
         fromMe: m.senderId === meId,

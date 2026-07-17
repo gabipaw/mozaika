@@ -4143,8 +4143,10 @@ function updateMsgBadge(n) {
 
 async function refreshMsgBadge() {
   try {
-    const convs = await api("/me/conversations");
-    updateMsgBadge(convs.reduce((s, c) => s + c.unread, 0));
+    // Osobna, tania trasa — sam licznik. Wcześniej szło tu po CAŁĄ listę rozmów
+    // (ze zdjęciami i avatarami) tylko po to, żeby zsumować jedną liczbę, a dzieje
+    // się to co 30 sekund.
+    updateMsgBadge((await api("/me/messages/unread")).count);
   } catch {
     /* cichy — badge to detal */
   }

@@ -53,6 +53,7 @@ import {
   editMessage,
   reactToMessage,
   sendMessage,
+  unreadMessageCount,
 } from "./logic/messages.js";
 import {
   listNotifications,
@@ -555,6 +556,13 @@ api.delete("/me/block/:id", requireAuth, async (c) => {
 // Lista rozmów: rozmówca + ostatnia wiadomość + liczba nieprzeczytanych.
 api.get("/me/conversations", requireAuth, async (c) =>
   c.json(await conversations(c.get("userId"))),
+);
+
+// Sam licznik przy ikonie czatu. Front pyta o to CO 30 SEKUND, więc ma być tanie:
+// wcześniej brał całą listę rozmów i sumował ją u siebie, czyli baza wysyłała co pół
+// minuty wszystkie zdjęcia z rozmów, żeby wyszła jedna liczba.
+api.get("/me/messages/unread", requireAuth, async (c) =>
+  c.json({ count: await unreadMessageCount(c.get("userId")) }),
 );
 
 // Historia rozmowy z danym userem (oznacza jego wiadomości jako przeczytane).
