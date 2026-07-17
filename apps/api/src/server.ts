@@ -24,6 +24,7 @@ import { blockUser, unblockUser, listBlocked } from "./logic/blocks.js";
 import { listComments, addComment, deleteComment } from "./logic/comments.js";
 import {
   updateDisplayName,
+  updateBio,
   changePassword,
   getNotifPrefs,
   setNotifPrefs,
@@ -223,8 +224,18 @@ api.post("/auth/login", async (c) => {
 
 // Zmiana nazwy wyświetlanej.
 api.patch("/me/profile", requireAuth, async (c) => {
+  const userId = c.get("userId");
   const body = await c.req.json();
-  return c.json(await updateDisplayName(c.get("userId"), body.displayName));
+  // Pola są niezależne: front zapisuje nazwę i „o mnie" osobno, a `bio: ""` to
+  // świadome skasowanie opisu — dlatego sprawdzamy obecność klucza, nie prawdziwość.
+  const out: { displayName?: string; bio?: string | null } = {};
+  if (body.displayName !== undefined) {
+    Object.assign(out, await updateDisplayName(userId, body.displayName));
+  }
+  if (body.bio !== undefined) {
+    Object.assign(out, await updateBio(userId, body.bio));
+  }
+  return c.json(out);
 });
 
 // Zmiana hasła (wymaga podania obecnego).

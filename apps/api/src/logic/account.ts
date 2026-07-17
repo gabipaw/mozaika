@@ -32,6 +32,26 @@ export async function updateDisplayName(userId: number, raw: unknown) {
   return { displayName };
 }
 
+/** Ile znaków może mieć „o mnie". Krótko — to podpis pod nazwą, nie życiorys. */
+export const MAX_BIO = 200;
+
+/**
+ * Zmienia opis „o mnie". Pusty tekst = kasuje bio (NULL), a nie zapisuje pustego
+ * stringa — inaczej profil miałby pusty akapit zamiast żadnego.
+ */
+export async function updateBio(userId: number, raw: unknown) {
+  // Zwykłe spacje z końców + puste linie: bio ma jedną linijkę na profilu, a wklejony
+  // tekst z entera rozpychałby układ.
+  const bio = String(raw ?? "")
+    .replace(/\s*\n\s*/g, " ")
+    .trim();
+  if (bio.length > MAX_BIO) {
+    throw new ValidationError(`Opis może mieć max. ${MAX_BIO} znaków.`);
+  }
+  await prisma.user.update({ where: { id: userId }, data: { bio: bio || null } });
+  return { bio: bio || null };
+}
+
 /**
  * Zmienia hasło po sprawdzeniu obecnego. Konta bez hasła (stare demo) nie mają
  * czego weryfikować — odsyłamy z jasnym komunikatem zamiast cichego błędu.

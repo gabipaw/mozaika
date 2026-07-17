@@ -166,6 +166,10 @@ const I18N = {
     account: "Konto",
     save: "Zapisz",
     nameSaved: "Nazwa zapisana",
+    bioLabel: "O mnie",
+    bioPlaceholder: "Krótko o sobie — co lubisz oglądać?",
+    bioSaved: "Opis zapisany",
+    bioLeft: "Zostało {n} znaków",
     changePw: "Zmień hasło",
     currentPw: "Obecne hasło",
     newPw: "Nowe hasło (min. 6 znaków)",
@@ -435,6 +439,10 @@ const I18N = {
     account: "Account",
     save: "Save",
     nameSaved: "Name saved",
+    bioLabel: "About me",
+    bioPlaceholder: "A few words about you — what do you like to watch?",
+    bioSaved: "Bio saved",
+    bioLeft: "{n} characters left",
     changePw: "Change password",
     currentPw: "Current password",
     newPw: "New password (min. 6 chars)",
@@ -704,6 +712,10 @@ const I18N = {
     account: "Konto",
     save: "Speichern",
     nameSaved: "Name gespeichert",
+    bioLabel: "Über mich",
+    bioPlaceholder: "Kurz über dich — was schaust du gern?",
+    bioSaved: "Beschreibung gespeichert",
+    bioLeft: "Noch {n} Zeichen",
     changePw: "Passwort ändern",
     currentPw: "Aktuelles Passwort",
     newPw: "Neues Passwort (mind. 6 Zeichen)",
@@ -968,6 +980,10 @@ const I18N = {
     account: "Cuenta",
     save: "Guardar",
     nameSaved: "Nombre guardado",
+    bioLabel: "Sobre mí",
+    bioPlaceholder: "Unas palabras sobre ti — ¿qué te gusta ver?",
+    bioSaved: "Descripción guardada",
+    bioLeft: "Quedan {n} caracteres",
     changePw: "Cambiar contraseña",
     currentPw: "Contraseña actual",
     newPw: "Nueva contraseña (mín. 6 caracteres)",
@@ -1231,6 +1247,10 @@ const I18N = {
     account: "Conta",
     save: "Guardar",
     nameSaved: "Nome guardado",
+    bioLabel: "Sobre mim",
+    bioPlaceholder: "Umas palavras sobre ti — o que gostas de ver?",
+    bioSaved: "Descrição guardada",
+    bioLeft: "Faltam {n} caracteres",
     changePw: "Mudar palavra-passe",
     currentPw: "Palavra-passe atual",
     newPw: "Nova palavra-passe (mín. 6 caracteres)",
@@ -1492,6 +1512,10 @@ const I18N = {
     account: "账号",
     save: "保存",
     nameSaved: "名字已保存",
+    bioLabel: "关于我",
+    bioPlaceholder: "简单介绍一下自己——你喜欢看什么？",
+    bioSaved: "简介已保存",
+    bioLeft: "还剩 {n} 个字",
     changePw: "修改密码",
     currentPw: "当前密码",
     newPw: "新密码（至少 6 个字符）",
@@ -1748,6 +1772,10 @@ const I18N = {
     account: "アカウント",
     save: "保存",
     nameSaved: "名前を保存しました",
+    bioLabel: "自己紹介",
+    bioPlaceholder: "ひとことで自己紹介 — 何を観るのが好き？",
+    bioSaved: "自己紹介を保存しました",
+    bioLeft: "残り {n} 文字",
     changePw: "パスワードを変更",
     currentPw: "現在のパスワード",
     newPw: "新しいパスワード（6文字以上）",
@@ -2140,8 +2168,18 @@ function wireAccordion() {
 }
 
 // Wypełnia pole nazwy bieżącą wartością i chowa (zwinięty) formularz hasła.
+const MAX_BIO = 200; // musi się zgadzać z limitem serwera (logic/account.ts)
+
+/** Licznik „ile jeszcze znaków" pod polem „o mnie". */
+function updateBioCount() {
+  const left = MAX_BIO - $("bioInput").value.length;
+  $("bioCount").textContent = t("bioLeft", { n: left });
+}
+
 function renderAccountSettings() {
   $("nameInput").value = me?.displayName ?? "";
+  $("bioInput").value = myProfile?.user?.bio ?? "";
+  updateBioCount();
   $("pwForm").classList.add("hidden");
   $("pwCurrent").value = "";
   $("pwNew").value = "";
@@ -4125,6 +4163,12 @@ function renderProfileData(data, readOnly) {
     mkLink(t("followingLink", { n: fw }), "following"),
   );
 
+  // „O mnie" — tylko gdy jest co pokazać. Pusty akapit rozpychałby nagłówek profilu
+  // każdemu, kto bio nie uzupełnił (czyli na start: wszystkim).
+  const bio = $("profileBio");
+  bio.textContent = data.user.bio ?? "";
+  bio.classList.toggle("hidden", !data.user.bio);
+
   // 3. kolumna: własny profil = portret gustu + feed znajomych, cudzy = porównanie.
   $("profileFeed").classList.toggle("hidden", readOnly);
   $("comparePanel").classList.toggle("hidden", !readOnly);
@@ -5303,6 +5347,28 @@ function wireAccountSettings() {
       toast(err.message);
     }
   });
+
+  $("bioForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api("/me/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ bio: $("bioInput").value }),
+      });
+      // Serwer przycina i normalizuje (puste → null) — bierzemy JEGO wersję, żeby
+      // pole i profil pokazywały to, co faktycznie jest w bazie.
+      if (myProfile?.user) myProfile.user.bio = res.bio;
+      $("bioInput").value = res.bio ?? "";
+      updateBioCount();
+      toast(t("bioSaved"));
+      if (!$("profileView").classList.contains("hidden") && !viewingUserId) loadProfile();
+    } catch (err) {
+      toast(err.message);
+    }
+  });
+
+  $("bioInput").addEventListener("input", updateBioCount);
 
   $("pwToggle").addEventListener("click", () => {
     $("pwForm").classList.toggle("hidden");

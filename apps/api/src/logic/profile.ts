@@ -29,7 +29,7 @@ export async function profilePayload(
 ) {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { id: true, displayName: true, avatarUrl: true, email: withEmail },
+    select: { id: true, displayName: true, avatarUrl: true, bio: true, email: withEmail },
   });
 
   const [rows, watchlist, followersCount, followingCount] = await Promise.all([

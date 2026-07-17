@@ -299,6 +299,7 @@
                     </button>
                   </div>
                   <div id="profileCounts" class="profile-counts"></div>
+                  <p id="profileBio" class="profile-bio hidden"></p>
                 </div>
               </div>
               <h2 class="profile-h" data-i18n="top4">Top 4 ulubione</h2>
@@ -424,6 +425,22 @@
                 <form id="nameForm" class="settings-form">
                   <input id="nameInput" type="text" maxlength="40" autocomplete="off" />
                   <button type="submit" data-i18n="save">Zapisz</button>
+                </form>
+                <form id="bioForm" class="settings-form col">
+                  <label class="bio-label" for="bioInput" data-i18n="bioLabel">
+                    O mnie
+                  </label>
+                  <textarea
+                    id="bioInput"
+                    maxlength="200"
+                    rows="3"
+                    data-i18n-ph="bioPlaceholder"
+                    placeholder="Krótko o sobie — co lubisz oglądać?"
+                  ></textarea>
+                  <div class="bio-foot">
+                    <span id="bioCount" class="muted small"></span>
+                    <button type="submit" data-i18n="save">Zapisz</button>
+                  </div>
                 </form>
                 <button id="pwToggle" class="linkbtn" type="button" data-i18n="changePw">
                   Zmień hasło

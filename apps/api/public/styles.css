@@ -2759,7 +2759,10 @@ h2 {
   align-items: stretch;
   margin-top: 8px;
 }
-.settings-form input {
+/* `textarea` MUSI tu być razem z `input`: samo `input` zostawiało pole „o mnie"
+   z domyślnym białym tłem przeglądarki na ciemnym panelu ustawień. */
+.settings-form input,
+.settings-form textarea {
   flex: 1;
   min-width: 0;
   background: var(--bg);
@@ -3113,4 +3116,34 @@ footer {
 
 .auto-trans .muted {
   margin-top: 4px;
+}
+
+/* „O mnie" pod licznikami obserwacji na profilu. Łamie długie ciągi bez spacji —
+   wklejony link bez tego rozpychał kolumnę profilu. */
+.profile-bio {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* Pole „o mnie" w ustawieniach: licznik znaków po lewej, „Zapisz" po prawej. */
+.bio-label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+#bioInput {
+  resize: vertical;
+  min-height: 64px;
+  font: inherit;
+}
+
+.bio-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
