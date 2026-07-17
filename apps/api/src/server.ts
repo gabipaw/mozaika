@@ -67,6 +67,7 @@ import { invalidateDiscoveryCache, tasteDiscovery } from "./logic/discovery.js";
 import { addMediaFromTmdb, searchTmdb, tmdbTitles } from "./logic/tmdb.js";
 import { currentLang, normalizeLang, withLang } from "./logic/lang.js";
 import { localizeTitles } from "./logic/localize.js";
+import { translate, translateEnabled } from "./logic/translate.js";
 
 // Sekret do podpisu tokenów. Fallback istnieje TYLKO dla wygody lokalnej — na
 // produkcji jest zakazany: gdyby serwer podpisywal tokeny stringiem znanym z kodu,
@@ -402,6 +403,27 @@ api.get("/me/notifications/unread", requireAuth, async (c) =>
 api.post("/me/notifications/read", requireAuth, async (c) =>
   c.json(await markAllRead(c.get("userId"))),
 );
+
+// --- Tłumaczenie cudzych tekstów (czat, recenzje, komentarze) ---
+
+// Front pyta o to raz przy starcie: bez klucza DeepL nie ma po co pokazywać
+// przycisku „Przetłumacz", skoro klik i tak skończyłby się błędem.
+api.get("/translate/enabled", (c) => c.json({ enabled: translateEnabled() }));
+
+/**
+ * Tłumaczy na język requestu (nagłówek X-Lang). Wymaga logowania i jest dławione:
+ * bez tego trasa byłaby otwartym proxy do NASZEGO klucza DeepL i ktokolwiek mógłby
+ * przepalić miesięczny limit całej aplikacji. 30 tłumaczeń na minutę na użytkownika
+ * — czytającemu rozmowę nie przeszkadza, skryptowi owszem.
+ */
+api.post("/translate", requireAuth, async (c) => {
+  const { allowed, retryAfter } = rateLimit(`translate:${c.get("userId")}`, 30, 60_000);
+  if (!allowed) {
+    throw new TooManyRequestsError(`Za dużo tłumaczeń. Spróbuj za ${retryAfter} s.`);
+  }
+  const body = await c.req.json();
+  return c.json(await translate(String(body.text ?? "")));
+});
 
 // „Co obejrzeć razem" — typy dla Ciebie i oglądanego użytkownika.
 api.get("/users/:id/together", requireAuth, async (c) => {

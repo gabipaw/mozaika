@@ -233,7 +233,10 @@ Repo zawiera `render.yaml` (Blueprint). W panelu Render: **New → Blueprint →
 Render zbuduje (`npm install --include=dev && npm run build`) i uruchomi
 (`cd apps/api && node dist/server.js`). W zakładce **Environment** ustaw sekrety
 `DATABASE_URL` i `DIRECT_URL` (z Supabase) oraz `TMDB_API_KEY` (klucz TMDB v3 —
-do wyszukiwarki filmów; trzymany po stronie serwera, nie w repo). Po wdrożeniu apka jest pod publicznym
+do wyszukiwarki filmów; trzymany po stronie serwera, nie w repo).
+Opcjonalnie `DEEPL_API_KEY` (darmowy klucz z [deepl.com/pro-api](https://www.deepl.com/pro-api))
+— włącza przycisk „Przetłumacz" pod cudzymi wiadomościami, recenzjami i komentarzami.
+Bez tego klucza przycisk się nie pokazuje, a reszta aplikacji działa normalnie. Po wdrożeniu apka jest pod publicznym
 `https://…onrender.com`. Uwaga: darmowy plan usypia po ~15 min → pierwszy request budzi
 serwer ~50 s.
 

@@ -132,6 +132,10 @@ const I18N = {
     watchEmptyRO: "Pusto.",
     seeAll: "Zobacz wszystko ({n})",
     nothingRatedCat: "Nic tu jeszcze",
+    translate: "Przetłumacz",
+    translating: "Tłumaczę…",
+    showOriginal: "Pokaż oryginał",
+    showOriginalFrom: "Oryginał ({lang})",
     noCoversPicked: "Nie wybrano okładek",
     edit: "Zmień",
     pickN: "Wybierz {max} ({n})",
@@ -393,6 +397,10 @@ const I18N = {
     watchEmptyRO: "Empty.",
     seeAll: "See all ({n})",
     nothingRatedCat: "Nothing yet",
+    translate: "Translate",
+    translating: "Translating…",
+    showOriginal: "Show original",
+    showOriginalFrom: "Original ({lang})",
     noCoversPicked: "No covers picked",
     edit: "Edit",
     pickN: "Pick {max} ({n})",
@@ -656,6 +664,10 @@ const I18N = {
     watchEmptyRO: "Leer.",
     seeAll: "Alle ansehen ({n})",
     nothingRatedCat: "Hier ist noch nichts",
+    translate: "Übersetzen",
+    translating: "Übersetze…",
+    showOriginal: "Original anzeigen",
+    showOriginalFrom: "Original ({lang})",
     noCoversPicked: "Keine Cover ausgewählt",
     edit: "Ändern",
     pickN: "Wähle {max} ({n})",
@@ -911,6 +923,10 @@ const I18N = {
     watchEmptyRO: "Vacío.",
     seeAll: "Ver todo ({n})",
     nothingRatedCat: "Aún no hay nada aquí",
+    translate: "Traducir",
+    translating: "Traduciendo…",
+    showOriginal: "Ver original",
+    showOriginalFrom: "Original ({lang})",
     noCoversPicked: "Sin portadas elegidas",
     edit: "Cambiar",
     pickN: "Elige {max} ({n})",
@@ -1167,6 +1183,10 @@ const I18N = {
     watchEmptyRO: "Vazio.",
     seeAll: "Ver tudo ({n})",
     nothingRatedCat: "Ainda não há nada aqui",
+    translate: "Traduzir",
+    translating: "A traduzir…",
+    showOriginal: "Ver original",
+    showOriginalFrom: "Original ({lang})",
     noCoversPicked: "Nenhuma capa escolhida",
     edit: "Alterar",
     pickN: "Escolhe {max} ({n})",
@@ -1421,6 +1441,10 @@ const I18N = {
     watchEmptyRO: "空。",
     seeAll: "查看全部（{n}）",
     nothingRatedCat: "这里还什么都没有",
+    translate: "翻译",
+    translating: "翻译中…",
+    showOriginal: "显示原文",
+    showOriginalFrom: "原文（{lang}）",
     noCoversPicked: "未选择封面",
     edit: "修改",
     pickN: "选择 {max}（{n}）",
@@ -1670,6 +1694,10 @@ const I18N = {
     watchEmptyRO: "空です。",
     seeAll: "すべて見る（{n}）",
     nothingRatedCat: "ここにはまだ何もありません",
+    translate: "翻訳",
+    translating: "翻訳中…",
+    showOriginal: "原文を表示",
+    showOriginalFrom: "原文（{lang}）",
     noCoversPicked: "表紙が選ばれていません",
     edit: "変更",
     pickN: "{max} 個選ぶ（{n}）",
@@ -2241,6 +2269,67 @@ async function api(path, options = {}) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || t("apiError"));
   return data;
+}
+
+// --- Tłumaczenie cudzych tekstów (czat, recenzje, komentarze) ---
+
+// Bez klucza DeepL na serwerze tłumaczenia nie ma — wtedy nie pokazujemy przycisku,
+// zamiast dawać go i wywalać się dopiero przy kliknięciu. Pytamy raz, przy starcie.
+let translateOn = false;
+async function initTranslate() {
+  try {
+    translateOn = (await api("/translate/enabled")).enabled === true;
+  } catch {
+    translateOn = false;
+  }
+}
+
+/**
+ * Przycisk „Przetłumacz" pod CUDZYM tekstem: podmienia treść `el` na tłumaczenie
+ * i wraca do oryginału drugim kliknięciem. Zwraca null, gdy nie ma czego/jak
+ * tłumaczyć — wołający wtedy nic nie dokłada.
+ *
+ * Języka źródłowego nie zgadujemy z góry (wykrywanie na froncie myli się na krótkich
+ * tekstach, a „hey" wygląda tak samo w kilku językach) — mówi go DeepL przy okazji
+ * tłumaczenia i dopiero wtedy piszemy, z czego przetłumaczyliśmy.
+ */
+function translateControl(el, text) {
+  if (!translateOn || !me || !(text ?? "").trim()) return null;
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "translate-btn";
+  btn.textContent = t("translate");
+
+  let original = null; // != null → pokazujemy tłumaczenie
+  btn.addEventListener("click", async () => {
+    if (original !== null) {
+      el.textContent = original;
+      original = null;
+      btn.textContent = t("translate");
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = t("translating");
+    try {
+      const r = await api("/translate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      original = el.textContent;
+      el.textContent = r.text;
+      btn.textContent = r.from
+        ? t("showOriginalFrom", { lang: r.from.toUpperCase() })
+        : t("showOriginal");
+    } catch (e) {
+      toast(e.message);
+      btn.textContent = t("translate");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+  return btn;
 }
 
 function toast(msg) {
@@ -3416,6 +3505,11 @@ async function loadThread(forceScroll = false) {
           tx.className = "chat-text-body";
           tx.textContent = m.text;
           bubble.append(tx);
+          // Tylko pod CUDZĄ wiadomością — własnej nie ma po co tłumaczyć.
+          if (!mine) {
+            const tr = translateControl(tx, m.text);
+            if (tr) bubble.append(tr);
+          }
         }
       }
       col.append(bubble);
@@ -3956,7 +4050,12 @@ function renderMyComments(reviews, authorId, ownerName) {
     const text = document.createElement("p");
     text.className = "comment-text";
     text.textContent = r.text;
-    body.append(head, text, likeControl(r, authorId));
+    body.append(head, text);
+    if (authorId !== me?.id) {
+      const tr = translateControl(text, r.text);
+      if (tr) body.append(tr);
+    }
+    body.append(likeControl(r, authorId));
 
     item.append(poster, body);
     item.addEventListener("click", () =>
@@ -4524,6 +4623,10 @@ async function loadDetailReviews(mediaId) {
         txt.className = "text";
         txt.textContent = r.text;
         el.append(txt);
+        if (r.user.id !== me?.id) {
+          const tr = translateControl(txt, r.text);
+          if (tr) el.append(tr);
+        }
       }
       el.append(likeControl(r, r.user.id));
       el.append(buildCommentsSection(r.id));
@@ -4704,6 +4807,10 @@ function commentEl(node, reviewId, isReply = false) {
   text.textContent = node.deleted ? t("commentDeleted") : node.text;
 
   main.append(head, text);
+  if (!node.deleted && node.author.id !== me?.id) {
+    const tr = translateControl(text, node.text);
+    if (tr) main.append(tr);
+  }
 
   // Akcje: odpowiedz (każdy zalogowany), usuń (tylko autor, nieusunięty).
   if (!node.deleted && me) {
@@ -4935,6 +5042,10 @@ function showAuth() {
 }
 
 async function showApp() {
+  // Zanim cokolwiek narysujemy: czat i recenzje pytają translateControl, czy przycisk
+  // „Przetłumacz" ma się pojawić. Jedno miejsce dla obu wejść — startu z zapisanym
+  // tokenem i świeżego logowania.
+  await initTranslate();
   $("authView").classList.add("hidden");
   $("appView").classList.remove("hidden");
   $("userBox").classList.remove("hidden");

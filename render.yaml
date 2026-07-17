@@ -24,6 +24,10 @@ services:
         sync: false # klucz TMDB v3 — do wyszukiwarki filmów
       - key: RAWG_API_KEY
         sync: false # klucz RAWG — do wyszukiwarki gier (rawg.io/apikey)
+      - key: DEEPL_API_KEY
+        # klucz DeepL (plan free, deepl.com/pro-api) — tłumaczenie czatu/recenzji.
+        # Bez niego przycisk „Przetłumacz" się nie pokazuje, reszta działa normalnie.
+        sync: false
       - key: VAPID_PUBLIC_KEY
         sync: false # Web Push — klucz publiczny (uzupełnij w panelu Render)
       - key: VAPID_PRIVATE_KEY
