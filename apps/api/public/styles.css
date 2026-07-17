@@ -827,11 +827,17 @@ h2 {
    a okładki musiały się dopasować do tej narzuconej wysokości — przy 4 sztukach
    nie mieściły się w szerokości i były rozciągane/przycinane. Teraz jest odwrotnie:
    wysokość rzędu WYNIKA z okładek, więc proporcja 2:3 zawsze zostaje nietknięta. */
+/* Pasek nagłówka NAD okładkami (etykieta z lewej, przyciski z prawej), tak jak od
+   zawsze na telefonie. Etykieta stała wcześniej w osobnej kolumnie z lewej — wtedy
+   „Zobacz wszystko" nie miało jak trafić w prawy górny róg kategorii inaczej niż
+   nad plakatami, a tam przy czterech okładkach lądowałoby NA ostatniej z nich.
+   Przy okazji okładki dostają całą szerokość kolumny zamiast tracić 100px na podpis. */
 .cat-row {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
   padding: 10px 0;
   border-top: 1px solid var(--line);
 }
@@ -846,12 +852,20 @@ h2 {
   padding-bottom: 0;
 }
 
-/* Lewa kolumna rzędu: nazwa kategorii + przycisk „Zmień" pod nią. */
+/* Pasek nad okładkami: nazwa kategorii z lewej, przyciski dociśnięte do prawej. */
 .cat-head {
-  flex: 0 0 100px;
+  flex: 0 0 auto;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Przyciski kategorii razem, „Zobacz wszystko" jako ostatni — czyli w samym rogu. */
+.cat-actions {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -873,10 +887,13 @@ h2 {
 /* Okładki dzielą szerokość rzędu na 4 równe kolumny, a wysokość biorą z proporcji
    plakatu (2:3) — nic nie jest rozciągane ani przycinane. Rzędy z mniej niż 4
    pozycjami mają węższe karty tej samej wielkości, więc wszystkie kategorie
-   wyglądają spójnie. */
+   wyglądają spójnie.
+   Górny limit szerokości, bo etykieta przeniosła się nad plakaty i zwolniła 100px:
+   bez niego 1/4 rzędu to ~109px zamiast ~70px, plakat (2:3) rośnie o połowę i cała
+   kolumna kategorii robi się dwa razy wyższa niż sąsiednie. */
 .cat-posters .card {
   flex: 0 0 calc((100% - 3 * 10px) / 4);
-  max-width: calc((100% - 3 * 10px) / 4);
+  max-width: min(calc((100% - 3 * 10px) / 4), 76px);
   height: auto;
 }
 
@@ -1923,19 +1940,6 @@ h2 {
    — nie ma jak wejść na okładki. */
 .cat-seeall {
   flex: 0 0 auto;
-}
-
-/* Główka ma trzymać stałe 100px (.cat-head), ale przyciski są od niej szersze i przez
-   `white-space: nowrap` rozpychały ją do ~140px — tylko w rzędach, które taki przycisk
-   mają. Rzędy zaczynały się wtedy w różnych miejscach i okładki nie stały w jednej
-   kolumnie. W główce pozwalamy tekstowi przycisku się zawinąć. */
-.cat-head {
-  min-width: 0;
-}
-
-.cat-head .seeall {
-  max-width: 100%;
-  white-space: normal;
 }
 
 /* Przycisk „Zobacz wszystko". */

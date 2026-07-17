@@ -2767,15 +2767,17 @@ function renderRatedByCat(reviews, readOnly) {
     const items = reviews.filter((r) => g.types.includes(r.media.type));
     const catRow = document.createElement("div");
     catRow.className = "cat-row";
-    // Nazwa kategorii i przycisk „Zmień" w jednej kolumnie po lewej. Przycisk był
-    // wcześniej pozycjonowany absolutnie nad plakatami i przy 4 okładkach (które
-    // wypełniają całą szerokość) lądował NA ostatniej z nich.
+    // Pasek nad okładkami: nazwa kategorii z lewej, przyciski z prawej. Przyciski NIE
+    // mogą być pozycjonowane absolutnie nad plakatami — przy czterech okładkach (a te
+    // wypełniają całą szerokość) lądowały wtedy NA ostatniej z nich.
     const head = document.createElement("div");
     head.className = "cat-head";
     const label = document.createElement("div");
     label.className = "cat-label";
     label.textContent = t(g.labelKey);
-    head.append(label);
+    const actions = document.createElement("div");
+    actions.className = "cat-actions";
+    head.append(label, actions);
     const posters = document.createElement("div");
     posters.className = "cat-posters";
     // Cudzy profil pokazuje pierwsze MAX_COVERS; własny — okładki wybrane przez usera.
@@ -2803,6 +2805,19 @@ function renderRatedByCat(reviews, readOnly) {
       }
       for (const r of shown) appendCard(posters, r.media, r.rating);
     }
+    // „Wybierz" tylko na WŁASNYM profilu (nie zmieniasz cudzych okładek). Idzie PRZED
+    // „Zobacz wszystko", żeby to drugie zostało w samym rogu kategorii.
+    if (!readOnly && items.length > 0) {
+      const btn = document.createElement("button");
+      btn.className = "seeall cat-seeall";
+      btn.type = "button";
+      btn.textContent =
+        items.length > MAX_COVERS
+          ? t("pickN", { n: items.length, max: MAX_COVERS })
+          : t("edit");
+      btn.addEventListener("click", () => openCatPicker(g, items));
+      actions.append(btn);
+    }
     // „Zobacz wszystko" na KAŻDYM profilu — rząd mieści najwyżej MAX_COVERS okładek,
     // więc bez tego reszta ocen była nieosiągalna; na cudzym profilu tym bardziej, bo
     // tam nie ma nawet przycisku wyboru. Tylko gdy jest CO dobierać: przy kategorii,
@@ -2813,19 +2828,7 @@ function renderRatedByCat(reviews, readOnly) {
       all.type = "button";
       all.textContent = t("seeAll", { n: items.length });
       all.addEventListener("click", () => openSeeAll(t(g.labelKey), items));
-      head.append(all);
-    }
-    // „Wybierz" tylko na WŁASNYM profilu (nie zmieniasz cudzych okładek).
-    if (!readOnly && items.length > 0) {
-      const btn = document.createElement("button");
-      btn.className = "seeall cat-seeall";
-      btn.type = "button";
-      btn.textContent =
-        items.length > MAX_COVERS
-          ? t("pickN", { n: items.length, max: MAX_COVERS })
-          : t("edit");
-      btn.addEventListener("click", () => openCatPicker(g, items));
-      head.append(btn);
+      actions.append(all);
     }
     catRow.append(head, posters);
     box.append(catRow);
