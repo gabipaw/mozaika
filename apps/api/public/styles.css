@@ -756,9 +756,15 @@ h2 {
   padding: 0;
 }
 
+/* Dół watchlisty ma trafiać w tę samą linię co dół kategorii. Wolna wysokość
+   (u pełnego profilu ~90px) idzie w odstępy między sekcjami, a NIE w okładki:
+   Top 4 to 4 plakaty w kolumnie 300px, więc szerzej niż ~67px nie urosną, a przy
+   proporcji 2:3 szerokość rządzi wysokością. Rozpychanie samych okładek wymagałoby
+   układu 2×2 (~145px) — to już raz odrzucono jako za duże (komentarz przy #topMedia). */
 .profile-left {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   min-height: 0;
   height: 100%;
 }
