@@ -66,6 +66,7 @@ import { tastePortrait } from "./logic/tasteProfile.js";
 import { invalidateDiscoveryCache, tasteDiscovery } from "./logic/discovery.js";
 import { addMediaFromTmdb, searchTmdb, tmdbTitles } from "./logic/tmdb.js";
 import { currentLang, normalizeLang, withLang } from "./logic/lang.js";
+import { MAX_FAVORITES, siblingTypes } from "./logic/categories.js";
 import { localizeTitles } from "./logic/localize.js";
 
 // Sekret do podpisu tokenów. Fallback istnieje TYLKO dla wygody lokalnej — na
@@ -272,14 +273,23 @@ api.post("/me/favorite", requireAuth, async (c) => {
   const favorite = Boolean(body.favorite);
   const review = await prisma.review.findUnique({
     where: { userId_mediaId: { userId, mediaId } },
+    include: { media: { select: { type: true } } },
   });
   if (!review) {
     throw new NotFoundError("Najpierw oceń ten tytuł, żeby dodać go do TOP 4.");
   }
+  // Limit obowiązuje W OBRĘBIE KATEGORII: cztery przypięte anime nie mogą zabierać
+  // miejsca filmom. Liczony globalnie sprawiał, że użytkownik z zapełnioną jedną półką
+  // słyszał „masz już 4 ulubione" przy tytule z półki, na której nie miał nic.
   if (favorite && !review.favorite) {
-    const count = await prisma.review.count({ where: { userId, favorite: true } });
-    if (count >= 4) {
-      throw new ValidationError("Masz już 4 ulubione — najpierw odepnij inny tytuł.");
+    const types = siblingTypes(review.media.type);
+    const count = await prisma.review.count({
+      where: { userId, favorite: true, media: { type: { in: types } } },
+    });
+    if (count >= MAX_FAVORITES) {
+      throw new ValidationError(
+        `Masz już ${MAX_FAVORITES} ulubione w tej kategorii — najpierw odepnij inny tytuł.`,
+      );
     }
   }
   await prisma.review.update({

@@ -38,6 +38,11 @@ const I18N = {
     typeAnime: "🎞️ Anime",
     typeMusic: "🎵 Muzyka",
     typeGame: "🎮 Gry",
+    shelfMusic: "Muzyka",
+    shelfFilm: "Filmy / Seriale",
+    shelfAnime: "Anime",
+    shelfBook: "Książki / Manga",
+    shelfGame: "Gry",
     searchFilm: "Szukaj filmu (TMDB)…",
     searchBook: "Szukaj książki (Open Library)…",
     searchManga: "Szukaj mangi (AniList)…",
@@ -294,6 +299,11 @@ const I18N = {
     typeAnime: "🎞️ Anime",
     typeMusic: "🎵 Music",
     typeGame: "🎮 Games",
+    shelfMusic: "Music",
+    shelfFilm: "Movies / TV",
+    shelfAnime: "Anime",
+    shelfBook: "Books / Manga",
+    shelfGame: "Games",
     searchFilm: "Search movies (TMDB)…",
     searchBook: "Search books (Open Library)…",
     searchManga: "Search manga (AniList)…",
@@ -550,6 +560,11 @@ const I18N = {
     typeAnime: "🎞️ Anime",
     typeMusic: "🎵 Musik",
     typeGame: "🎮 Spiele",
+    shelfMusic: "Musik",
+    shelfFilm: "Filme / Serien",
+    shelfAnime: "Anime",
+    shelfBook: "Bücher / Manga",
+    shelfGame: "Spiele",
     searchFilm: "Film suchen (TMDB)…",
     searchBook: "Buch suchen (Open Library)…",
     searchManga: "Manga suchen (AniList)…",
@@ -802,6 +817,11 @@ const I18N = {
     typeAnime: "🎞️ Anime",
     typeMusic: "🎵 Música",
     typeGame: "🎮 Juegos",
+    shelfMusic: "Música",
+    shelfFilm: "Películas / Series",
+    shelfAnime: "Anime",
+    shelfBook: "Libros / Manga",
+    shelfGame: "Juegos",
     searchFilm: "Buscar película (TMDB)…",
     searchBook: "Buscar libro (Open Library)…",
     searchManga: "Buscar manga (AniList)…",
@@ -1053,6 +1073,11 @@ const I18N = {
     typeAnime: "🎞️ Anime",
     typeMusic: "🎵 Música",
     typeGame: "🎮 Jogos",
+    shelfMusic: "Música",
+    shelfFilm: "Filmes / Séries",
+    shelfAnime: "Anime",
+    shelfBook: "Livros / Mangá",
+    shelfGame: "Jogos",
     searchFilm: "Procurar filme (TMDB)…",
     searchBook: "Procurar livro (Open Library)…",
     searchManga: "Procurar manga (AniList)…",
@@ -1303,6 +1328,11 @@ const I18N = {
     typeAnime: "🎞️ 动画",
     typeMusic: "🎵 音乐",
     typeGame: "🎮 游戏",
+    shelfMusic: "音乐",
+    shelfFilm: "电影 / 剧集",
+    shelfAnime: "动画",
+    shelfBook: "图书 / 漫画",
+    shelfGame: "游戏",
     searchFilm: "搜索电影（TMDB）…",
     searchBook: "搜索图书（Open Library）…",
     searchManga: "搜索漫画（AniList）…",
@@ -1547,6 +1577,11 @@ const I18N = {
     typeAnime: "🎞️ アニメ",
     typeMusic: "🎵 音楽",
     typeGame: "🎮 ゲーム",
+    shelfMusic: "音楽",
+    shelfFilm: "映画 / ドラマ",
+    shelfAnime: "アニメ",
+    shelfBook: "書籍 / マンガ",
+    shelfGame: "ゲーム",
     searchFilm: "映画を検索（TMDB）…",
     searchBook: "書籍を検索（Open Library）…",
     searchManga: "マンガを検索（AniList）…",
@@ -2569,12 +2604,14 @@ async function loadMe() {
 }
 
 // Grupy kategorii na prawej stronie profilu.
+// Etykiety przez klucz i18n, nie gotowym tekstem — inaczej nazwy półek zostawałyby
+// polskie po przełączeniu języka (labelKey czyta się przez t() przy renderze).
 const CAT_GROUPS = [
-  { key: "music", label: "Muzyka", types: ["MUZYKA"] },
-  { key: "film", label: "Filmy / Seriale", types: ["FILM", "SERIAL"] },
-  { key: "anime", label: "Anime", types: ["ANIME"] },
-  { key: "book", label: "Książki / Manga", types: ["KSIAZKA", "MANGA"] },
-  { key: "game", label: "Gry", types: ["GRA"] },
+  { key: "music", labelKey: "shelfMusic", types: ["MUZYKA"] },
+  { key: "film", labelKey: "shelfFilm", types: ["FILM", "SERIAL"] },
+  { key: "anime", labelKey: "shelfAnime", types: ["ANIME"] },
+  { key: "book", labelKey: "shelfBook", types: ["KSIAZKA", "MANGA"] },
+  { key: "game", labelKey: "shelfGame", types: ["GRA"] },
 ];
 
 // Ile okładek pokazuje jeden rząd kategorii na profilu. JEDNO miejsce — teksty
@@ -2662,7 +2699,7 @@ function openCatPicker(group, items) {
   $("seeAllGrid").classList.remove("hidden"); // picker używa siatki plakatów
   $("togetherWrap").classList.add("hidden");
   $("seeAllTitle").textContent = t("pickCovers", {
-    label: group.label,
+    label: t(group.labelKey),
     max: MAX_COVERS,
   });
   renderCatPickGrid();
@@ -2720,7 +2757,7 @@ function renderRatedByCat(reviews, readOnly) {
     head.className = "cat-head";
     const label = document.createElement("div");
     label.className = "cat-label";
-    label.textContent = g.label;
+    label.textContent = t(g.labelKey);
     head.append(label);
     const posters = document.createElement("div");
     posters.className = "cat-posters";
@@ -3770,15 +3807,37 @@ function renderProfileData(data, readOnly) {
   // Cudzy profil: portretu gustu nie ma, więc komentarze biorą CAŁĄ szerokość (3×3).
   $("profileView").classList.toggle("readonly", readOnly);
 
-  // Top 4 = przypięte (favorite).
-  const top = data.reviews.filter((r) => r.favorite).slice(0, 4);
+  // Top 4 = przypięte (favorite), półka po półce. Limit czterech obowiązuje W KAŻDEJ
+  // kategorii z osobna, więc jeden wspólny rząd nie miałby jak tego pokazać.
+  // Puste kategorie pomijamy: profil z jednym przypiętym albumem to inaczej cztery
+  // rzędy pustki. (W #ratedByCat stałe rzędy mają sens — tam trzymają układ.)
   const topBox = $("topMedia");
   topBox.innerHTML = "";
-  if (top.length === 0) {
+  const favs = data.reviews.filter((r) => r.favorite);
+  const shelves = CAT_GROUPS.map((g) => ({
+    g,
+    items: favs.filter((r) => g.types.includes(r.media.type)).slice(0, MAX_COVERS),
+  })).filter((s) => s.items.length > 0);
+
+  if (shelves.length === 0) {
     topBox.innerHTML = `<p class="muted">${readOnly ? t("top4EmptyRO") : t("top4Empty")}</p>`;
   } else {
-    // Muzyka w Top 4 jako prostokąt 2:3 (rect), nie kwadrat.
-    for (const r of top) appendCard(topBox, r.media, r.rating, undefined, true);
+    for (const { g, items } of shelves) {
+      const row = document.createElement("div");
+      row.className = "cat-row";
+      const head = document.createElement("div");
+      head.className = "cat-head";
+      const label = document.createElement("div");
+      label.className = "cat-label";
+      label.textContent = t(g.labelKey);
+      head.append(label);
+      const posters = document.createElement("div");
+      posters.className = "cat-posters";
+      // Muzyka w Top 4 jako prostokąt 2:3 (rect), nie kwadrat.
+      for (const r of items) appendCard(posters, r.media, r.rating, undefined, true);
+      row.append(head, posters);
+      topBox.append(row);
+    }
   }
 
   // Lista „do obejrzenia/zagrania" — do 6 (3×2), reszta pod „Zobacz wszystko".
