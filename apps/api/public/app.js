@@ -38,6 +38,11 @@ const I18N = {
     typeAnime: "🎞️ Anime",
     typeMusic: "🎵 Muzyka",
     typeGame: "🎮 Gry",
+    shelfMusic: "Muzyka",
+    shelfFilm: "Filmy / Seriale",
+    shelfAnime: "Anime",
+    shelfBook: "Książki / Manga",
+    shelfGame: "Gry",
     searchFilm: "Szukaj filmu (TMDB)…",
     searchBook: "Szukaj książki (Open Library)…",
     searchManga: "Szukaj mangi (AniList)…",
@@ -127,6 +132,7 @@ const I18N = {
     watchEmptyRO: "Pusto.",
     seeAll: "Zobacz wszystko ({n})",
     nothingRatedCat: "Nic tu jeszcze",
+    noCoversPicked: "Nie wybrano okładek",
     edit: "Zmień",
     pickN: "Wybierz {max} ({n})",
     pickCovers: "{label} — wybierz do {max} okładek",
@@ -294,6 +300,11 @@ const I18N = {
     typeAnime: "🎞️ Anime",
     typeMusic: "🎵 Music",
     typeGame: "🎮 Games",
+    shelfMusic: "Music",
+    shelfFilm: "Movies / TV",
+    shelfAnime: "Anime",
+    shelfBook: "Books / Manga",
+    shelfGame: "Games",
     searchFilm: "Search movies (TMDB)…",
     searchBook: "Search books (Open Library)…",
     searchManga: "Search manga (AniList)…",
@@ -383,6 +394,7 @@ const I18N = {
     watchEmptyRO: "Empty.",
     seeAll: "See all ({n})",
     nothingRatedCat: "Nothing yet",
+    noCoversPicked: "No covers picked",
     edit: "Edit",
     pickN: "Pick {max} ({n})",
     pickCovers: "{label} — pick up to {max} covers",
@@ -550,6 +562,11 @@ const I18N = {
     typeAnime: "🎞️ Anime",
     typeMusic: "🎵 Musik",
     typeGame: "🎮 Spiele",
+    shelfMusic: "Musik",
+    shelfFilm: "Filme / Serien",
+    shelfAnime: "Anime",
+    shelfBook: "Bücher / Manga",
+    shelfGame: "Spiele",
     searchFilm: "Film suchen (TMDB)…",
     searchBook: "Buch suchen (Open Library)…",
     searchManga: "Manga suchen (AniList)…",
@@ -641,6 +658,7 @@ const I18N = {
     watchEmptyRO: "Leer.",
     seeAll: "Alle ansehen ({n})",
     nothingRatedCat: "Hier ist noch nichts",
+    noCoversPicked: "Keine Cover ausgewählt",
     edit: "Ändern",
     pickN: "Wähle {max} ({n})",
     pickCovers: "{label} — wähle bis zu {max} Cover",
@@ -802,6 +820,11 @@ const I18N = {
     typeAnime: "🎞️ Anime",
     typeMusic: "🎵 Música",
     typeGame: "🎮 Juegos",
+    shelfMusic: "Música",
+    shelfFilm: "Películas / Series",
+    shelfAnime: "Anime",
+    shelfBook: "Libros / Manga",
+    shelfGame: "Juegos",
     searchFilm: "Buscar película (TMDB)…",
     searchBook: "Buscar libro (Open Library)…",
     searchManga: "Buscar manga (AniList)…",
@@ -891,6 +914,7 @@ const I18N = {
     watchEmptyRO: "Vacío.",
     seeAll: "Ver todo ({n})",
     nothingRatedCat: "Aún no hay nada aquí",
+    noCoversPicked: "Sin portadas elegidas",
     edit: "Cambiar",
     pickN: "Elige {max} ({n})",
     pickCovers: "{label} — elige hasta {max} portadas",
@@ -1053,6 +1077,11 @@ const I18N = {
     typeAnime: "🎞️ Anime",
     typeMusic: "🎵 Música",
     typeGame: "🎮 Jogos",
+    shelfMusic: "Música",
+    shelfFilm: "Filmes / Séries",
+    shelfAnime: "Anime",
+    shelfBook: "Livros / Mangá",
+    shelfGame: "Jogos",
     searchFilm: "Procurar filme (TMDB)…",
     searchBook: "Procurar livro (Open Library)…",
     searchManga: "Procurar manga (AniList)…",
@@ -1142,6 +1171,7 @@ const I18N = {
     watchEmptyRO: "Vazio.",
     seeAll: "Ver tudo ({n})",
     nothingRatedCat: "Ainda não há nada aqui",
+    noCoversPicked: "Nenhuma capa escolhida",
     edit: "Alterar",
     pickN: "Escolhe {max} ({n})",
     pickCovers: "{label} — escolhe até {max} capas",
@@ -1303,6 +1333,11 @@ const I18N = {
     typeAnime: "🎞️ 动画",
     typeMusic: "🎵 音乐",
     typeGame: "🎮 游戏",
+    shelfMusic: "音乐",
+    shelfFilm: "电影 / 剧集",
+    shelfAnime: "动画",
+    shelfBook: "图书 / 漫画",
+    shelfGame: "游戏",
     searchFilm: "搜索电影（TMDB）…",
     searchBook: "搜索图书（Open Library）…",
     searchManga: "搜索漫画（AniList）…",
@@ -1391,6 +1426,7 @@ const I18N = {
     watchEmptyRO: "空。",
     seeAll: "查看全部（{n}）",
     nothingRatedCat: "这里还什么都没有",
+    noCoversPicked: "未选择封面",
     edit: "修改",
     pickN: "选择 {max}（{n}）",
     pickCovers: "{label}——最多选 {max} 张封面",
@@ -1547,6 +1583,11 @@ const I18N = {
     typeAnime: "🎞️ アニメ",
     typeMusic: "🎵 音楽",
     typeGame: "🎮 ゲーム",
+    shelfMusic: "音楽",
+    shelfFilm: "映画 / ドラマ",
+    shelfAnime: "アニメ",
+    shelfBook: "書籍 / マンガ",
+    shelfGame: "ゲーム",
     searchFilm: "映画を検索（TMDB）…",
     searchBook: "書籍を検索（Open Library）…",
     searchManga: "マンガを検索（AniList）…",
@@ -1635,6 +1676,7 @@ const I18N = {
     watchEmptyRO: "空です。",
     seeAll: "すべて見る（{n}）",
     nothingRatedCat: "ここにはまだ何もありません",
+    noCoversPicked: "表紙が選ばれていません",
     edit: "変更",
     pickN: "{max} 個選ぶ（{n}）",
     pickCovers: "{label} — 最大 {max} 枚のカバーを選択",
@@ -2569,12 +2611,14 @@ async function loadMe() {
 }
 
 // Grupy kategorii na prawej stronie profilu.
+// Etykiety przez klucz i18n, nie gotowym tekstem — inaczej nazwy kategorii zostawały
+// polskie po przełączeniu języka (labelKey czyta się przez t() dopiero przy renderze).
 const CAT_GROUPS = [
-  { key: "music", label: "Muzyka", types: ["MUZYKA"] },
-  { key: "film", label: "Filmy / Seriale", types: ["FILM", "SERIAL"] },
-  { key: "anime", label: "Anime", types: ["ANIME"] },
-  { key: "book", label: "Książki / Manga", types: ["KSIAZKA", "MANGA"] },
-  { key: "game", label: "Gry", types: ["GRA"] },
+  { key: "music", labelKey: "shelfMusic", types: ["MUZYKA"] },
+  { key: "film", labelKey: "shelfFilm", types: ["FILM", "SERIAL"] },
+  { key: "anime", labelKey: "shelfAnime", types: ["ANIME"] },
+  { key: "book", labelKey: "shelfBook", types: ["KSIAZKA", "MANGA"] },
+  { key: "game", labelKey: "shelfGame", types: ["GRA"] },
 ];
 
 // Ile okładek pokazuje jeden rząd kategorii na profilu. JEDNO miejsce — teksty
@@ -2599,22 +2643,28 @@ function getFeatured(catKey) {
   return Array.isArray(ids) ? ids : [];
 }
 
+// „Nie wybrałem nic" (brak klucza) to co innego niż „wybrałem, żeby nie było nic"
+// (pusta lista). Bez tego rozróżnienia odznaczenie ostatniej okładki kasowało wybór
+// i rząd wracał do domyślnych czterech — czyli usunięcie okładki ją przywracało.
+function hasFeatured(catKey) {
+  return Array.isArray(getFeaturedMap()[catKey]);
+}
+
 function setFeatured(catKey, ids) {
   const m = getFeaturedMap();
-  if (ids.length) m[catKey] = ids;
-  else delete m[catKey];
+  m[catKey] = ids; // także pustą listę — to świadomy wybór użytkownika
   localStorage.setItem(FEATURED_KEY, JSON.stringify(m));
 }
 
 // Które pozycje pokazać w kategorii: wybrane okładki albo pierwsze MAX_COVERS.
+// Ids nieistniejących już pozycji (skasowana ocena) wypadają przez filter.
 function displayedForCat(g, items) {
-  const feat = getFeatured(g.key);
-  if (feat.length) {
-    const byId = new Map(items.map((r) => [r.media.id, r]));
-    const chosen = feat.map((id) => byId.get(id)).filter(Boolean);
-    if (chosen.length) return chosen.slice(0, MAX_COVERS);
-  }
-  return items.slice(0, MAX_COVERS);
+  if (!hasFeatured(g.key)) return items.slice(0, MAX_COVERS);
+  const byId = new Map(items.map((r) => [r.media.id, r]));
+  return getFeatured(g.key)
+    .map((id) => byId.get(id))
+    .filter(Boolean)
+    .slice(0, MAX_COVERS);
 }
 
 // Dodaje klikalną kartę (otwiera szczegóły) do kontenera.
@@ -2659,10 +2709,21 @@ let catPickCtx = null; // { group, items } gdy tryb wyboru okładek
 
 function openCatPicker(group, items) {
   catPickCtx = { group, items };
+  // Wybór startuje od okładek, które AKTUALNIE widać w rzędzie. Bez tego picker
+  // otwierał się z zerem zaznaczeń, mimo że w rzędzie stały cztery domyślne plakaty:
+  // kliknięcie w widoczny plakat nie usuwało go, tylko zakładało nowy, jednoelementowy
+  // wybór — i z rzędu znikały pozostałe trzy. Zapisujemy od razu, żeby to, co widać,
+  // i to, co zaznaczone, były tym samym stanem.
+  if (!hasFeatured(group.key)) {
+    setFeatured(
+      group.key,
+      displayedForCat(group, items).map((r) => r.media.id),
+    );
+  }
   $("seeAllGrid").classList.remove("hidden"); // picker używa siatki plakatów
   $("togetherWrap").classList.add("hidden");
   $("seeAllTitle").textContent = t("pickCovers", {
-    label: group.label,
+    label: t(group.labelKey),
     max: MAX_COVERS,
   });
   renderCatPickGrid();
@@ -2720,7 +2781,7 @@ function renderRatedByCat(reviews, readOnly) {
     head.className = "cat-head";
     const label = document.createElement("div");
     label.className = "cat-label";
-    label.textContent = g.label;
+    label.textContent = t(g.labelKey);
     head.append(label);
     const posters = document.createElement("div");
     posters.className = "cat-posters";
@@ -2732,6 +2793,15 @@ function renderRatedByCat(reviews, readOnly) {
       posters.append(ph);
     } else {
       const shown = readOnly ? items.slice(0, MAX_COVERS) : displayedForCat(g, items);
+      // Oceny są, ale user odznaczył wszystkie okładki — inny komunikat niż „nic tu
+      // jeszcze", bo tu jest co pokazać; to świadomy wybór, nie pusta kategoria.
+      if (shown.length === 0) {
+        posters.classList.add("empty");
+        const ph = document.createElement("span");
+        ph.className = "cat-empty";
+        ph.textContent = t("noCoversPicked");
+        posters.append(ph);
+      }
       for (const r of shown) appendCard(posters, r.media, r.rating);
     }
     // „Wybierz" tylko na WŁASNYM profilu (nie zmieniasz cudzych okładek).
