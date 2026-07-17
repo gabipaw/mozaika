@@ -14,7 +14,16 @@ import { createHash } from "node:crypto";
 import { ValidationError } from "../errors.js";
 import { currentLang } from "./lang.js";
 
-const DEEPL_FREE = "https://api-free.deepl.com/v2/translate";
+/**
+ * DeepL ma DWA adresy i wybór zależy od planu, nie od nas. Klucze planu free kończą
+ * się na „:fx" (tak to dokumentuje DeepL) i chodzą pod api-free; klucze Pro pod api.
+ * Bierzemy to z klucza, bo zaszycie jednego adresu znaczyłoby, że zmiana planu psuje
+ * tłumaczenie bez żadnej wskazówki dlaczego.
+ */
+function deeplUrl(key: string): string {
+  const host = key.endsWith(":fx") ? "api-free.deepl.com" : "api.deepl.com";
+  return `https://${host}/v2/translate`;
+}
 
 /** Nasze kody języków → kody docelowe DeepL (te są inne, np. pt → PT-BR). */
 const DEEPL_TARGETS: Record<string, string> = {
@@ -65,7 +74,7 @@ export async function translate(
   const hit = cache.get(cacheKey);
   if (hit) return hit;
 
-  const res = await fetch(DEEPL_FREE, {
+  const res = await fetch(deeplUrl(key), {
     method: "POST",
     headers: {
       Authorization: `DeepL-Auth-Key ${key}`,

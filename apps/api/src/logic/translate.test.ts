@@ -11,15 +11,16 @@ import { translate, translateEnabled } from "./translate.js";
 const realFetch = globalThis.fetch;
 
 interface Call {
+  url: string;
   target: string;
   text: string;
 }
 
 /** Podstawia DeepL-a: zapisuje, o co pytaliśmy, i oddaje ustaloną odpowiedź. */
 function stubDeepl(calls: Call[], status = 200, translated = "cześć") {
-  globalThis.fetch = (async (_url: string, init: { body: string }) => {
+  globalThis.fetch = (async (url: string, init: { body: string }) => {
     const body = JSON.parse(init.body) as { text: string[]; target_lang: string };
-    calls.push({ target: body.target_lang, text: body.text[0] });
+    calls.push({ url: String(url), target: body.target_lang, text: body.text[0] });
     return {
       ok: status === 200,
       status,
@@ -56,6 +57,19 @@ test("nasze kody języków idą do DeepL jako JEGO kody (pt → PT-BR, en → EN
     calls.map((c) => c.target),
     ["PT-BR", "EN-US", "JA"],
   );
+});
+
+test("adres DeepL wynika z klucza: ':fx' → api-free, Pro → api", async () => {
+  const calls: Call[] = [];
+  stubDeepl(calls);
+
+  process.env.DEEPL_API_KEY = "abc-123:fx"; // plan free
+  await translate("tekst na planie free", "pl");
+  assert.match(calls[0].url, /^https:\/\/api-free\.deepl\.com\//);
+
+  process.env.DEEPL_API_KEY = "abc-123"; // plan Pro
+  await translate("tekst na planie pro", "pl");
+  assert.match(calls[1].url, /^https:\/\/api\.deepl\.com\//);
 });
 
 test("zwraca tłumaczenie i wykryty język źródłowy małymi literami", async () => {
