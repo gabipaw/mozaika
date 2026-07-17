@@ -837,8 +837,8 @@ h2 {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
-  padding: 10px 0;
+  gap: 6px;
+  padding: 8px 0;
   border-top: 1px solid var(--line);
 }
 
@@ -893,7 +893,7 @@ h2 {
    kolumna kategorii robi się dwa razy wyższa niż sąsiednie. */
 .cat-posters .card {
   flex: 0 0 calc((100% - 3 * 10px) / 4);
-  max-width: min(calc((100% - 3 * 10px) / 4), 76px);
+  max-width: min(calc((100% - 3 * 10px) / 4), 64px);
   height: auto;
 }
 
