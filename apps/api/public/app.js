@@ -133,6 +133,9 @@ const I18N = {
     seeAll: "Zobacz wszystko ({n})",
     nothingRatedCat: "Nic tu jeszcze",
     translate: "Przetłumacz",
+    autoTranslate: "Tłumacz automatycznie",
+    autoTranslateHint:
+      "Obce wiadomości, recenzje i komentarze tłumaczą się same — bez klikania „Przetłumacz”.",
     translating: "Tłumaczę…",
     hideTranslation: "Ukryj tłumaczenie",
     hideTranslationFrom: "Ukryj tłumaczenie ({lang})",
@@ -398,6 +401,9 @@ const I18N = {
     seeAll: "See all ({n})",
     nothingRatedCat: "Nothing yet",
     translate: "Translate",
+    autoTranslate: "Translate automatically",
+    autoTranslateHint:
+      "Foreign messages, reviews and comments translate themselves — no clicking “Translate”.",
     translating: "Translating…",
     hideTranslation: "Hide translation",
     hideTranslationFrom: "Hide translation ({lang})",
@@ -665,6 +671,9 @@ const I18N = {
     seeAll: "Alle ansehen ({n})",
     nothingRatedCat: "Hier ist noch nichts",
     translate: "Übersetzen",
+    autoTranslate: "Automatisch übersetzen",
+    autoTranslateHint:
+      "Fremdsprachige Nachrichten, Rezensionen und Kommentare werden von selbst übersetzt.",
     translating: "Übersetze…",
     hideTranslation: "Übersetzung ausblenden",
     hideTranslationFrom: "Übersetzung ausblenden ({lang})",
@@ -924,6 +933,9 @@ const I18N = {
     seeAll: "Ver todo ({n})",
     nothingRatedCat: "Aún no hay nada aquí",
     translate: "Traducir",
+    autoTranslate: "Traducir automáticamente",
+    autoTranslateHint:
+      "Los mensajes, reseñas y comentarios en otros idiomas se traducen solos.",
     translating: "Traduciendo…",
     hideTranslation: "Ocultar traducción",
     hideTranslationFrom: "Ocultar traducción ({lang})",
@@ -1184,6 +1196,9 @@ const I18N = {
     seeAll: "Ver tudo ({n})",
     nothingRatedCat: "Ainda não há nada aqui",
     translate: "Traduzir",
+    autoTranslate: "Traduzir automaticamente",
+    autoTranslateHint:
+      "Mensagens, críticas e comentários noutras línguas traduzem-se sozinhos.",
     translating: "A traduzir…",
     hideTranslation: "Ocultar tradução",
     hideTranslationFrom: "Ocultar tradução ({lang})",
@@ -1442,6 +1457,8 @@ const I18N = {
     seeAll: "查看全部（{n}）",
     nothingRatedCat: "这里还什么都没有",
     translate: "翻译",
+    autoTranslate: "自动翻译",
+    autoTranslateHint: "外语的消息、评论和留言会自动翻译，无需点击「翻译」。",
     translating: "翻译中…",
     hideTranslation: "隐藏翻译",
     hideTranslationFrom: "隐藏翻译（{lang}）",
@@ -1695,6 +1712,8 @@ const I18N = {
     seeAll: "すべて見る（{n}）",
     nothingRatedCat: "ここにはまだ何もありません",
     translate: "翻訳",
+    autoTranslate: "自動翻訳",
+    autoTranslateHint: "外国語のメッセージ・レビュー・コメントは自動で翻訳されます。",
     translating: "翻訳中…",
     hideTranslation: "翻訳を隠す",
     hideTranslationFrom: "翻訳を隠す（{lang}）",
@@ -1890,6 +1909,10 @@ function renderLangList() {
     btn.addEventListener("click", () => setLang(L.code));
     list.append(btn);
   }
+  // Przełącznik automatu tylko wtedy, gdy serwer w ogóle umie tłumaczyć (klucz DeepL).
+  const row = $("autoTransRow");
+  row.classList.toggle("hidden", !translateOn);
+  $("autoTransToggle").checked = autoTranslate;
 }
 
 function setLang(code) {
@@ -2293,6 +2316,68 @@ async function initTranslate() {
  */
 const translationCache = new Map(); // klucz → { text, from }
 const translationOpen = new Set(); // klucze z rozwiniętym tłumaczeniem
+// Wpisy, które i tak są w Twoim języku (DeepL wykrył to samo, o co prosiliśmy).
+// Nie pokazujemy przy nich niczego — przycisk „Przetłumacz" pod polskim zdaniem
+// dla polskiego użytkownika to śmieć na ekranie.
+const translationSame = new Set();
+
+// --- Tryb automatyczny ---
+
+const AUTO_KEY = "mozaika_autotranslate";
+let autoTranslate = localStorage.getItem(AUTO_KEY) === "1";
+
+/**
+ * Wpisy czekające na automatyczne tłumaczenie. Zbieramy je z CAŁEGO renderu i wysyłamy
+ * jednym zapytaniem: osobne na wiadomość rozbiłoby limit (30/min) na pierwszej dłuższej
+ * rozmowie, a przy odpytywaniu czatu co 4 s tym bardziej.
+ */
+const autoPending = new Map(); // klucz → { text, apply }
+const autoTried = new Set(); // już próbowane — polling nie ma strzelać w kółko
+let autoTimer = null;
+
+function queueAuto(key, text, apply) {
+  if (autoTried.has(key)) return;
+  autoPending.set(key, { text, apply });
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(flushAuto, 60); // chwila na zebranie całego renderu
+}
+
+const AUTO_BATCH = 50; // tyle, ile przyjmuje trasa /translate
+
+async function flushAuto() {
+  if (!autoPending.size) return;
+  const batch = [...autoPending.entries()].slice(0, AUTO_BATCH);
+  for (const [key] of batch) {
+    autoPending.delete(key);
+    autoTried.add(key);
+  }
+  try {
+    const out = await api("/translate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ texts: batch.map(([, v]) => v.text) }),
+    });
+    batch.forEach(([key, v], i) => {
+      const tr = out[i];
+      if (!tr) return;
+      translationCache.set(key, tr);
+      // Tekst już w Twoim języku → nie ma czego pokazywać.
+      if (tr.from && tr.from === lang) translationSame.add(key);
+      else translationOpen.add(key);
+      v.apply(); // element mógł już zniknąć — apply sam to sprawdza
+    });
+  } catch {
+    // Cicho: automat jest wygodą, nie obietnicą. Przycisk „Przetłumacz" zostaje,
+    // więc user zawsze może kliknąć i wtedy zobaczy konkretny błąd.
+  }
+  if (autoPending.size) flushAuto(); // reszta, gdy widok miał >AUTO_BATCH wpisów
+}
+
+function setAutoTranslate(on) {
+  autoTranslate = on;
+  localStorage.setItem(AUTO_KEY, on ? "1" : "0");
+  if (on) refreshDynamic(); // dociągnij tłumaczenia do tego, co już na ekranie
+}
 
 /**
  * Blok „Przetłumacz" pod CUDZYM tekstem: tłumaczenie pokazuje się POD oryginałem
@@ -2308,6 +2393,8 @@ const translationOpen = new Set(); // klucze z rozwiniętym tłumaczeniem
  */
 function translateControl(text, key) {
   if (!translateOn || !me || !(text ?? "").trim() || !key) return null;
+  // Automat już ustalił, że to Twój język — nie zaśmiecamy ekranu przyciskiem.
+  if (translationSame.has(key)) return null;
 
   const wrap = document.createElement("div");
   wrap.className = "translate-wrap";
@@ -2335,6 +2422,16 @@ function translateControl(text, key) {
   // Render po odświeżeniu listy: wracamy do tego, co user miał na ekranie.
   const cached = translationCache.get(key);
   if (cached && translationOpen.has(key)) show(cached);
+  // Tryb automatyczny: nieznany tekst dopisujemy do wspólnego wsadu. `apply` odpali
+  // się po odpowiedzi — o ile ten konkretny element jeszcze wisi w dokumencie
+  // (polling mógł go w międzyczasie podmienić; wtedy odtworzy go render z cache).
+  else if (autoTranslate && !cached) {
+    queueAuto(key, text, () => {
+      const tr = translationCache.get(key);
+      if (tr && box.isConnected && translationOpen.has(key)) show(tr);
+      if (translationSame.has(key)) wrap.remove();
+    });
+  }
 
   btn.addEventListener("click", async () => {
     if (translationOpen.has(key)) {
@@ -5308,6 +5405,9 @@ async function init() {
   $("typeGame").addEventListener("click", () => setSearchType("game"));
   detailStars = buildStars($("detailStars"), $("detailStarVal"));
   $("detailSave").addEventListener("click", saveDetail);
+  $("autoTransToggle").addEventListener("change", (e) =>
+    setAutoTranslate(e.target.checked),
+  );
   $("seeAllClose").addEventListener("click", closeSeeAll);
   $("seeAllOverlay").addEventListener("click", (e) => {
     if (e.target === $("seeAllOverlay")) closeSeeAll();

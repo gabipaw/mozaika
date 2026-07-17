@@ -6,7 +6,12 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, test } from "node:test";
 
-import { localizeMessage, translate, translateEnabled } from "./translate.js";
+import {
+  localizeMessage,
+  translate,
+  translateEnabled,
+  translateMany,
+} from "./translate.js";
 
 const realFetch = globalThis.fetch;
 
@@ -25,7 +30,11 @@ function stubDeepl(calls: Call[], status = 200, translated = "cześć") {
       ok: status === 200,
       status,
       json: async () => ({
-        translations: [{ text: translated, detected_source_language: "EN" }],
+        // Tyle tlumaczen, ile tekstow — DeepL oddaje je w tej samej kolejnosci.
+        translations: body.text.map((t) => ({
+          text: body.text.length > 1 ? `${translated} [${t}]` : translated,
+          detected_source_language: "EN",
+        })),
       }),
     };
   }) as unknown as typeof globalThis.fetch;
@@ -135,4 +144,87 @@ test("awaria tłumaczenia NIE gubi błędu — zostaje polski oryginał", async 
   // Brak klucza.
   delete process.env.DEEPL_API_KEY;
   assert.equal(await localizeMessage(msg, "ja"), msg);
+});
+
+// --- tryb wsadowy (auto-tłumaczenie całego widoku) ---
+
+test("wiele tekstów = JEDNO zapytanie do DeepL, kolejność zachowana", async () => {
+  const bodies: string[] = [];
+  globalThis.fetch = (async (_u: string, init: { body: string }) => {
+    bodies.push(init.body);
+    const t = JSON.parse(init.body).text as string[];
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        translations: t.map((x) => ({
+          text: `PL(${x})`,
+          detected_source_language: "EN",
+        })),
+      }),
+    };
+  }) as never;
+
+  const out = await translateMany(["one", "two", "three"], "pl");
+  assert.equal(bodies.length, 1, "ma być jedno zapytanie, nie trzy");
+  assert.deepEqual(
+    out.map((o) => o.text),
+    ["PL(one)", "PL(two)", "PL(three)"],
+  );
+});
+
+test("powtórki we wsadzie idą do DeepL raz — znaki kosztują", async () => {
+  const bodies: string[] = [];
+  globalThis.fetch = (async (_u: string, init: { body: string }) => {
+    bodies.push(init.body);
+    const t = JSON.parse(init.body).text as string[];
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        translations: t.map((x) => ({
+          text: `PL(${x})`,
+          detected_source_language: "EN",
+        })),
+      }),
+    };
+  }) as never;
+
+  const out = await translateMany(["ok", "hey", "ok", "ok"], "pl");
+  assert.deepEqual(JSON.parse(bodies[0]).text, ["ok", "hey"], "bez powtórek");
+  // …ale każdy tekst dostaje swoje tłumaczenie z powrotem.
+  assert.deepEqual(
+    out.map((o) => o.text),
+    ["PL(ok)", "PL(hey)", "PL(ok)", "PL(ok)"],
+  );
+});
+
+test("wsad korzysta z cache — drugi raz nie pyta o nic", async () => {
+  const bodies: string[] = [];
+  globalThis.fetch = (async (_u: string, init: { body: string }) => {
+    bodies.push(init.body);
+    const t = JSON.parse(init.body).text as string[];
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        translations: t.map((x) => ({
+          text: `PL(${x})`,
+          detected_source_language: "EN",
+        })),
+      }),
+    };
+  }) as never;
+
+  await translateMany(["wsad cache jeden", "wsad cache dwa"], "pl");
+  await translateMany(["wsad cache jeden", "wsad cache dwa"], "pl");
+  assert.equal(bodies.length, 1);
+});
+
+test("za duży wsad odrzucamy bez pytania DeepL-a", async () => {
+  const calls: Call[] = [];
+  stubDeepl(calls);
+  const many = Array.from({ length: 51 }, (_, i) => `tekst numer ${i}`);
+  await assert.rejects(() => translateMany(many, "pl"), /maksymalnie 50/i);
+  assert.equal(calls.length, 0);
 });

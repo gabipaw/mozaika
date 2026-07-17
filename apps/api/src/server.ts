@@ -67,7 +67,12 @@ import { invalidateDiscoveryCache, tasteDiscovery } from "./logic/discovery.js";
 import { addMediaFromTmdb, searchTmdb, tmdbTitles } from "./logic/tmdb.js";
 import { currentLang, normalizeLang, withLang } from "./logic/lang.js";
 import { localizeTitles } from "./logic/localize.js";
-import { localizeMessage, translate, translateEnabled } from "./logic/translate.js";
+import {
+  localizeMessage,
+  translate,
+  translateEnabled,
+  translateMany,
+} from "./logic/translate.js";
 import { MAX_FAVORITES, siblingTypes } from "./logic/categories.js";
 
 // Sekret do podpisu tokenów. Fallback istnieje TYLKO dla wygody lokalnej — na
@@ -444,6 +449,11 @@ api.post("/translate", requireAuth, async (c) => {
     throw new TooManyRequestsError(`Za dużo tłumaczeń. Spróbuj za ${retryAfter} s.`);
   }
   const body = await c.req.json();
+  // Tryb automatyczny przysyła cały widok naraz (`texts`) — jedno zapytanie zamiast
+  // kilkudziesięciu. Pojedynczy `text` zostaje dla przycisku „Przetłumacz".
+  if (Array.isArray(body.texts)) {
+    return c.json(await translateMany(body.texts.map(String)));
+  }
   return c.json(await translate(String(body.text ?? "")));
 });
 

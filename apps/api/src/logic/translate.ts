@@ -57,51 +57,89 @@ export interface Translation {
 const cache = new Map<string, Translation>();
 const MAX_CACHE = 500;
 
-export async function translate(
-  raw: string,
+const cacheKeyFor = (text: string, target: string) =>
+  `${target}:${createHash("sha256").update(text).digest("hex")}`;
+
+/**
+ * Ile tekstów naraz. DeepL nie ogranicza ich liczby, tylko rozmiar żądania (128 KiB),
+ * ale przy MAX_CHARS=2000 pięćdziesiąt sztuk to ~100 KB — mieścimy się z zapasem.
+ */
+const MAX_BATCH = 50;
+
+/**
+ * Tłumaczy WIELE tekstów jednym zapytaniem — DeepL przyjmuje je hurtem i oddaje
+ * w tej samej kolejności. To nie optymalizacja dla sportu: tryb automatyczny
+ * tłumaczy cały wątek naraz, a osobne zapytanie na wiadomość rozbijałoby limit
+ * żądań (30/min) na pierwszej dłuższej rozmowie.
+ */
+export async function translateMany(
+  raws: string[],
   lang: string = currentLang(),
-): Promise<Translation> {
-  const text = (raw ?? "").trim();
-  if (!text) throw new ValidationError("Nie ma czego tłumaczyć.");
-  if (text.length > MAX_CHARS) {
-    throw new ValidationError(`Tekst jest za długi (limit ${MAX_CHARS} znaków).`);
+): Promise<Translation[]> {
+  const texts = raws.map((r) => (r ?? "").trim());
+  if (!texts.length) return [];
+  if (texts.length > MAX_BATCH) {
+    throw new ValidationError(`Naraz maksymalnie ${MAX_BATCH} tekstów.`);
+  }
+  for (const text of texts) {
+    if (!text) throw new ValidationError("Nie ma czego tłumaczyć.");
+    if (text.length > MAX_CHARS) {
+      throw new ValidationError(`Tekst jest za długi (limit ${MAX_CHARS} znaków).`);
+    }
   }
   const key = process.env.DEEPL_API_KEY;
   if (!key) throw new ValidationError("Tłumaczenie jest wyłączone na tym serwerze.");
 
   const target = DEEPL_TARGETS[lang] ?? DEEPL_TARGETS.pl;
-  const cacheKey = `${target}:${createHash("sha256").update(text).digest("hex")}`;
-  const hit = cache.get(cacheKey);
-  if (hit) return hit;
+  const out = new Array<Translation | undefined>(texts.length);
+  texts.forEach((text, i) => (out[i] = cache.get(cacheKeyFor(text, target))));
 
-  const res = await fetch(deeplUrl(key), {
-    method: "POST",
-    headers: {
-      Authorization: `DeepL-Auth-Key ${key}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ text: [text], target_lang: target }),
-  });
-  // 456 = wyczerpany limit znaków; osobny komunikat, bo to nie jest awaria kodu.
-  if (res.status === 456) {
-    throw new ValidationError("Miesięczny limit tłumaczeń wyczerpany.");
+  // Do DeepL-a idzie tylko to, czego nie ma w cache, i bez powtórek: w jednym wątku
+  // te same „ok" czy „dzięki" potrafią wystąpić wiele razy, a każde kosztuje znaki.
+  const missing = [...new Set(texts.filter((_, i) => !out[i]))];
+  if (missing.length) {
+    const res = await fetch(deeplUrl(key), {
+      method: "POST",
+      headers: {
+        Authorization: `DeepL-Auth-Key ${key}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ text: missing, target_lang: target }),
+    });
+    // 456 = wyczerpany limit znaków; osobny komunikat, bo to nie jest awaria kodu.
+    if (res.status === 456) {
+      throw new ValidationError("Miesięczny limit tłumaczeń wyczerpany.");
+    }
+    if (!res.ok) throw new Error(`DeepL error ${res.status}`);
+
+    const data = (await res.json()) as {
+      translations?: { text: string; detected_source_language?: string }[];
+    };
+    const got = data.translations ?? [];
+    if (got.length !== missing.length) {
+      throw new Error("DeepL zwrócił inną liczbę tłumaczeń niż tekstów.");
+    }
+    const byText = new Map<string, Translation>();
+    missing.forEach((text, i) => {
+      const tr: Translation = {
+        text: got[i].text,
+        from: (got[i].detected_source_language ?? "").toLowerCase(),
+      };
+      byText.set(text, tr);
+      // Najstarszy wpis wypada — cache ma nie rosnąć w nieskończoność na wolnym planie.
+      if (cache.size >= MAX_CACHE) cache.delete(cache.keys().next().value as string);
+      cache.set(cacheKeyFor(text, target), tr);
+    });
+    texts.forEach((text, i) => (out[i] ??= byText.get(text)));
   }
-  if (!res.ok) throw new Error(`DeepL error ${res.status}`);
+  return out as Translation[];
+}
 
-  const data = (await res.json()) as {
-    translations?: { text: string; detected_source_language?: string }[];
-  };
-  const first = data.translations?.[0];
-  if (!first) throw new Error("DeepL nie zwrócił tłumaczenia.");
-
-  const out: Translation = {
-    text: first.text,
-    from: (first.detected_source_language ?? "").toLowerCase(),
-  };
-  // Najstarszy wpis wypada — cache ma nie rosnąć w nieskończoność na wolnym planie.
-  if (cache.size >= MAX_CACHE) cache.delete(cache.keys().next().value as string);
-  cache.set(cacheKey, out);
-  return out;
+export async function translate(
+  raw: string,
+  lang: string = currentLang(),
+): Promise<Translation> {
+  return (await translateMany([raw], lang))[0];
 }
 
 /**
