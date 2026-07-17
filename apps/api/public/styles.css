@@ -827,18 +827,12 @@ h2 {
    a okładki musiały się dopasować do tej narzuconej wysokości — przy 4 sztukach
    nie mieściły się w szerokości i były rozciągane/przycinane. Teraz jest odwrotnie:
    wysokość rzędu WYNIKA z okładek, więc proporcja 2:3 zawsze zostaje nietknięta. */
-/* Pasek nagłówka NAD okładkami (etykieta z lewej, przyciski z prawej), tak jak od
-   zawsze na telefonie. Etykieta stała wcześniej w osobnej kolumnie z lewej — wtedy
-   „Zobacz wszystko" nie miało jak trafić w prawy górny róg kategorii inaczej niż
-   nad plakatami, a tam przy czterech okładkach lądowałoby NA ostatniej z nich.
-   Przy okazji okładki dostają całą szerokość kolumny zamiast tracić 100px na podpis. */
 .cat-row {
   flex: 0 0 auto;
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-  padding: 8px 0;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
   border-top: 1px solid var(--line);
 }
 
@@ -852,20 +846,12 @@ h2 {
   padding-bottom: 0;
 }
 
-/* Pasek nad okładkami: nazwa kategorii z lewej, przyciski dociśnięte do prawej. */
+/* Lewa kolumna rzędu: nazwa kategorii + przycisk „Zmień" pod nią. */
 .cat-head {
-  flex: 0 0 auto;
+  flex: 0 0 100px;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-/* Przyciski kategorii razem, „Zobacz wszystko" jako ostatni — czyli w samym rogu. */
-.cat-actions {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
 }
 
@@ -874,6 +860,18 @@ h2 {
   font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.25;
+}
+
+/* Nazwa kategorii otwiera pełną listę ocen — musi po sobie pokazywać, że jest
+   klikalna, bo przycisku tu nie ma (dokładałby rzędowi wysokości). */
+.cat-label-link {
+  cursor: pointer;
+}
+
+.cat-label-link:hover,
+.cat-label-link:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 .cat-posters {
@@ -887,13 +885,10 @@ h2 {
 /* Okładki dzielą szerokość rzędu na 4 równe kolumny, a wysokość biorą z proporcji
    plakatu (2:3) — nic nie jest rozciągane ani przycinane. Rzędy z mniej niż 4
    pozycjami mają węższe karty tej samej wielkości, więc wszystkie kategorie
-   wyglądają spójnie.
-   Górny limit szerokości, bo etykieta przeniosła się nad plakaty i zwolniła 100px:
-   bez niego 1/4 rzędu to ~109px zamiast ~70px, plakat (2:3) rośnie o połowę i cała
-   kolumna kategorii robi się dwa razy wyższa niż sąsiednie. */
+   wyglądają spójnie. */
 .cat-posters .card {
   flex: 0 0 calc((100% - 3 * 10px) / 4);
-  max-width: min(calc((100% - 3 * 10px) / 4), 64px);
+  max-width: calc((100% - 3 * 10px) / 4);
   height: auto;
 }
 
