@@ -125,3 +125,38 @@ test("pusty tekst i sama interpunkcja nie wywalają filtra", () => {
   assert.equal(censor("!!! ... ???"), "!!! ... ???");
   assert.equal(hasProfanity(""), false);
 });
+
+// --- pozostałe języki aplikacji (de, es, pt, zh, ja) ---
+
+test("niemiecki, hiszpański i portugalski — wulgaryzmy i obelgi", () => {
+  const zle = [
+    "du Arschloch",
+    "du Neger", // obelga rasowa
+    "so eine Scheiße", // ß rozwijane do „ss"
+    "verpiss dich",
+    "hijo de puta",
+    "eres un sudaca", // obelga wobec Latynosów
+    "vete a la mierda",
+    "maricón", // obelga homofobiczna
+    "vai tomar no caralho",
+    "que merda",
+  ];
+  for (const t of zle) assert.equal(hasProfanity(t), true, `przepuścił: ${t}`);
+});
+
+test("chiński i japoński — dopasowanie po FRAGMENCIE, bo nie ma tam spacji", () => {
+  const zle = ["你是傻逼", "他妈的电影", "支那", "お前は死ね", "このキチガイ", "チョン"];
+  for (const t of zle) assert.equal(hasProfanity(t), true, `przepuścił: ${t}`);
+});
+
+test("zwykłe zdania w tych językach zostają NIETKNIĘTE", () => {
+  const dobre = [
+    "Ein wirklich guter Film über Freundschaft",
+    "Una película negra muy buena, cine de autor", // „negra" = kolor, nie obelga
+    "El diputado del pueblo", // zawiera ciąg „putad"
+    "Um filme preto e branco maravilhoso",
+    "这部电影非常好看",
+    "この映画は素晴らしかった",
+  ];
+  for (const t of dobre) assert.equal(censor(t), t, `fałszywy alarm: ${t}`);
+});

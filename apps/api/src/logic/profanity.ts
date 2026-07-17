@@ -78,6 +78,9 @@ function normalize(word: string): string {
   const bare = [...word.toLowerCase().replace(INVISIBLE, "")]
     .map((c) => HOMOGLYPHS[c] ?? c)
     .join("")
+    // „ß" NIE rozkłada się przez NFD, więc bez tego „scheiße" i „scheisse" to dla
+    // kodu dwa różne słowa.
+    .replace(/ß/g, "ss")
     .normalize("NFD")
     // \p{M} zamiast \p{Diacritic}: kreska łącząca spod „K̲U̲R̲W̲A̲" to znak łączący,
     // ale NIE diakrytyk — na samym \p{Diacritic} to obejście przechodziło.
@@ -132,6 +135,73 @@ const ROOTS = [
   "faggot",
   "chinaman",
   "wetback",
+
+  // --- niemiecki ---
+  "arschloch",
+  "hurensohn",
+  "wichser",
+  "schlampe",
+  "scheiss", // „scheiße" → „scheisse" (ß rozwijamy w normalizacji)
+  "ficken",
+  "fickt",
+  "verpiss",
+  "neger", // obelga rasowa
+  "kanake", // obelga etniczna
+  "schwuchtel", // obelga homofobiczna
+
+  // --- hiszpański ---
+  "puta",
+  "puto",
+  "mierda",
+  "joder",
+  "jodid",
+  "gilipolla",
+  "cabron",
+  "maricon",
+  "pendejo",
+  "sudaca", // obelga wobec Latynosów
+  "chingar",
+  "chinga",
+
+  // --- portugalski ---
+  "caralho",
+  "foder",
+  "fodas",
+  "merda",
+  "cuzao",
+  "viado", // obelga homofobiczna („veado" pomijamy — to też „jeleń")
+  "otario",
+  "corno",
+];
+
+/**
+ * Chiński i japoński NIE mają spacji między słowami, więc podział na słowa i rdzenie
+ * tu nie działa — całe zdanie jest jednym „słowem". Dlatego szukamy tych wyrażeń jako
+ * FRAGMENTU tekstu. To bezpieczne, bo znaki są długie i jednoznaczne (inaczej niż
+ * łacińskie „cunt" w „country").
+ */
+const CJK = [
+  // chiński
+  "傻逼",
+  "傻屄",
+  "操你妈",
+  "草你妈",
+  "他妈的",
+  "婊子",
+  "贱人",
+  "支那", // obelga wobec Chińczyków
+  "尼哥", // zapis „nigger"
+  "死全家",
+  // japoński
+  "死ね",
+  "くたばれ",
+  "きちがい",
+  "キチガイ",
+  "気違い",
+  "チョン", // obelga wobec Koreańczyków
+  "土人", // obelga wobec ludów rdzennych
+  "クソ野郎",
+  "くそったれ",
 ];
 
 /**
@@ -222,7 +292,11 @@ export function censor(input: string): string {
   // Znaki niewidoczne lecą z CAŁEGO tekstu od razu: wklejone w środek słowa rozbijały
   // je na kawałki jeszcze zanim normalizacja zdążyła cokolwiek zrobić („kur<zwsp>wa"
   // to dla kodu „kur" + „wa"). W opisie czy recenzji nie mają żadnego zastosowania.
-  const raw = input.replace(INVISIBLE, "");
+  let raw = input.replace(INVISIBLE, "");
+  // Chiński/japoński: bez spacji nie ma „słów", więc podmieniamy fragment tekstu.
+  for (const zwrot of CJK) {
+    if (raw.includes(zwrot)) raw = raw.split(zwrot).join("*".repeat(zwrot.length));
+  }
   const bezRozstrzelonych = raw.replace(SPACED, (seq) =>
     spacedIsBad(seq) ? "*".repeat(seq.length) : seq,
   );
