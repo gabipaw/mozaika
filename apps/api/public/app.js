@@ -2367,6 +2367,14 @@ const translationOpen = new Set(); // klucze z rozwiniętym tłumaczeniem
 // dla polskiego użytkownika to śmieć na ekranie.
 const translationSame = new Set();
 
+/**
+ * Klucz pamięci MUSI zawierać język. Samo id wpisu znaczyło, że po przełączeniu
+ * języka wisiało poprzednie tłumaczenie podpisane nowym językiem (przetłumaczone
+ * na polski zostawało na ekranie po zmianie na niemiecki), a wpis uznany kiedyś
+ * za „już w Twoim języku" nigdy nie dostawał przycisku po zmianie na inny.
+ */
+const tk = (key, l = lang) => `${l}:${key}`;
+
 // --- Tryb automatyczny ---
 
 const AUTO_KEY = "mozaika_autotranslate";
@@ -2382,7 +2390,7 @@ const autoTried = new Set(); // już próbowane — polling nie ma strzelać w k
 let autoTimer = null;
 
 function queueAuto(key, text, apply) {
-  if (autoTried.has(key)) return;
+  if (autoTried.has(tk(key))) return;
   autoPending.set(key, { text, apply });
   clearTimeout(autoTimer);
   autoTimer = setTimeout(flushAuto, 60); // chwila na zebranie całego renderu
@@ -2392,10 +2400,13 @@ const AUTO_BATCH = 50; // tyle, ile przyjmuje trasa /translate
 
 async function flushAuto() {
   if (!autoPending.size) return;
+  // Język zapamiętany na czas TEGO zapytania: gdyby user przełączył go w locie,
+  // odpowiedź opisuje stary język i musi trafić pod jego klucz, nie pod nowy.
+  const reqLang = lang;
   const batch = [...autoPending.entries()].slice(0, AUTO_BATCH);
   for (const [key] of batch) {
     autoPending.delete(key);
-    autoTried.add(key);
+    autoTried.add(tk(key, reqLang));
   }
   try {
     const out = await api("/translate", {
@@ -2406,10 +2417,10 @@ async function flushAuto() {
     batch.forEach(([key, v], i) => {
       const tr = out[i];
       if (!tr) return;
-      translationCache.set(key, tr);
+      translationCache.set(tk(key, reqLang), tr);
       // Tekst już w Twoim języku → nie ma czego pokazywać.
-      if (tr.from && tr.from === lang) translationSame.add(key);
-      else translationOpen.add(key);
+      if (tr.from && tr.from === reqLang) translationSame.add(tk(key, reqLang));
+      else translationOpen.add(tk(key, reqLang));
       v.apply(); // element mógł już zniknąć — apply sam to sprawdza
     });
   } catch {
@@ -2437,8 +2448,10 @@ function setAutoTranslate(on) {
  * tekstach, a „hey" wygląda tak samo w kilku językach) — mówi go DeepL przy okazji
  * tłumaczenia i dopiero wtedy piszemy, z czego przetłumaczyliśmy.
  */
-function translateControl(text, key) {
-  if (!translateOn || !me || !(text ?? "").trim() || !key) return null;
+function translateControl(text, rawKey) {
+  if (!translateOn || !me || !(text ?? "").trim() || !rawKey) return null;
+  // Klucz zawiera język: po jego zmianie wpis jest dla nas nowy i tłumaczy się od nowa.
+  const key = tk(rawKey);
   // Automat już ustalił, że to Twój język — nie zaśmiecamy ekranu przyciskiem.
   if (translationSame.has(key)) return null;
 
@@ -2472,7 +2485,7 @@ function translateControl(text, key) {
   // się po odpowiedzi — o ile ten konkretny element jeszcze wisi w dokumencie
   // (polling mógł go w międzyczasie podmienić; wtedy odtworzy go render z cache).
   else if (autoTranslate && !cached) {
-    queueAuto(key, text, () => {
+    queueAuto(rawKey, text, () => {
       const tr = translationCache.get(key);
       if (tr && box.isConnected && translationOpen.has(key)) show(tr);
       if (translationSame.has(key)) wrap.remove();
