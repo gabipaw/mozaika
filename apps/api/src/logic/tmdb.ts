@@ -5,6 +5,7 @@
 import { MediaType } from "@prisma/client";
 
 import { NotFoundError, ValidationError } from "../errors.js";
+import { tmdbLocale } from "./lang.js";
 import { type ExternalMedia, parseReleaseDate, upsertExternalMedia } from "./media.js";
 
 const TMDB = "https://api.themoviedb.org/3";
@@ -81,7 +82,7 @@ export async function searchTmdb(query: string): Promise<ExternalMedia[]> {
   if (!q) throw new ValidationError("Podaj frazę do wyszukania.");
 
   const url =
-    `${TMDB}/search/movie?api_key=${apiKey()}&language=pl-PL` +
+    `${TMDB}/search/movie?api_key=${apiKey()}&language=${tmdbLocale()}` +
     `&include_adult=false&query=${encodeURIComponent(q)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`TMDB search error ${res.status}`);
@@ -115,7 +116,7 @@ async function discoverMovies(buildUrl: () => string): Promise<ExternalMedia[]> 
 export function discoverTmdb(yearFrom: number, yearTo: number): Promise<ExternalMedia[]> {
   return discoverMovies(
     () =>
-      `${TMDB}/discover/movie?api_key=${apiKey()}&language=pl-PL` +
+      `${TMDB}/discover/movie?api_key=${apiKey()}&language=${tmdbLocale()}` +
       `&include_adult=false&sort_by=popularity.desc&vote_count.gte=100` +
       `&primary_release_date.gte=${yearFrom}-01-01&primary_release_date.lte=${yearTo}-12-31`,
   );
@@ -129,7 +130,7 @@ export function discoverTmdbByGenre(
 ): Promise<ExternalMedia[]> {
   return discoverMovies(
     () =>
-      `${TMDB}/discover/movie?api_key=${apiKey()}&language=pl-PL` +
+      `${TMDB}/discover/movie?api_key=${apiKey()}&language=${tmdbLocale()}` +
       `&include_adult=false&sort_by=popularity.desc&vote_count.gte=100` +
       `&with_genres=${genreId}` +
       `&primary_release_date.gte=${yearFrom}-01-01&primary_release_date.lte=${yearTo}-12-31`,
@@ -141,7 +142,8 @@ export function similarTmdb(externalId: string): Promise<ExternalMedia[]> {
   const id = externalId.trim();
   if (!/^\d+$/.test(id)) return Promise.resolve([]);
   return discoverMovies(
-    () => `${TMDB}/movie/${id}/recommendations?api_key=${apiKey()}&language=pl-PL`,
+    () =>
+      `${TMDB}/movie/${id}/recommendations?api_key=${apiKey()}&language=${tmdbLocale()}`,
   );
 }
 
@@ -152,7 +154,9 @@ export async function addMediaFromTmdb(externalId: string) {
     throw new ValidationError("externalId musi być liczbą (TMDB id).");
   }
 
-  const res = await fetch(`${TMDB}/movie/${id}?api_key=${apiKey()}&language=pl-PL`);
+  const res = await fetch(
+    `${TMDB}/movie/${id}?api_key=${apiKey()}&language=${tmdbLocale()}`,
+  );
   if (res.status === 404) throw new NotFoundError(`Film TMDB #${id} nie istnieje.`);
   if (!res.ok) throw new Error(`TMDB error ${res.status}`);
 
@@ -192,17 +196,72 @@ export async function tmdbTrailer(externalId: string): Promise<string | null> {
 export async function tmdbReleaseDate(externalId: string): Promise<Date | null> {
   const id = externalId.trim();
   if (!/^\d+$/.test(id)) return null;
-  const res = await fetch(`${TMDB}/movie/${id}?api_key=${apiKey()}&language=pl-PL`);
+  const res = await fetch(
+    `${TMDB}/movie/${id}?api_key=${apiKey()}&language=${tmdbLocale()}`,
+  );
   if (!res.ok) return null;
   const m = (await res.json()) as { release_date?: string };
   return parseReleaseDate(m.release_date);
+}
+
+/**
+ * Tytuły filmów w danym języku, po id z TMDB.
+ *
+ * Katalog trzyma `Media.title` jako JEDEN string — w tym języku, w którym film
+ * akurat trafił do bazy. Dla użytkownika z innym językiem to zły tytuł, a wspólna
+ * kolumna nie ma gdzie pomieścić siedmiu wersji. Dlatego tłumaczenie dobieramy przy
+ * wyświetlaniu i trzymamy w pamięci procesu: tytuł filmu się nie zmienia, więc cache
+ * bez wygasania jest w porządku, a TMDB dostaje jedno pytanie na (film, język).
+ *
+ * Brak tłumaczenia w TMDB nie jest błędem — oddaje wtedy tytuł oryginalny, i dobrze.
+ * Gdy zapytanie padnie, wołający zostaje przy tytule z bazy (patrz `localizeTitles`).
+ */
+const titleCache = new Map<string, string>();
+
+export async function tmdbTitles(
+  externalIds: string[],
+  lang: string,
+): Promise<Map<string, string>> {
+  const locale = tmdbLocale(lang);
+  const ids = [...new Set(externalIds)].filter((id) => /^\d+$/.test(id));
+  const out = new Map<string, string>();
+
+  const missing: string[] = [];
+  for (const id of ids) {
+    const hit = titleCache.get(`${id}:${locale}`);
+    if (hit) out.set(id, hit);
+    else missing.push(id);
+  }
+  if (!missing.length) return out;
+
+  // TMDB nie ma pobierania hurtem — jedno zapytanie na film, ale tylko raz w życiu
+  // procesu. Równolegle, żeby lista 20 pozycji nie czekała 20 rund w kolejce.
+  await Promise.all(
+    missing.map(async (id) => {
+      try {
+        const res = await fetch(
+          `${TMDB}/movie/${id}?api_key=${apiKey()}&language=${locale}`,
+        );
+        if (!res.ok) return;
+        const { title } = (await res.json()) as { title?: string };
+        if (!title) return;
+        titleCache.set(`${id}:${locale}`, title);
+        out.set(id, title);
+      } catch {
+        // Sieć/klucz padły — zostawiamy tytuł z bazy zamiast wywalać całą listę.
+      }
+    }),
+  );
+  return out;
 }
 
 /** Opis filmu (streszczenie TMDB) — do widoku szczegółów. Pusty, gdy brak. */
 export async function tmdbDescription(externalId: string): Promise<string> {
   const id = externalId.trim();
   if (!/^\d+$/.test(id)) return "";
-  const res = await fetch(`${TMDB}/movie/${id}?api_key=${apiKey()}&language=pl-PL`);
+  const res = await fetch(
+    `${TMDB}/movie/${id}?api_key=${apiKey()}&language=${tmdbLocale()}`,
+  );
   if (!res.ok) return "";
   const m = (await res.json()) as { overview?: string };
   return (m.overview ?? "").trim();

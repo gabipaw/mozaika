@@ -64,7 +64,9 @@ import { tasteMatch } from "./logic/tasteMatch.js";
 import { togetherPicks } from "./logic/together.js";
 import { tastePortrait } from "./logic/tasteProfile.js";
 import { invalidateDiscoveryCache, tasteDiscovery } from "./logic/discovery.js";
-import { addMediaFromTmdb, searchTmdb } from "./logic/tmdb.js";
+import { addMediaFromTmdb, searchTmdb, tmdbTitles } from "./logic/tmdb.js";
+import { currentLang, normalizeLang, withLang } from "./logic/lang.js";
+import { localizeTitles } from "./logic/localize.js";
 
 // Sekret do podpisu tokenów. Fallback istnieje TYLKO dla wygody lokalnej — na
 // produkcji jest zakazany: gdyby serwer podpisywal tokeny stringiem znanym z kodu,
@@ -125,6 +127,33 @@ const requireAuth: MiddlewareHandler<Vars> = async (c, next) => {
   c.set("userId", userId);
   await next();
 };
+
+/**
+ * Język requestu (nagłówek `X-Lang` z frontu; brak = polski).
+ *
+ * Robi dwie rzeczy naraz, bo obie zależą od tego samego kodu języka:
+ * 1. wystawia go przez AsyncLocalStorage, żeby zapytania do TMDB szły w tym języku,
+ * 2. po wykonaniu trasy tłumaczy tytuły filmów, które przyszły z bazy.
+ *
+ * Własny nagłówek zamiast `Accept-Language`, bo ten drugi bywa dla fetcha w przeglądarce
+ * nagłówkiem zabronionym — front i tak trzyma wybór języka u siebie w localStorage.
+ */
+const withLanguage: MiddlewareHandler<Vars> = async (c, next) => {
+  const lang = normalizeLang(c.req.header("X-Lang"));
+  await withLang(lang, next);
+
+  const res = c.res;
+  if (!res.headers.get("content-type")?.includes("application/json")) return;
+
+  const body = await res.clone().json();
+  const headers = new Headers(res.headers);
+  headers.delete("content-length"); // tłumaczenie zmienia długość ciała
+  c.res = new Response(JSON.stringify(await localizeTitles(body, lang)), {
+    status: res.status,
+    headers,
+  });
+};
+api.use("*", withLanguage);
 
 // Health + wersja. `commit` odpowiada na pytanie „czy mój push już wszedł?" bez
 // zaglądania do panelu Render — inaczej jedynym sposobem jest porównywanie
@@ -620,12 +649,18 @@ api.get("/details", async (c) => {
   const externalId = c.req.query("externalId") ?? "";
   // Opis i zwiastun idą równolegle — zwiastun jest dodatkiem, więc jego brak
   // (albo padnięte API) nie może zabrać widzowi opisu.
-  const [description, trailer] = await Promise.all([
+  // Tytuł filmu doklejamy w języku requestu: widok szczegółów dostaje go od karty,
+  // z której wszedł, a ta po zmianie języka nie jest przerysowywana. Typ bywa
+  // katalogowy („FILM") albo źródłowy („film") — oba znaczą to samo.
+  const isFilm = type.toLowerCase() === "film";
+  const [description, trailer, titles] = await Promise.all([
     getDescription(type, externalId),
     getTrailer(type, externalId).catch(() => null),
+    isFilm ? tmdbTitles([externalId], currentLang()) : null,
   ]);
   // trailerKind mówi frontowi, czym to odtworzyć: "youtube" (iframe) czy "video" (mp4 z RAWG).
   return c.json({
+    title: titles?.get(externalId) ?? null,
     description,
     trailerUrl: trailer?.url ?? null,
     trailerKind: trailer?.kind ?? null,

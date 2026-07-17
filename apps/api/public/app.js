@@ -1851,6 +1851,7 @@ function refreshDynamic() {
     else loadProfile();
   } else if (!$("detailView").classList.contains("hidden")) {
     updateDetailButtons();
+    loadDetailTexts(); // tytuł + opis w nowym języku
     if (detailCtx?.mediaId) loadDetailReviews(detailCtx.mediaId); // recenzje + komentarze
   } else if (me) {
     loadTasteRecommendations();
@@ -2194,6 +2195,9 @@ async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
+  // Tytuły i opisy filmów tłumaczy backend (pyta TMDB w tym języku) — słownik I18N
+  // zna tylko teksty statyczne, więc bez tego tytuły zostawałyby po polsku.
+  headers["X-Lang"] = lang;
   const res = await fetch(`/api${path}`, { ...options, headers });
   if (res.status === 401) {
     logout();
@@ -4210,6 +4214,36 @@ function buildStars(container, label) {
   };
 }
 
+/**
+ * Dociąga opis, zwiastun i tytuł otwartego tytułu. Osobno od openDetail, bo po zmianie
+ * języka trzeba je pobrać na nowo (wracają z API przetłumaczone), a openDetail przy
+ * okazji ustawia nawigację — wołanie go ponownie gubiłoby powrót do wyników wyszukiwania.
+ */
+function loadDetailTexts() {
+  const item = detailCtx;
+  if (!item?.type || !item?.externalId) {
+    $("detailDesc").textContent = t("noDesc");
+    return;
+  }
+  $("detailDesc").textContent = t("loadingDesc");
+  api(
+    `/details?type=${encodeURIComponent(item.type)}&externalId=${encodeURIComponent(item.externalId)}`,
+  )
+    .then((d) => {
+      $("detailDesc").textContent = d.description || t("noDesc");
+      // Tytuł z karty bywa w starym języku (karta nie jest przerysowywana po
+      // zmianie); backend zna wersję w bieżącym języku, więc ma pierwszeństwo.
+      if (d.title) {
+        item.title = d.title;
+        $("detailTitle").textContent = d.title;
+      }
+      showTrailer(d.trailerUrl, d.trailerKind);
+    })
+    .catch(() => {
+      $("detailDesc").textContent = t("noDesc");
+    });
+}
+
 async function openDetail(item) {
   detailCtx = item;
   $("detailMsg").textContent = "";
@@ -4254,20 +4288,7 @@ async function openDetail(item) {
   window.scrollTo(0, 0);
 
   showTrailer(null); // z poprzedniego tytułu mógł zostać zwiastun — czyścimy
-  if (item.type && item.externalId) {
-    api(
-      `/details?type=${encodeURIComponent(item.type)}&externalId=${encodeURIComponent(item.externalId)}`,
-    )
-      .then((d) => {
-        $("detailDesc").textContent = d.description || t("noDesc");
-        showTrailer(d.trailerUrl, d.trailerKind);
-      })
-      .catch(() => {
-        $("detailDesc").textContent = t("noDesc");
-      });
-  } else {
-    $("detailDesc").textContent = t("noDesc");
-  }
+  loadDetailTexts();
 
   // Jeśli tytuł jest już w katalogu, znajdź mediaId, żeby pokazać komentarze.
   // (typ w bazie jest WIELKIMI literami, więc normalizujemy przez ENUM_TYPE.)
