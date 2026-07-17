@@ -14,6 +14,9 @@ export const NOTIF_TYPES = [
   "reply",
   "watchlist_rated",
   "premiere",
+  // „message" nie ma wpisu w centrum powiadomień (czat ma własny licznik przy
+  // ikonie) — jest tu wyłącznie po to, żeby dało się wyciszyć pushe z rozmów.
+  "message",
 ] as const;
 
 /** Zmienia nazwę wyświetlaną (te same reguły co przy rejestracji). */

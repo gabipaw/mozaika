@@ -180,6 +180,7 @@ const I18N = {
     ntReply: "Odpowiedzi na komentarze",
     ntWatchlist: "Oceny tytułów z listy",
     ntPremiere: "Premiery z listy",
+    ntMessage: "Wiadomości na czacie",
     // Ustawienia — o aplikacji / usuwanie konta
     about: "O aplikacji",
     aboutText: "Mozaika — oceniaj wszystko, co oglądasz i czytasz. Wersja {v}.",
@@ -448,6 +449,7 @@ const I18N = {
     ntReply: "Replies to comments",
     ntWatchlist: "Ratings of watchlisted titles",
     ntPremiere: "Premieres from your list",
+    ntMessage: "Chat messages",
     // Settings — about / delete account
     about: "About",
     aboutText: "Mozaika — rate everything you watch and read. Version {v}.",
@@ -715,6 +717,7 @@ const I18N = {
     ntReply: "Antworten auf Kommentare",
     ntWatchlist: "Bewertungen von Titeln der Liste",
     ntPremiere: "Premieren von der Liste",
+    ntMessage: "Chat-Nachrichten",
     about: "Über die App",
     aboutText: "Mozaika — bewerte alles, was du schaust und liest. Version {v}.",
     deleteAccount: "Konto löschen",
@@ -978,6 +981,7 @@ const I18N = {
     ntReply: "Respuestas a comentarios",
     ntWatchlist: "Puntuaciones de títulos de la lista",
     ntPremiere: "Estrenos de la lista",
+    ntMessage: "Mensajes del chat",
     about: "Acerca de",
     aboutText: "Mozaika — puntúa todo lo que ves y lees. Versión {v}.",
     deleteAccount: "Eliminar cuenta",
@@ -1240,6 +1244,7 @@ const I18N = {
     ntReply: "Respostas a comentários",
     ntWatchlist: "Avaliações de títulos da lista",
     ntPremiere: "Estreias da lista",
+    ntMessage: "Mensagens do chat",
     about: "Sobre a app",
     aboutText: "Mozaika — avalia tudo o que vês e lês. Versão {v}.",
     deleteAccount: "Eliminar conta",
@@ -1500,6 +1505,7 @@ const I18N = {
     ntReply: "留言的回复",
     ntWatchlist: "清单作品的评分",
     ntPremiere: "清单里的上映",
+    ntMessage: "聊天消息",
     about: "关于",
     aboutText: "Mozaika——为你看的、读的一切打分。版本 {v}。",
     deleteAccount: "删除账号",
@@ -1755,6 +1761,7 @@ const I18N = {
     ntReply: "コメントへの返信",
     ntWatchlist: "リスト作品の評価",
     ntPremiere: "リストの作品の公開",
+    ntMessage: "チャットのメッセージ",
     about: "アプリについて",
     aboutText: "Mozaika — 観たもの・読んだものすべてを評価。バージョン {v}。",
     deleteAccount: "アカウントを削除",
@@ -2148,6 +2155,7 @@ const NOTIF_PREF_TYPES = [
   { type: "reply", label: "ntReply" },
   { type: "watchlist_rated", label: "ntWatchlist" },
   { type: "premiere", label: "ntPremiere" },
+  { type: "message", label: "ntMessage" },
 ];
 
 async function renderNotifPrefs() {
@@ -3540,6 +3548,25 @@ async function loadConversations() {
     }
     row.addEventListener("click", () => openChat(c.user));
     list.append(row);
+  }
+}
+
+/**
+ * Otwiera rozmowę z osobą o podanym id — po kliknięciu w powiadomienie o wiadomości.
+ * Push niesie tylko id nadawcy (nie cały profil), więc dociągamy go tutaj.
+ * Wejścia są dwa: świeże otwarcie apki z „/?chat=12" i już otwarta karta, której
+ * Service Worker przysyła adres (przeładowania jej nie robimy — zgubiłaby stan).
+ */
+async function openChatFromUrl(url) {
+  const id = Number(new URL(url, location.origin).searchParams.get("chat"));
+  if (!me || !Number.isInteger(id) || id <= 0) return;
+  try {
+    const data = await api(`/users/${id}/profile`);
+    $("chatOverlay").classList.remove("hidden");
+    await openChat(data.user);
+    startChatPoll();
+  } catch {
+    // Konto mogło zniknąć albo przestaliście być znajomymi — trudno, zostajemy.
   }
 }
 
@@ -5198,6 +5225,13 @@ async function showApp() {
   // „Przetłumacz" ma się pojawić. Jedno miejsce dla obu wejść — startu z zapisanym
   // tokenem i świeżego logowania.
   await initTranslate();
+  // Wejście z powiadomienia o wiadomości („/?chat=12") — otwórz od razu tę rozmowę.
+  // Adres czyścimy, żeby odświeżenie strony nie otwierało czatu w kółko.
+  if (new URLSearchParams(location.search).has("chat")) {
+    const url = location.href;
+    history.replaceState(null, "", location.pathname);
+    setTimeout(() => openChatFromUrl(url), 0); // po narysowaniu widoku
+  }
   $("authView").classList.add("hidden");
   $("appView").classList.remove("hidden");
   $("userBox").classList.remove("hidden");
@@ -5543,6 +5577,13 @@ async function init() {
 }
 
 if ("serviceWorker" in navigator) {
+  // Klik w powiadomienie przy OTWARTEJ karcie: SW ją podnosi i przysyła adres.
+  // Bez tego focus() zostawiał usera dokładnie tam, gdzie był — a więc klik
+  // w powiadomienie o wiadomości nie otwierał rozmowy.
+  navigator.serviceWorker.addEventListener("message", (e) => {
+    if (e.data?.type === "navigate" && e.data.url) openChatFromUrl(e.data.url);
+  });
+
   // Czy stroną steruje już jakiś Service Worker? Zapamiętujemy TERAZ, bo poniżej
   // rozróżniamy pierwsze wejście (nic nie steruje) od podmiany SW na nowszy.
   const miałKontroler = Boolean(navigator.serviceWorker.controller);

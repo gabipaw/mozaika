@@ -579,11 +579,23 @@ api.post("/me/messages", requireAuth, async (c) => {
       : msg.text.length > 120
         ? `${msg.text.slice(0, 117)}…`
         : msg.text;
-  sendPushToUser(toId, {
-    title: me?.displayName ?? "Nowa wiadomość",
-    body: preview,
-    url: "/",
-  }).catch((e) => console.error("push (message) nie wyszedl:", e));
+  // Wyciszenie rozmów w ustawieniach ma DZIAŁAĆ: bez tej kontroli push szedł zawsze,
+  // bo mutedNotifs sprawdzało dotąd tylko centrum powiadomień (a czat wpisu tam nie ma).
+  const to = await prisma.user.findUnique({
+    where: { id: toId },
+    select: { mutedNotifs: true },
+  });
+  if (!to?.mutedNotifs.includes("message")) {
+    sendPushToUser(toId, {
+      title: me?.displayName ?? "Nowa wiadomość",
+      body: preview,
+      // Klik ma otwierać TĘ rozmowę, nie stronę główną.
+      url: `/?chat=${meId}`,
+      // Tag per nadawca: inaczej wiadomość od jednej osoby kasowała z ekranu
+      // powiadomienie od drugiej (wszystko szło pod wspólnym „mozaika").
+      tag: `chat:${meId}`,
+    }).catch((e) => console.error("push (message) nie wyszedl:", e));
+  }
   return c.json(msg, 201);
 });
 

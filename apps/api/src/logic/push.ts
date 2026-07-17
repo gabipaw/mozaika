@@ -63,6 +63,12 @@ export interface PushPayload {
   title: string;
   body: string;
   url?: string; // dokąd zabrać po kliknięciu (domyślnie „/")
+  /**
+   * Grupa powiadomień: ten sam tag → nowe ZASTĘPUJE poprzednie. Domyślnie wszystko
+   * ląduje w jednej grupie („mozaika"), ale rozmowy dostają tag per nadawca —
+   * inaczej wiadomość od Bartka kasowałaby z ekranu tę od Celiny.
+   */
+  tag?: string;
 }
 
 /**

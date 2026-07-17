@@ -1,5 +1,5 @@
 // Service worker Mozaiki — cache'uje „powłokę" aplikacji (offline + instalowalność PWA).
-const CACHE = "mozaika-v170";
+const CACHE = "mozaika-v171";
 const SHELL = [
   "/",
   "/index.html",
@@ -67,7 +67,9 @@ self.addEventListener("push", (event) => {
       badge: "/icon-192.png",
       data: { url: dane.url || "/" },
       // Ten sam tag → nowe powiadomienie ZASTĘPUJE stare, zamiast zasypywać ekran.
-      tag: "mozaika",
+      // Rozmowy przysyłają własny tag (per nadawca), bo inaczej wiadomość od jednej
+      // osoby kasowałaby z ekranu tę od drugiej.
+      tag: dane.tag || "mozaika",
     }),
   );
 });
@@ -81,7 +83,13 @@ self.addEventListener("notificationclick", (event) => {
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((klienci) => {
         for (const k of klienci) {
-          if ("focus" in k) return k.focus();
+          if ("focus" in k) {
+            // Samo focus() zostawiało usera tam, gdzie był — czyli klik w powiadomienie
+            // o wiadomości nie otwierał rozmowy. Otwartej karcie nie przeładowujemy
+            // (zgubiłaby stan), tylko mówimy jej, dokąd ma przejść.
+            k.postMessage({ type: "navigate", url: cel });
+            return k.focus();
+          }
         }
         return self.clients.openWindow(cel);
       }),
