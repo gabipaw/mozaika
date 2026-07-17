@@ -6,6 +6,7 @@
  */
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors.js";
 import { prisma } from "../db.js";
+import { censor } from "./profanity.js";
 import { isBlocked } from "./blocks.js";
 import { notifyComment, notifyReply } from "./notifications.js";
 
@@ -95,7 +96,9 @@ export async function addComment(
   text: string,
   parentId: number | null,
 ) {
-  const clean = text.trim();
+  // Komentarz jest publiczny — filtr jak przy recenzjach. Cenzura nie zmienia
+  // długości tekstu, więc limit poniżej liczy to samo co przed nią.
+  const clean = censor(text.trim());
   if (!clean) throw new ValidationError("Pusty komentarz.");
   if (clean.length > MAX_LEN) {
     throw new ValidationError(`Komentarz za długi (max ${MAX_LEN} znaków).`);

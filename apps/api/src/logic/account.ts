@@ -5,6 +5,7 @@
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors.js";
 import { prisma } from "../db.js";
 import { hashPassword, verifyPassword } from "./auth.js";
+import { censor } from "./profanity.js";
 
 /** Typy powiadomień, które można wyciszyć (spójne z notifications.ts). */
 export const NOTIF_TYPES = [
@@ -28,12 +29,16 @@ export async function updateDisplayName(userId: number, raw: unknown) {
   if (displayName.length > 40) {
     throw new ValidationError("Nazwa może mieć max. 40 znaków.");
   }
-  await prisma.user.update({ where: { id: userId }, data: { displayName } });
-  return { displayName };
+  // Nazwa widnieje wszędzie — na czacie, pod komentarzami, na listach — więc
+  // wulgaryzm w niej razi bardziej niż w opisie. Cenzurujemy po sprawdzeniu długości:
+  // gwiazdki mają tyle znaków co słowo, więc limit i tak by się zgadzał.
+  const clean = censor(displayName);
+  await prisma.user.update({ where: { id: userId }, data: { displayName: clean } });
+  return { displayName: clean };
 }
 
 /** Ile znaków może mieć „o mnie". Krótko — to podpis pod nazwą, nie życiorys. */
-export const MAX_BIO = 200;
+export const MAX_BIO = 100;
 
 /**
  * Zmienia opis „o mnie". Pusty tekst = kasuje bio (NULL), a nie zapisuje pustego
@@ -42,9 +47,11 @@ export const MAX_BIO = 200;
 export async function updateBio(userId: number, raw: unknown) {
   // Zwykłe spacje z końców + puste linie: bio ma jedną linijkę na profilu, a wklejony
   // tekst z entera rozpychałby układ.
-  const bio = String(raw ?? "")
-    .replace(/\s*\n\s*/g, " ")
-    .trim();
+  const bio = censor(
+    String(raw ?? "")
+      .replace(/\s*\n\s*/g, " ")
+      .trim(),
+  );
   if (bio.length > MAX_BIO) {
     throw new ValidationError(`Opis może mieć max. ${MAX_BIO} znaków.`);
   }

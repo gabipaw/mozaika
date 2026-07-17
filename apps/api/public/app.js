@@ -2168,7 +2168,7 @@ function wireAccordion() {
 }
 
 // Wypełnia pole nazwy bieżącą wartością i chowa (zwinięty) formularz hasła.
-const MAX_BIO = 200; // musi się zgadzać z limitem serwera (logic/account.ts)
+const MAX_BIO = 100; // musi się zgadzać z limitem serwera (logic/account.ts)
 
 /** Licznik „ile jeszcze znaków" pod polem „o mnie". */
 function updateBioCount() {

@@ -6,6 +6,7 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 import { prisma } from "../db.js";
+import { censor } from "./profanity.js";
 import { ValidationError } from "../errors.js";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -50,8 +51,14 @@ export async function register(input: {
   const exists = await prisma.user.findUnique({ where: { email } });
   if (exists) throw new ValidationError("Konto z tym e-mailem już istnieje.");
 
+  // Nazwa jest widoczna wszędzie, więc filtr obowiązuje już przy zakładaniu konta —
+  // inaczej wystarczyłoby zarejestrować się z wyzwiskiem i nigdy nie zmieniać nazwy.
   return prisma.user.create({
-    data: { email, displayName, passwordHash: hashPassword(password) },
+    data: {
+      email,
+      displayName: censor(displayName),
+      passwordHash: hashPassword(password),
+    },
     select: PUBLIC,
   });
 }

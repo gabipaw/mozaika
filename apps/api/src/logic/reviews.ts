@@ -4,6 +4,7 @@
  * Walidacja (czysta funkcja) jest oddzielona od zapisu do bazy.
  */
 import { prisma } from "../db.js";
+import { censor } from "./profanity.js";
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors.js";
 import { notifyWatchlistWatchers } from "./notifications.js";
 
@@ -46,8 +47,9 @@ export function validateReviewInput(input: ReviewInput): ValidReviewInput {
     );
   }
 
+  // Recenzja jest publiczna (widzi ją każdy pod tytułem), więc idzie przez filtr.
   const trimmed = input.text?.trim();
-  return { userId, mediaId, rating, text: trimmed ? trimmed : null };
+  return { userId, mediaId, rating, text: trimmed ? censor(trimmed) : null };
 }
 
 /**
