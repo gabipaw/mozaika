@@ -2454,6 +2454,20 @@ const ENUM_TYPE = {
   GRA: "game",
 };
 
+/**
+ * MOJA ocena tytułu — nigdy ta z klikniętej karty.
+ *
+ * Karta niesie ocenę swojego właściciela i słusznie, bo ją pokazuje. Ale widok
+ * szczegółów wypełniał tą liczbą gwiazdki „Twoja ocena": na profilu znajomego
+ * wchodziło się w nieoceniony przez siebie tytuł i „Zapisz" zapisywał CUDZĄ ocenę
+ * jako własną — po cichu, bo gwiazdki wyglądały na wypełnione przez nas.
+ * (Lista recenzji poprawiała gwiazdki, ale tylko gdy własna ocena już istniała.)
+ */
+function myRatingFor(mediaId) {
+  if (!mediaId) return undefined;
+  return myProfile?.reviews?.find((r) => r.media.id === mediaId)?.rating;
+}
+
 // Buduje obiekt szczegółów z rekordu (media z bazy / wynik wyszukiwania).
 // Typ zawsze normalizowany do małego klucza (film/book/manga/anime/music).
 function toDetail(m, type, mediaId, myRating) {
@@ -2798,7 +2812,8 @@ function appendCard(container, media, rating, onClick, rect) {
   const { card } = posterCard(media, { score: rating, noMeta: true, square });
   card.addEventListener(
     "click",
-    onClick ?? (() => openDetail(toDetail(media, media.type, media.id, rating))),
+    onClick ??
+      (() => openDetail(toDetail(media, media.type, media.id, myRatingFor(media.id)))),
   );
   container.append(card);
 }
@@ -2816,7 +2831,7 @@ function openSeeAll(title, items) {
     const rating = it.rating;
     appendCard(grid, media, rating, () => {
       closeSeeAll();
-      openDetail(toDetail(media, media.type, media.id, rating));
+      openDetail(toDetail(media, media.type, media.id, myRatingFor(media.id)));
     });
   }
   $("seeAllOverlay").classList.remove("hidden");
@@ -4099,7 +4114,7 @@ function renderMyComments(reviews, authorId, ownerName) {
 
     item.append(poster, body);
     item.addEventListener("click", () =>
-      openDetail(toDetail(r.media, r.media.type, r.media.id, r.rating)),
+      openDetail(toDetail(r.media, r.media.type, r.media.id, myRatingFor(r.media.id))),
     );
     box.append(item);
   }
