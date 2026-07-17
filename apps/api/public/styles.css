@@ -1925,6 +1925,19 @@ h2 {
   flex: 0 0 auto;
 }
 
+/* Główka ma trzymać stałe 100px (.cat-head), ale przyciski są od niej szersze i przez
+   `white-space: nowrap` rozpychały ją do ~140px — tylko w rzędach, które taki przycisk
+   mają. Rzędy zaczynały się wtedy w różnych miejscach i okładki nie stały w jednej
+   kolumnie. W główce pozwalamy tekstowi przycisku się zawinąć. */
+.cat-head {
+  min-width: 0;
+}
+
+.cat-head .seeall {
+  max-width: 100%;
+  white-space: normal;
+}
+
 /* Przycisk „Zobacz wszystko". */
 .seeall {
   background: var(--bg-2);

@@ -2778,6 +2778,13 @@ function renderRatedByCat(reviews, readOnly) {
     head.append(label);
     const posters = document.createElement("div");
     posters.className = "cat-posters";
+    // Cudzy profil pokazuje pierwsze MAX_COVERS; własny — okładki wybrane przez usera.
+    const shown =
+      items.length === 0
+        ? []
+        : readOnly
+          ? items.slice(0, MAX_COVERS)
+          : displayedForCat(g, items);
     if (items.length === 0) {
       posters.classList.add("empty");
       const ph = document.createElement("span");
@@ -2785,7 +2792,6 @@ function renderRatedByCat(reviews, readOnly) {
       ph.textContent = t("nothingRatedCat");
       posters.append(ph);
     } else {
-      const shown = readOnly ? items.slice(0, MAX_COVERS) : displayedForCat(g, items);
       // Oceny są, ale user odznaczył wszystkie okładki — inny komunikat niż „nic tu
       // jeszcze", bo tu jest co pokazać; to świadomy wybór, nie pusta kategoria.
       if (shown.length === 0) {
@@ -2796,6 +2802,18 @@ function renderRatedByCat(reviews, readOnly) {
         posters.append(ph);
       }
       for (const r of shown) appendCard(posters, r.media, r.rating);
+    }
+    // „Zobacz wszystko" na KAŻDYM profilu — rząd mieści najwyżej MAX_COVERS okładek,
+    // więc bez tego reszta ocen była nieosiągalna; na cudzym profilu tym bardziej, bo
+    // tam nie ma nawet przycisku wyboru. Tylko gdy jest CO dobierać: przy kategorii,
+    // której wszystkie pozycje już widać, przycisk otwierałby to samo, co na wierzchu.
+    if (items.length > shown.length) {
+      const all = document.createElement("button");
+      all.className = "seeall cat-seeall";
+      all.type = "button";
+      all.textContent = t("seeAll", { n: items.length });
+      all.addEventListener("click", () => openSeeAll(t(g.labelKey), items));
+      head.append(all);
     }
     // „Wybierz" tylko na WŁASNYM profilu (nie zmieniasz cudzych okładek).
     if (!readOnly && items.length > 0) {
