@@ -2375,6 +2375,20 @@ const translationSame = new Set();
  */
 const tk = (key, l = lang) => `${l}:${key}`;
 
+/**
+ * Krótki skrót treści — wchodzi do klucza pamięci obok id wpisu.
+ *
+ * Samo id nie wystarcza, bo treść pod tym samym id POTRAFI się zmienić: czat ma
+ * edycję wiadomości, a recenzja jest nadpisywana (upsert po użytkowniku i tytule).
+ * Bez tego po edycji wisiało tłumaczenie POPRZEDNIEJ wersji — pod „Actually it was
+ * terrible." spokojnie stało „Ten film był niesamowity".
+ */
+function hashText(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
 // --- Tryb automatyczny ---
 
 const AUTO_KEY = "mozaika_autotranslate";
@@ -2448,9 +2462,11 @@ function setAutoTranslate(on) {
  * tekstach, a „hey" wygląda tak samo w kilku językach) — mówi go DeepL przy okazji
  * tłumaczenia i dopiero wtedy piszemy, z czego przetłumaczyliśmy.
  */
-function translateControl(text, rawKey) {
-  if (!translateOn || !me || !(text ?? "").trim() || !rawKey) return null;
-  // Klucz zawiera język: po jego zmianie wpis jest dla nas nowy i tłumaczy się od nowa.
+function translateControl(text, entryKey) {
+  if (!translateOn || !me || !(text ?? "").trim() || !entryKey) return null;
+  // Klucz = wpis + skrót treści + język. Każdy z tych trzech może się zmienić i każda
+  // zmiana ma znaczyć „to jest nowy tekst do tłumaczenia".
+  const rawKey = `${entryKey}#${hashText(text)}`;
   const key = tk(rawKey);
   // Automat już ustalił, że to Twój język — nie zaśmiecamy ekranu przyciskiem.
   if (translationSame.has(key)) return null;
