@@ -442,13 +442,16 @@
                     <button type="submit" data-i18n="save">Zapisz</button>
                   </div>
                 </form>
+                <!-- Rozwija sekcję hasła. Etykieta „Pokaż hasło", a nie „Zmień hasło":
+                     zmianę robi dopiero przycisk zapisu w formularzu niżej, a dwie
+                     identyczne etykiety obok siebie były mylące. -->
                 <button
-                  id="changePwBtn"
+                  id="showPwBtn"
                   class="linkbtn"
                   type="button"
-                  data-i18n="changePw"
+                  data-i18n="showPassword"
                 >
-                  Zmień hasło
+                  Pokaż hasło
                 </button>
                 <form id="pwForm" class="settings-form col hidden">
                   <div class="pw-field">
