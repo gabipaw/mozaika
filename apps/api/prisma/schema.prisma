@@ -48,23 +48,6 @@ model User {
   reviewComments   ReviewComment[] // moje komentarze pod recenzjami
   blocking         Block[]        @relation("blocker") // kogo ja zablokowałem
   blockedBy        Block[]        @relation("blocked") // kto zablokował mnie
-  resetTokens      PasswordResetToken[] // linki „nie pamiętam hasła"
-}
-
-/// Jednorazowy token do ustawienia nowego hasła („nie pamiętam hasła").
-/// W bazie trzymamy SHA-256 tokenu, nigdy jego jawnej postaci — dzięki temu wyciek
-/// bazy nie pozwala przejąć konta, bo z hasha nie da się odtworzyć linku.
-model PasswordResetToken {
-  id        Int       @id @default(autoincrement())
-  tokenHash String    @unique // SHA-256 tokenu z linku (hex)
-  expiresAt DateTime // link żyje krótko (godzinę)
-  usedAt    DateTime? // ustawiane przy użyciu — token działa dokładnie raz
-  createdAt DateTime  @default(now())
-
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId Int
-
-  @@index([userId])
 }
 
 /// Blokada: `blocker` nie chce mieć nic wspólnego z `blocked`. Blokada jest

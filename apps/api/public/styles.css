@@ -2963,19 +2963,19 @@ h2 {
   line-height: 1.4;
 }
 
-.auth-form {
+#authForm {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.auth-form input {
+#authForm input {
   padding: 12px 14px;
   font-size: 1rem;
   background: var(--bg-2);
 }
 
-.auth-form input:focus {
+#authForm input:focus {
   outline: none;
   border-color: var(--accent);
 }
@@ -2985,7 +2985,7 @@ h2 {
   display: flex;
 }
 
-.auth-form .pw-field input {
+#authForm .pw-field input {
   flex: 1;
   padding-right: 46px; /* miejsce na oczko „pokaż hasło" */
   /* Bez min-width: 0 input nie zwęzi się poniżej swojej naturalnej szerokości
@@ -3021,7 +3021,7 @@ h2 {
   transform: translateY(-50%);
 }
 
-.auth-submit {
+#authSubmit {
   padding: 13px;
   font-size: 1rem;
   margin-top: 6px;
@@ -3031,7 +3031,7 @@ h2 {
   box-shadow: 0 10px 24px -10px rgba(0, 194, 168, 0.65);
 }
 
-.auth-submit:hover {
+#authSubmit:hover {
   filter: brightness(1.06);
 }
 
@@ -3041,12 +3041,6 @@ h2 {
   margin: 10px 0 0;
   font-size: 0.9rem;
   text-align: center;
-}
-
-/* Ten sam akapit bywa też potwierdzeniem (wysłano link, hasło zmienione) —
-   wtedy kolor błędu wprowadzałby w błąd. */
-.err.ok {
-  color: var(--ok, #2ecc71);
 }
 
 .auth-switch {

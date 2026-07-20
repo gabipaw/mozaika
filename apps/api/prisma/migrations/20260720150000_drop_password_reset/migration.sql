@@ -1,0 +1,12 @@
+-- Wycofanie tabeli tokenów resetu hasła — funkcja „nie pamiętam hasła" została
+-- porzucona (wysyłka maili wymagała konta u dostawcy SMTP, a hasła aplikacji Google
+-- są niedostępne przy Ochronie Zaawansowanej). Zmianę hasła robi się w ustawieniach
+-- konta, mając stare hasło — tam nic nie jest potrzebne poza bazą.
+--
+-- Poprzednia migracja (20260720120000_password_reset) zostaje w historii CELOWO:
+-- mogła już zostać wgrana na produkcję, a skasowanie jej katalogu rozjechałoby
+-- `prisma migrate status` z tabelą `_prisma_migrations`.
+--
+-- IF EXISTS, bo tabela może nigdy nie powstać (jeśli tamta migracja nie została
+-- wdrożona) — wtedy ta ma po prostu nic nie robić, zamiast wywalać deploy.
+DROP TABLE IF EXISTS "PasswordResetToken";

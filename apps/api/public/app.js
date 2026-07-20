@@ -5,7 +5,6 @@ let allMedia = [];
 let searchTimer = null;
 let me = null;
 let authMode = "login";
-let resetToken = ""; // token z linku ?reset=… , gdy user przyszedł z maila
 let searchType = "film"; // "film" (TMDB) | "book" (Open Library)
 let viewingUserId = null; // null = własny profil; inaczej id oglądanego usera
 let viewingName = ""; // imię oglądanego usera (do etykiet porównania)
@@ -30,18 +29,6 @@ const I18N = {
     passwordPhNew: "Hasło (min. 6 znaków)",
     showPassword: "Pokaż hasło",
     hidePassword: "Ukryj hasło",
-    forgotLink: "Nie pamiętasz hasła?",
-    forgotTitle: "Odzyskaj hasło",
-    forgotIntro: "Podaj e-mail konta — wyślemy link do ustawienia nowego hasła.",
-    forgotSubmit: "Wyślij link",
-    forgotSent:
-      "Jeśli konto o tym adresie istnieje, link jest już w drodze. Zajrzyj też do spamu.",
-    backToLogin: "← Wróć do logowania",
-    resetTitle: "Ustaw nowe hasło",
-    resetIntro: "Wpisz nowe hasło do swojego konta.",
-    resetSubmit: "Zapisz hasło",
-    resetDone: "Hasło zmienione. Możesz się zalogować.",
-    newPasswordPh: "Nowe hasło (min. 6 znaków)",
     yourProfile: "Twój profil",
     changePhoto: "Zmień zdjęcie",
     hi: "Cześć, {name}",
@@ -315,18 +302,6 @@ const I18N = {
     passwordPhNew: "Password (min. 6 characters)",
     showPassword: "Show password",
     hidePassword: "Hide password",
-    forgotLink: "Forgot your password?",
-    forgotTitle: "Reset your password",
-    forgotIntro: "Enter your account e-mail — we'll send a link to set a new password.",
-    forgotSubmit: "Send link",
-    forgotSent:
-      "If an account with that address exists, the link is on its way. Check your spam folder too.",
-    backToLogin: "← Back to sign in",
-    resetTitle: "Set a new password",
-    resetIntro: "Enter a new password for your account.",
-    resetSubmit: "Save password",
-    resetDone: "Password changed. You can sign in now.",
-    newPasswordPh: "New password (min. 6 characters)",
     yourProfile: "Your profile",
     changePhoto: "Change photo",
     hi: "Hi, {name}",
@@ -600,19 +575,6 @@ const I18N = {
     passwordPhNew: "Passwort (mind. 6 Zeichen)",
     showPassword: "Passwort anzeigen",
     hidePassword: "Passwort verbergen",
-    forgotLink: "Passwort vergessen?",
-    forgotTitle: "Passwort zurücksetzen",
-    forgotIntro:
-      "Gib die E-Mail deines Kontos ein — wir senden dir einen Link für ein neues Passwort.",
-    forgotSubmit: "Link senden",
-    forgotSent:
-      "Falls ein Konto mit dieser Adresse existiert, ist der Link unterwegs. Schau auch im Spam nach.",
-    backToLogin: "← Zurück zur Anmeldung",
-    resetTitle: "Neues Passwort festlegen",
-    resetIntro: "Gib ein neues Passwort für dein Konto ein.",
-    resetSubmit: "Passwort speichern",
-    resetDone: "Passwort geändert. Du kannst dich jetzt anmelden.",
-    newPasswordPh: "Neues Passwort (mind. 6 Zeichen)",
     yourProfile: "Dein Profil",
     changePhoto: "Foto ändern",
     hi: "Hallo, {name}",
@@ -882,19 +844,6 @@ const I18N = {
     passwordPhNew: "Contraseña (mín. 6 caracteres)",
     showPassword: "Mostrar contraseña",
     hidePassword: "Ocultar contraseña",
-    forgotLink: "¿Olvidaste tu contraseña?",
-    forgotTitle: "Recuperar contraseña",
-    forgotIntro:
-      "Introduce el correo de tu cuenta — te enviaremos un enlace para crear una nueva contraseña.",
-    forgotSubmit: "Enviar enlace",
-    forgotSent:
-      "Si existe una cuenta con esa dirección, el enlace ya está en camino. Revisa también el spam.",
-    backToLogin: "← Volver a iniciar sesión",
-    resetTitle: "Establece una nueva contraseña",
-    resetIntro: "Escribe una nueva contraseña para tu cuenta.",
-    resetSubmit: "Guardar contraseña",
-    resetDone: "Contraseña cambiada. Ya puedes iniciar sesión.",
-    newPasswordPh: "Nueva contraseña (mín. 6 caracteres)",
     yourProfile: "Tu perfil",
     changePhoto: "Cambiar foto",
     hi: "Hola, {name}",
@@ -1163,19 +1112,6 @@ const I18N = {
     passwordPhNew: "Palavra-passe (mín. 6 caracteres)",
     showPassword: "Mostrar palavra-passe",
     hidePassword: "Ocultar palavra-passe",
-    forgotLink: "Esqueceste-te da palavra-passe?",
-    forgotTitle: "Recuperar palavra-passe",
-    forgotIntro:
-      "Indica o e-mail da tua conta — enviamos-te um link para definir uma nova palavra-passe.",
-    forgotSubmit: "Enviar link",
-    forgotSent:
-      "Se existir uma conta com esse endereço, o link já vai a caminho. Vê também o spam.",
-    backToLogin: "← Voltar ao início de sessão",
-    resetTitle: "Define uma nova palavra-passe",
-    resetIntro: "Escreve uma nova palavra-passe para a tua conta.",
-    resetSubmit: "Guardar palavra-passe",
-    resetDone: "Palavra-passe alterada. Já podes iniciar sessão.",
-    newPasswordPh: "Nova palavra-passe (mín. 6 caracteres)",
     yourProfile: "O teu perfil",
     changePhoto: "Mudar foto",
     hi: "Olá, {name}",
@@ -1443,17 +1379,6 @@ const I18N = {
     passwordPhNew: "密码（至少 6 个字符）",
     showPassword: "显示密码",
     hidePassword: "隐藏密码",
-    forgotLink: "忘记密码？",
-    forgotTitle: "找回密码",
-    forgotIntro: "请输入账号邮箱，我们会发送设置新密码的链接。",
-    forgotSubmit: "发送链接",
-    forgotSent: "如果该邮箱已注册，链接已在发送途中。请同时查看垃圾邮件。",
-    backToLogin: "← 返回登录",
-    resetTitle: "设置新密码",
-    resetIntro: "请输入你的新密码。",
-    resetSubmit: "保存密码",
-    resetDone: "密码已修改，现在可以登录了。",
-    newPasswordPh: "新密码（至少 6 个字符）",
     yourProfile: "你的资料",
     changePhoto: "更换头像",
     hi: "你好，{name}",
@@ -1714,19 +1639,6 @@ const I18N = {
     passwordPhNew: "パスワード（6文字以上）",
     showPassword: "パスワードを表示",
     hidePassword: "パスワードを隠す",
-    forgotLink: "パスワードをお忘れですか？",
-    forgotTitle: "パスワードの再設定",
-    forgotIntro:
-      "アカウントのメールアドレスを入力してください。新しいパスワードを設定するリンクをお送りします。",
-    forgotSubmit: "リンクを送信",
-    forgotSent:
-      "そのアドレスのアカウントが存在する場合、リンクを送信しました。迷惑メールもご確認ください。",
-    backToLogin: "← ログインに戻る",
-    resetTitle: "新しいパスワードを設定",
-    resetIntro: "アカウントの新しいパスワードを入力してください。",
-    resetSubmit: "パスワードを保存",
-    resetDone: "パスワードを変更しました。ログインできます。",
-    newPasswordPh: "新しいパスワード（6文字以上）",
     yourProfile: "あなたのプロフィール",
     changePhoto: "写真を変更",
     hi: "こんにちは、{name}さん",
@@ -5491,7 +5403,7 @@ function wireAccountSettings() {
 
   // Uwaga: to przycisk „Zmień hasło" w USTAWIENIACH. Miał kiedyś id="pwToggle" —
   // ten sam co ikonka oka na ekranie logowania — więc getElementById trafiał w oko
-  // i przycisk w ustawieniach nie robił nic.
+  // i przycisk w ustawieniach nie robił NIC (a oko dostawało ten handler w prezencie).
   $("changePwBtn").addEventListener("click", () => {
     $("pwForm").classList.toggle("hidden");
   });
@@ -5532,82 +5444,6 @@ function wireAccountSettings() {
       toast(err.message);
     }
   });
-}
-
-/**
- * Podpina ikonkę oka (podgląd hasła) do pola. Ten sam mechanizm obsługuje logowanie
- * i ekran ustawiania nowego hasła — stąd parametry zamiast dwóch kopii.
- */
-function wirePwEye(toggleId, inputId) {
-  const btn = $(toggleId);
-  btn.innerHTML = pwIcon(false);
-  btn.addEventListener("click", () => {
-    const pw = $(inputId);
-    const show = pw.type === "password";
-    pw.type = show ? "text" : "password";
-    btn.innerHTML = pwIcon(show);
-    btn.setAttribute("aria-label", show ? t("hidePassword") : t("showPassword"));
-  });
-}
-
-/**
- * Przełącza widoczną kartę na ekranie logowania: "login" | "forgot" | "reset".
- * Karty żyją obok siebie w #authView, więc wystarczy chować pozostałe.
- */
-function showAuthCard(which) {
-  const karty = { login: "loginCard", forgot: "forgotCard", reset: "resetCard" };
-  for (const [nazwa, id] of Object.entries(karty)) {
-    $(id).classList.toggle("hidden", nazwa !== which);
-  }
-}
-
-/**
- * Prośba o link resetu. Komunikat po wysłaniu jest CELOWO ten sam niezależnie od
- * tego, czy konto istnieje — backend odpowiada tak samo, żeby formularz nie służył
- * do sprawdzania, kto ma konto.
- */
-async function submitForgot(ev) {
-  ev.preventDefault();
-  const msg = $("forgotMsg");
-  msg.textContent = "";
-  msg.classList.remove("ok");
-  try {
-    await api("/auth/forgot", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: $("forgotEmail").value }),
-    });
-    msg.textContent = t("forgotSent");
-    msg.classList.add("ok");
-    $("forgotForm").reset();
-  } catch (e) {
-    msg.textContent = e.message; // np. limit żądań (429)
-  }
-}
-
-/** Ustawienie nowego hasła tokenem z linku z maila. */
-async function submitReset(ev) {
-  ev.preventDefault();
-  const msg = $("resetMsg");
-  msg.textContent = "";
-  msg.classList.remove("ok");
-  try {
-    await api("/auth/reset", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ token: resetToken, password: $("resetPassword").value }),
-    });
-    msg.textContent = t("resetDone");
-    msg.classList.add("ok");
-    $("resetForm").reset();
-    // Token jest zużyty — czyścimy adres, żeby odświeżenie strony nie wracało
-    // na ekran resetu z martwym linkiem.
-    resetToken = "";
-    history.replaceState(null, "", location.pathname);
-    setTimeout(() => showAuthCard("login"), 1500);
-  } catch (e) {
-    msg.textContent = e.message;
-  }
 }
 
 function setAuthMode(mode) {
@@ -5680,16 +5516,6 @@ async function init() {
     setAuthMode(authMode === "login" ? "register" : "login"),
   );
   $("authForm").addEventListener("submit", submitAuth);
-  $("forgotBtn").addEventListener("click", () => showAuthCard("forgot"));
-  $("forgotBackBtn").addEventListener("click", () => showAuthCard("login"));
-  $("forgotForm").addEventListener("submit", submitForgot);
-  $("resetForm").addEventListener("submit", submitReset);
-  $("resetBackBtn").addEventListener("click", () => {
-    // Rezygnacja z resetu — token przestaje nas interesować, adres wraca do czystego.
-    resetToken = "";
-    history.replaceState(null, "", location.pathname);
-    showAuthCard("login");
-  });
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", openProfile);
   $("topBack").addEventListener("click", () => {
@@ -5822,22 +5648,20 @@ async function init() {
     else if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
     else if (!$("detailView").classList.contains("hidden")) closeDetail();
   });
-  wirePwEye("pwToggle", "password");
-  wirePwEye("resetPwToggle", "resetPassword");
+  $("pwToggle").innerHTML = pwIcon(false);
+  $("pwToggle").addEventListener("click", () => {
+    const pw = $("password");
+    const show = pw.type === "password";
+    pw.type = show ? "text" : "password";
+    $("pwToggle").innerHTML = pwIcon(show);
+    $("pwToggle").setAttribute(
+      "aria-label",
+      show ? t("hidePassword") : t("showPassword"),
+    );
+  });
   applyStaticI18n();
   applySearchPlaceholder();
   setAuthMode("login");
-
-  // Wejście z linku w mailu ma pierwszeństwo przed zapisaną sesją: ktoś, kto nie
-  // pamięta hasła, mógł zostawić w tej przeglądarce zalogowane konto — i bez tego
-  // zamiast ekranu resetu zobaczyłby po prostu aplikację.
-  const zLinku = new URLSearchParams(location.search).get("reset");
-  if (zLinku) {
-    resetToken = zLinku;
-    showAuth();
-    showAuthCard("reset");
-    return;
-  }
 
   if (getToken()) {
     try {
@@ -5850,7 +5674,6 @@ async function init() {
     }
   }
   showAuth();
-  showAuthCard("login");
 }
 
 if ("serviceWorker" in navigator) {
