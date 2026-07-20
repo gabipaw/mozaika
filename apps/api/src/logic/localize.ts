@@ -24,12 +24,16 @@ interface FilmNode {
   title: string;
 }
 
-/** Czy węzeł to rekord filmu z katalogu (a nie świeży wynik z discovery). */
+/**
+ * Czy węzeł to rekord filmu ALBO serialu z katalogu (a nie świeży wynik z discovery).
+ * Oba biorą tłumaczenie z TMDB, ale z INNYCH ścieżek (`/movie` vs `/tv`) — id 1399
+ * to zupełnie inna pozycja w każdym z katalogów, więc rodzaju nie wolno pomylić.
+ */
 function isFilmNode(v: unknown): v is FilmNode {
   const o = v as Record<string, unknown> | null;
   return (
     !!o &&
-    o.type === "FILM" &&
+    (o.type === "FILM" || o.type === "SERIAL") &&
     typeof o.externalId === "string" &&
     typeof o.title === "string"
   );
@@ -57,13 +61,32 @@ export async function localizeTitles(body: unknown, lang: string): Promise<unkno
   walk(body, (film) => films.push(film));
   if (!films.length) return body;
 
-  const titles = await tmdbTitles(
-    films.map((f) => f.externalId),
-    lang,
-  );
+  // Osobne zapytania dla filmów i seriali — patrz uwaga przy isFilmNode.
+  const [filmy, seriale] = [
+    films.filter((f) => f.type === "FILM"),
+    films.filter((f) => f.type === "SERIAL"),
+  ];
+  const [tytulyFilmow, tytulySeriali] = await Promise.all([
+    filmy.length
+      ? tmdbTitles(
+          filmy.map((f) => f.externalId),
+          lang,
+          "movie",
+        )
+      : new Map<string, string>(),
+    seriale.length
+      ? tmdbTitles(
+          seriale.map((f) => f.externalId),
+          lang,
+          "tv",
+        )
+      : new Map<string, string>(),
+  ]);
+
   // Brak trafienia = zostaje tytuł z bazy. Lepszy polski niż pusty.
   for (const film of films) {
-    const translated = titles.get(film.externalId);
+    const slownik = film.type === "SERIAL" ? tytulySeriali : tytulyFilmow;
+    const translated = slownik.get(film.externalId);
     if (translated) film.title = translated;
   }
   return body;

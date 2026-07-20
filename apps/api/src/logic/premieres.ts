@@ -19,7 +19,7 @@ import { aniListReleaseDate } from "./anilist.js";
 import { gameReleaseDate } from "./games.js";
 import { notifyPremiere } from "./notifications.js";
 import { sendPushToUser } from "./push.js";
-import { tmdbReleaseDate } from "./tmdb.js";
+import { tmdbReleaseDate, tmdbTvReleaseDate } from "./tmdb.js";
 
 /** Typy, dla których zewnętrzne API zna dzień premiery. */
 const ANNOUNCED_TYPES: MediaType[] = [MediaType.FILM, MediaType.ANIME, MediaType.GRA];
@@ -69,6 +69,8 @@ function fetchReleaseDate(m: Media): Promise<Date | null> {
   switch (m.type) {
     case MediaType.FILM:
       return tmdbReleaseDate(id);
+    case MediaType.SERIAL:
+      return tmdbTvReleaseDate(id);
     case MediaType.ANIME:
       return aniListReleaseDate("ANIME", id);
     case MediaType.GRA:

@@ -33,6 +33,7 @@ const I18N = {
     changePhoto: "Zmień zdjęcie",
     hi: "Cześć, {name}",
     typeFilm: "🎬 Filmy",
+    typeSerial: "📺 Seriale",
     typeBook: "📚 Książki",
     typeManga: "📗 Manga",
     typeAnime: "🎞️ Anime",
@@ -44,6 +45,7 @@ const I18N = {
     shelfBook: "Książki / Manga",
     shelfGame: "Gry",
     searchFilm: "Szukaj filmu (TMDB)…",
+    searchSerial: "Szukaj serialu (TMDB)…",
     searchBook: "Szukaj książki (Open Library)…",
     searchManga: "Szukaj mangi (AniList)…",
     searchAnime: "Szukaj anime (AniList)…",
@@ -312,6 +314,7 @@ const I18N = {
     changePhoto: "Change photo",
     hi: "Hi, {name}",
     typeFilm: "🎬 Movies",
+    typeSerial: "📺 TV shows",
     typeBook: "📚 Books",
     typeManga: "📗 Manga",
     typeAnime: "🎞️ Anime",
@@ -323,6 +326,7 @@ const I18N = {
     shelfBook: "Books / Manga",
     shelfGame: "Games",
     searchFilm: "Search movies (TMDB)…",
+    searchSerial: "Search TV shows (TMDB)…",
     searchBook: "Search books (Open Library)…",
     searchManga: "Search manga (AniList)…",
     searchAnime: "Search anime (AniList)…",
@@ -591,6 +595,7 @@ const I18N = {
     changePhoto: "Foto ändern",
     hi: "Hallo, {name}",
     typeFilm: "🎬 Filme",
+    typeSerial: "📺 Serien",
     typeBook: "📚 Bücher",
     typeManga: "📗 Manga",
     typeAnime: "🎞️ Anime",
@@ -602,6 +607,7 @@ const I18N = {
     shelfBook: "Bücher / Manga",
     shelfGame: "Spiele",
     searchFilm: "Film suchen (TMDB)…",
+    searchSerial: "Serie suchen (TMDB)…",
     searchBook: "Buch suchen (Open Library)…",
     searchManga: "Manga suchen (AniList)…",
     searchAnime: "Anime suchen (AniList)…",
@@ -866,6 +872,7 @@ const I18N = {
     changePhoto: "Cambiar foto",
     hi: "Hola, {name}",
     typeFilm: "🎬 Películas",
+    typeSerial: "📺 Series",
     typeBook: "📚 Libros",
     typeManga: "📗 Manga",
     typeAnime: "🎞️ Anime",
@@ -877,6 +884,7 @@ const I18N = {
     shelfBook: "Libros / Manga",
     shelfGame: "Juegos",
     searchFilm: "Buscar película (TMDB)…",
+    searchSerial: "Busca series (TMDB)…",
     searchBook: "Buscar libro (Open Library)…",
     searchManga: "Buscar manga (AniList)…",
     searchAnime: "Buscar anime (AniList)…",
@@ -1140,6 +1148,7 @@ const I18N = {
     changePhoto: "Mudar foto",
     hi: "Olá, {name}",
     typeFilm: "🎬 Filmes",
+    typeSerial: "📺 Séries",
     typeBook: "📚 Livros",
     typeManga: "📗 Manga",
     typeAnime: "🎞️ Anime",
@@ -1151,6 +1160,7 @@ const I18N = {
     shelfBook: "Livros / Mangá",
     shelfGame: "Jogos",
     searchFilm: "Procurar filme (TMDB)…",
+    searchSerial: "Procura séries (TMDB)…",
     searchBook: "Procurar livro (Open Library)…",
     searchManga: "Procurar manga (AniList)…",
     searchAnime: "Procurar anime (AniList)…",
@@ -1413,6 +1423,7 @@ const I18N = {
     changePhoto: "更换头像",
     hi: "你好，{name}",
     typeFilm: "🎬 电影",
+    typeSerial: "📺 剧集",
     typeBook: "📚 图书",
     typeManga: "📗 漫画",
     typeAnime: "🎞️ 动画",
@@ -1424,6 +1435,7 @@ const I18N = {
     shelfBook: "图书 / 漫画",
     shelfGame: "游戏",
     searchFilm: "搜索电影（TMDB）…",
+    searchSerial: "搜索剧集（TMDB）…",
     searchBook: "搜索图书（Open Library）…",
     searchManga: "搜索漫画（AniList）…",
     searchAnime: "搜索动画（AniList）…",
@@ -1679,6 +1691,7 @@ const I18N = {
     changePhoto: "写真を変更",
     hi: "こんにちは、{name}さん",
     typeFilm: "🎬 映画",
+    typeSerial: "📺 ドラマ",
     typeBook: "📚 書籍",
     typeManga: "📗 マンガ",
     typeAnime: "🎞️ アニメ",
@@ -1690,6 +1703,7 @@ const I18N = {
     shelfBook: "書籍 / マンガ",
     shelfGame: "ゲーム",
     searchFilm: "映画を検索（TMDB）…",
+    searchSerial: "ドラマを検索（TMDB）…",
     searchBook: "書籍を検索（Open Library）…",
     searchManga: "マンガを検索（AniList）…",
     searchAnime: "アニメを検索（AniList）…",
@@ -1965,6 +1979,7 @@ function applyStaticI18n() {
 
 const SEARCH_PH_KEY = {
   film: "searchFilm",
+  serial: "searchSerial",
   book: "searchBook",
   manga: "searchManga",
   anime: "searchAnime",
@@ -2676,7 +2691,7 @@ function posterCard(m, opts = {}) {
 // Enum typu w bazie (WIELKIE) → klucz źródła używany na froncie i w API (małe).
 const ENUM_TYPE = {
   FILM: "film",
-  SERIAL: "film",
+  SERIAL: "serial",
   KSIAZKA: "book",
   MANGA: "manga",
   ANIME: "anime",
@@ -2855,6 +2870,7 @@ function setSearchType(type) {
   if (searchType === type) return;
   searchType = type;
   $("typeFilm").classList.toggle("active", type === "film");
+  $("typeSerial").classList.toggle("active", type === "serial");
   $("typeBook").classList.toggle("active", type === "book");
   $("typeManga").classList.toggle("active", type === "manga");
   $("typeAnime").classList.toggle("active", type === "anime");
@@ -4428,7 +4444,7 @@ async function loadProfile() {
 // Enum rodzaju mediów → etykieta (z emoji) z i18n.
 const TYPE_I18N = {
   FILM: "typeFilm",
-  SERIAL: "typeFilm",
+  SERIAL: "typeSerial",
   KSIAZKA: "typeBook",
   MANGA: "typeManga",
   ANIME: "typeAnime",
@@ -5636,6 +5652,7 @@ async function init() {
   $("deleteBtn").addEventListener("click", deleteDetailReview);
   $("search").addEventListener("input", onSearchInput);
   $("typeFilm").addEventListener("click", () => setSearchType("film"));
+  $("typeSerial").addEventListener("click", () => setSearchType("serial"));
   $("typeBook").addEventListener("click", () => setSearchType("book"));
   $("typeManga").addEventListener("click", () => setSearchType("manga"));
   $("typeAnime").addEventListener("click", () => setSearchType("anime"));

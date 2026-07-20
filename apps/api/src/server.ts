@@ -66,7 +66,13 @@ import { tasteMatch } from "./logic/tasteMatch.js";
 import { togetherPicks } from "./logic/together.js";
 import { tastePortrait } from "./logic/tasteProfile.js";
 import { invalidateDiscoveryCache, tasteDiscovery } from "./logic/discovery.js";
-import { addMediaFromTmdb, searchTmdb, tmdbTitles } from "./logic/tmdb.js";
+import {
+  addMediaFromTmdb,
+  addSerialFromTmdb,
+  searchTmdb,
+  searchTmdbTv,
+  tmdbTitles,
+} from "./logic/tmdb.js";
 import { currentLang, normalizeLang, withLang } from "./logic/lang.js";
 import { localizeTitles } from "./logic/localize.js";
 import {
@@ -704,6 +710,7 @@ async function searchByType(type: string, q: string) {
   if (type === "anime") return searchAniList("ANIME", q);
   if (type === "music") return searchMusic(q);
   if (type === "game") return searchGames(q);
+  if (type === "serial") return searchTmdbTv(q);
   return searchTmdb(q);
 }
 
@@ -719,6 +726,7 @@ async function addByType(type: string, externalId: string) {
   if (type === "anime") return addFromAniList("ANIME", externalId);
   if (type === "music") return addMusicFromItunes(externalId);
   if (type === "game") return addGameFromRawg(externalId);
+  if (type === "serial") return addSerialFromTmdb(externalId);
   return addMediaFromTmdb(externalId);
 }
 
@@ -737,11 +745,15 @@ api.get("/details", async (c) => {
   // Tytuł filmu doklejamy w języku requestu: widok szczegółów dostaje go od karty,
   // z której wszedł, a ta po zmianie języka nie jest przerysowywana. Typ bywa
   // katalogowy („FILM") albo źródłowy („film") — oba znaczą to samo.
-  const isFilm = type.toLowerCase() === "film";
+  // Film i serial biora tytul z TMDB, ale z INNYCH katalogow — to samo id znaczy w
+  // nich co innego (1396 to „Breaking Bad" jako serial i „Zwierciadlo" jako film),
+  // wiec rodzaj musi trafic do zapytania.
+  const niski = type.toLowerCase();
+  const tmdbKind = niski === "film" ? "movie" : niski === "serial" ? "tv" : null;
   const [description, trailer, titles] = await Promise.all([
     getDescription(type, externalId),
     getTrailer(type, externalId).catch(() => null),
-    isFilm ? tmdbTitles([externalId], currentLang()) : null,
+    tmdbKind ? tmdbTitles([externalId], currentLang(), tmdbKind) : null,
   ]);
   // trailerKind mówi frontowi, czym to odtworzyć: "youtube" (iframe) czy "video" (mp4 z RAWG).
   return c.json({

@@ -6,7 +6,12 @@ import { aniListDescription, aniListTrailer } from "./anilist.js";
 import { bookDescription } from "./books.js";
 import { gameDescription, gameTrailer } from "./games.js";
 import { musicDescription } from "./music.js";
-import { tmdbDescription, tmdbTrailer } from "./tmdb.js";
+import {
+  tmdbDescription,
+  tmdbTrailer,
+  tmdbTvDescription,
+  tmdbTvTrailer,
+} from "./tmdb.js";
 
 export async function getDescription(type: string, externalId: string): Promise<string> {
   if (type === "book") return bookDescription(externalId);
@@ -14,6 +19,7 @@ export async function getDescription(type: string, externalId: string): Promise<
   if (type === "anime") return aniListDescription("ANIME", externalId);
   if (type === "music") return musicDescription(externalId);
   if (type === "game") return gameDescription(externalId);
+  if (type === "serial") return tmdbTvDescription(externalId);
   return tmdbDescription(externalId);
 }
 
@@ -41,6 +47,8 @@ export async function getTrailer(
       ? await aniListTrailer("ANIME", externalId)
       : type === "film"
         ? await tmdbTrailer(externalId)
-        : null;
+        : type === "serial"
+          ? await tmdbTvTrailer(externalId)
+          : null;
   return url ? { url, kind: "youtube" } : null;
 }
