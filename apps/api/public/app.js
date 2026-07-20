@@ -170,6 +170,7 @@ const I18N = {
     bioPlaceholder: "Krótko o sobie — co lubisz oglądać?",
     bioSaved: "Opis zapisany",
     bioLeft: "Zostało {n} znaków",
+    changePw: "Zmień hasło",
     currentPw: "Obecne hasło",
     newPw: "Nowe hasło (min. 6 znaków)",
     savePw: "Zmień hasło",
@@ -442,6 +443,7 @@ const I18N = {
     bioPlaceholder: "A few words about you — what do you like to watch?",
     bioSaved: "Bio saved",
     bioLeft: "{n} characters left",
+    changePw: "Change password",
     currentPw: "Current password",
     newPw: "New password (min. 6 chars)",
     savePw: "Change password",
@@ -714,6 +716,7 @@ const I18N = {
     bioPlaceholder: "Kurz über dich — was schaust du gern?",
     bioSaved: "Beschreibung gespeichert",
     bioLeft: "Noch {n} Zeichen",
+    changePw: "Passwort ändern",
     currentPw: "Aktuelles Passwort",
     newPw: "Neues Passwort (mind. 6 Zeichen)",
     savePw: "Passwort ändern",
@@ -981,6 +984,7 @@ const I18N = {
     bioPlaceholder: "Unas palabras sobre ti — ¿qué te gusta ver?",
     bioSaved: "Descripción guardada",
     bioLeft: "Quedan {n} caracteres",
+    changePw: "Cambiar contraseña",
     currentPw: "Contraseña actual",
     newPw: "Nueva contraseña (mín. 6 caracteres)",
     savePw: "Cambiar contraseña",
@@ -1247,6 +1251,7 @@ const I18N = {
     bioPlaceholder: "Umas palavras sobre ti — o que gostas de ver?",
     bioSaved: "Descrição guardada",
     bioLeft: "Faltam {n} caracteres",
+    changePw: "Mudar palavra-passe",
     currentPw: "Palavra-passe atual",
     newPw: "Nova palavra-passe (mín. 6 caracteres)",
     savePw: "Mudar palavra-passe",
@@ -1511,6 +1516,7 @@ const I18N = {
     bioPlaceholder: "简单介绍一下自己——你喜欢看什么？",
     bioSaved: "简介已保存",
     bioLeft: "还剩 {n} 个字",
+    changePw: "修改密码",
     currentPw: "当前密码",
     newPw: "新密码（至少 6 个字符）",
     savePw: "修改密码",
@@ -1770,6 +1776,7 @@ const I18N = {
     bioPlaceholder: "ひとことで自己紹介 — 何を観るのが好き？",
     bioSaved: "自己紹介を保存しました",
     bioLeft: "残り {n} 文字",
+    changePw: "パスワードを変更",
     currentPw: "現在のパスワード",
     newPw: "新しいパスワード（6文字以上）",
     savePw: "パスワードを変更",
@@ -5394,10 +5401,10 @@ function wireAccountSettings() {
 
   $("bioInput").addEventListener("input", updateBioCount);
 
-  // „Pokaż hasło" w USTAWIENIACH — rozwija sekcję zmiany hasła. Miał kiedyś
-  // id="pwToggle", ten sam co ikonka oka na ekranie logowania, więc getElementById
-  // trafiał w oko i przycisk nie robił NIC (a oko dostawało ten handler w prezencie).
-  $("showPwBtn").addEventListener("click", () => {
+  // Uwaga: to przycisk „Zmień hasło" w USTAWIENIACH. Miał kiedyś id="pwToggle" —
+  // ten sam co ikonka oka na ekranie logowania — więc getElementById trafiał w oko
+  // i przycisk w ustawieniach nie robił NIC (a oko dostawało ten handler w prezencie).
+  $("changePwBtn").addEventListener("click", () => {
     $("pwForm").classList.toggle("hidden");
   });
 
@@ -5436,22 +5443,6 @@ function wireAccountSettings() {
     } catch (err) {
       toast(err.message);
     }
-  });
-}
-
-/**
- * Podpina ikonkę oka (podgląd hasła) do pola. Trzy pola haseł w aplikacji — logowanie
- * i dwa w ustawieniach — dzielą ten sam mechanizm, stąd parametry zamiast trzech kopii.
- */
-function wirePwEye(toggleId, inputId) {
-  const btn = $(toggleId);
-  btn.innerHTML = pwIcon(false);
-  btn.addEventListener("click", () => {
-    const pw = $(inputId);
-    const show = pw.type === "password";
-    pw.type = show ? "text" : "password";
-    btn.innerHTML = pwIcon(show);
-    btn.setAttribute("aria-label", show ? t("hidePassword") : t("showPassword"));
   });
 }
 
@@ -5657,9 +5648,17 @@ async function init() {
     else if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
     else if (!$("detailView").classList.contains("hidden")) closeDetail();
   });
-  wirePwEye("pwToggle", "password"); // logowanie
-  wirePwEye("pwCurrentToggle", "pwCurrent"); // ustawienia: obecne hasło
-  wirePwEye("pwNewToggle", "pwNew"); // ustawienia: nowe hasło
+  $("pwToggle").innerHTML = pwIcon(false);
+  $("pwToggle").addEventListener("click", () => {
+    const pw = $("password");
+    const show = pw.type === "password";
+    pw.type = show ? "text" : "password";
+    $("pwToggle").innerHTML = pwIcon(show);
+    $("pwToggle").setAttribute(
+      "aria-label",
+      show ? t("hidePassword") : t("showPassword"),
+    );
+  });
   applyStaticI18n();
   applySearchPlaceholder();
   setAuthMode("login");
