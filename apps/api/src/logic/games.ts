@@ -17,12 +17,51 @@ function apiKey(): string {
   return key;
 }
 
-interface RawgGame {
+export interface RawgGame {
   id: number;
   name: string;
   released?: string | null;
   background_image?: string | null;
   genres?: { name: string }[];
+  added?: number; // ilu użytkowników RAWG dodało grę do biblioteki = miara popularności
+  ratings_count?: number; // zapasowa miara, gdy `added` nie przyszło
+}
+
+/** Do porównań nazw: małe litery, znaki inne niż alfanumeryczne na spacje. */
+function normalizeName(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Sortuje wyniki wyszukiwania gier. Powód istnienia: RAWG domyślnie stawia najwyżej
+ * DOSŁOWNE dopasowania nazwy, więc na „witcher" pierwsze były amatorskie „Witcher
+ * Switcher" i „Witcher's dungeon", a Wiedźmin 3 nie mieścił się w pierwszej ósemce.
+ *
+ * Dlatego głównym czynnikiem jest POPULARNOŚĆ (`added`), a trafność nazwy tylko ją
+ * koryguje. Odwrotna kolejność wag odtwarzałaby dokładnie ten błąd, który naprawiamy.
+ *
+ * Popularność wchodzi logarytmicznie (skala 0–5 dla 0–100 tys. graczy), żeby różnica
+ * między hitem a niszą ważyła dużo, a między dwoma hitami mało. Bonus za trafność jest
+ * mały (max 1.5), więc nie przebije przepaści w popularności, ale rozstrzygnie remis
+ * i wypromuje grę wyszukiwaną po pełnym tytule.
+ */
+export function rankGames(query: string, games: RawgGame[]): RawgGame[] {
+  const q = normalizeName(query);
+  const score = (g: RawgGame): number => {
+    const popularity = Math.log10((g.added ?? g.ratings_count ?? 0) + 1);
+    if (!q) return popularity;
+    const title = normalizeName(g.name);
+    let trafnosc = 0;
+    if (title === q) trafnosc = 1.5;
+    else if (title.startsWith(`${q} `)) trafnosc = 1;
+    else if (title.includes(q)) trafnosc = 0.5;
+    return popularity + trafnosc;
+  };
+  // Kopia, bo sort mutuje — wołający dostaje wynik, nie przestawioną własną tablicę.
+  return [...games].sort((a, b) => score(b) - score(a));
 }
 
 function toGame(g: RawgGame): ExternalMedia {
@@ -40,13 +79,18 @@ export async function searchGames(query: string): Promise<ExternalMedia[]> {
   const q = query.trim();
   if (!q) throw new ValidationError("Podaj frazę do wyszukania.");
 
-  const url = `${RAWG}/games?key=${apiKey()}&page_size=18&search=${encodeURIComponent(q)}`;
+  // Bierzemy 40 kandydatów (maksimum RAWG), a pokazujemy 18 najlepszych po własnym
+  // sortowaniu. Przy pobraniu tylko 18 popularna gra bywała POZA tą pulą — na „witcher"
+  // Wiedźmin 3 w ogóle nie wchodził do wyników, więc nie było czego przestawiać.
+  const url = `${RAWG}/games?key=${apiKey()}&page_size=40&search=${encodeURIComponent(q)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`RAWG search error ${res.status}`);
 
   const data = (await res.json()) as { results?: RawgGame[] };
-  return (data.results ?? [])
-    .filter((g) => g.name)
+  return rankGames(
+    q,
+    (data.results ?? []).filter((g) => g.name),
+  )
     .slice(0, 18)
     .map(toGame);
 }
