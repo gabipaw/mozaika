@@ -3075,7 +3075,7 @@ function appendCard(container, media, rating, onClick, rect) {
 function openSeeAll(title, items) {
   $("seeAllTitle").textContent = title;
   const grid = $("seeAllGrid");
-  grid.classList.remove("hidden"); // wracamy z trybu „Co obejrzeć razem"
+  $("seeAllWrap").classList.remove("hidden"); // wracamy z trybu „Co obejrzeć razem"
   $("togetherWrap").classList.add("hidden");
   grid.innerHTML = "";
   for (const it of items) {
@@ -3109,7 +3109,7 @@ function openCatPicker(group, items) {
       displayedForCat(group, items).map((r) => r.media.id),
     );
   }
-  $("seeAllGrid").classList.remove("hidden"); // picker używa siatki plakatów
+  $("seeAllWrap").classList.remove("hidden"); // picker używa siatki plakatów
   $("togetherWrap").classList.add("hidden");
   $("seeAllTitle").textContent = t("pickCovers", {
     label: t(group.labelKey),
@@ -4533,7 +4533,7 @@ function togetherReason(reason) {
 async function openTogether() {
   if (!viewingUserId) return;
   const grid = $("togetherGrid");
-  $("seeAllGrid").classList.add("hidden"); // ta siatka jest dla samych plakatów
+  $("seeAllWrap").classList.add("hidden"); // ta siatka jest dla samych plakatów
   $("togetherWrap").classList.remove("hidden");
   $("seeAllTitle").textContent = t("togetherTitle", { name: viewingName });
   grid.innerHTML = `<p class="muted">${t("loading")}</p>`;

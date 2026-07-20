@@ -709,7 +709,12 @@
               ✕ Zamknij
             </button>
           </div>
-          <div id="seeAllGrid" class="poster-grid"></div>
+          <!-- Przewija się WRAPPER, nie siatka — dokładnie z tego samego powodu,
+               co przy „Co obejrzeć razem" niżej. Gdy scroll siedział na #seeAllGrid,
+               rzędy wychodziły niższe od plakatu i karty były zgniecione. -->
+          <div id="seeAllWrap" class="seeall-wrap">
+            <div id="seeAllGrid" class="poster-grid"></div>
+          </div>
           <!-- „Co obejrzeć razem": karty mają tytuł i powód pod plakatem. Siatka MUSI
                mieć naturalną wysokość (przewija się kontener wokół niej) — gdy sama
                siatka dostawała sztywną wysokość, rzędy wychodziły niższe niż plakat

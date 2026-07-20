@@ -2055,8 +2055,15 @@ h2 {
   font-weight: 700;
 }
 
-#seeAllGrid {
+/* Scroll MUSI siedzieć na wrapperze, a siatka mieć naturalną wysokość. Gdy scroll
+   był na samej siatce, dostawała ona sztywną wysokość, a wtedy przeglądarka liczy
+   wysokość rzędu z „intrinsic" wysokości karty — w której plakat (aspect-ratio +
+   szerokość procentowa) wnosi prawie zero. Rzędy wychodziły niższe niż plakat, a
+   karta (overflow: hidden) ucinała plakat i tytuł. To ten sam mechanizm, co opisany
+   przy .together-wrap. */
+.seeall-wrap {
   overflow-y: auto;
+  min-height: 0;
   padding-right: 4px;
 }
 
