@@ -2635,8 +2635,24 @@ function posterCard(m, opts = {}) {
   }
   card.append(poster);
 
-  // Na profilu pokazujemy sam plakat (bez nazwy/roku pod spodem).
-  if (opts.noMeta) return { card, meta: null };
+  // Na profilu pokazujemy sam plakat (bez nazwy/roku pod spodem). Żeby dało się
+  // rozpoznać tytuł bez wchodzenia w szczegóły, nazwa wyjeżdża na najechanie
+  // kursorem. Pozycjonowana absolutnie, więc nie zmienia wysokości karty.
+  if (opts.noMeta) {
+    const cap = document.createElement("div");
+    cap.className = "poster-cap";
+    // Tekst w osobnym elemencie, bo przycinanie do 2 linii (-webkit-line-clamp)
+    // wymaga display:-webkit-box, a ten na elemencie pozycjonowanym absolutnie
+    // jest przez przeglądarkę zamieniany na blokowy — i klamrowanie przestaje działać.
+    const capText = document.createElement("span");
+    capText.className = "poster-cap-t";
+    capText.textContent = m.title;
+    cap.append(capText);
+    poster.append(cap);
+    // Dla czytników ekranu i jako podpowiedź systemowa — podpis jest tylko wizualny.
+    card.setAttribute("aria-label", m.title);
+    return { card, meta: null };
+  }
 
   const meta = document.createElement("div");
   meta.className = "meta";
