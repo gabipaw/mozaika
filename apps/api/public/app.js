@@ -80,6 +80,12 @@ const I18N = {
     yourCatalog: "Twój katalog",
     yourCatalogHint: "Tytuły, które oceniłeś.",
     allGenres: "Wszystkie",
+    catalogSearchPh: "Szukaj w katalogu…",
+    sortRecent: "Ostatnio ocenione",
+    sortRating: "Najwyżej ocenione",
+    sortTitle: "Alfabetycznie",
+    sortYear: "Rok premiery",
+    catalogEmpty: "Nic nie pasuje do tych filtrów.",
     tastePortrait: "Portret gustu",
     portraitEmpty: "Oceń kilka tytułów, a narysujemy Twój portret gustu.",
     harshMild: "Oceniasz łagodniej niż średnia.",
@@ -353,6 +359,12 @@ const I18N = {
     yourCatalog: "Your catalog",
     yourCatalogHint: "Titles you've rated.",
     allGenres: "All",
+    catalogSearchPh: "Search your catalog…",
+    sortRecent: "Recently rated",
+    sortRating: "Highest rated",
+    sortTitle: "Alphabetically",
+    sortYear: "Release year",
+    catalogEmpty: "Nothing matches these filters.",
     tastePortrait: "Taste portrait",
     portraitEmpty: "Rate a few titles and we'll draw your taste portrait.",
     harshMild: "You rate more generously than average.",
@@ -628,6 +640,12 @@ const I18N = {
     yourCatalog: "Dein Katalog",
     yourCatalogHint: "Titel, die du bewertet hast.",
     allGenres: "Alle",
+    catalogSearchPh: "Katalog durchsuchen…",
+    sortRecent: "Zuletzt bewertet",
+    sortRating: "Am besten bewertet",
+    sortTitle: "Alphabetisch",
+    sortYear: "Erscheinungsjahr",
+    catalogEmpty: "Nichts passt zu diesen Filtern.",
     tastePortrait: "Geschmacksprofil",
     portraitEmpty: "Bewerte ein paar Titel, dann zeichnen wir dein Geschmacksprofil.",
     harshMild: "Du bewertest milder als der Durchschnitt.",
@@ -895,6 +913,12 @@ const I18N = {
     yourCatalog: "Tu catálogo",
     yourCatalogHint: "Títulos que has puntuado.",
     allGenres: "Todos",
+    catalogSearchPh: "Busca en tu catálogo…",
+    sortRecent: "Valorados recientemente",
+    sortRating: "Mejor valorados",
+    sortTitle: "Alfabéticamente",
+    sortYear: "Año de estreno",
+    catalogEmpty: "Nada coincide con estos filtros.",
     tastePortrait: "Retrato de gustos",
     portraitEmpty: "Puntúa algunos títulos y dibujaremos tu retrato de gustos.",
     harshMild: "Puntúas más suave que la media.",
@@ -1163,6 +1187,12 @@ const I18N = {
     yourCatalog: "O teu catálogo",
     yourCatalogHint: "Títulos que avaliaste.",
     allGenres: "Todos",
+    catalogSearchPh: "Procura no teu catálogo…",
+    sortRecent: "Avaliados recentemente",
+    sortRating: "Melhor avaliados",
+    sortTitle: "Alfabeticamente",
+    sortYear: "Ano de lançamento",
+    catalogEmpty: "Nada corresponde a estes filtros.",
     tastePortrait: "Retrato de gostos",
     portraitEmpty: "Avalia alguns títulos e desenhamos o teu retrato de gostos.",
     harshMild: "Avalias de forma mais suave que a média.",
@@ -1430,6 +1460,12 @@ const I18N = {
     yourCatalog: "你的目录",
     yourCatalogHint: "你打过分的作品。",
     allGenres: "全部",
+    catalogSearchPh: "搜索你的收藏…",
+    sortRecent: "最近评分",
+    sortRating: "评分最高",
+    sortTitle: "按字母顺序",
+    sortYear: "发行年份",
+    catalogEmpty: "没有符合这些筛选条件的内容。",
     tastePortrait: "口味画像",
     portraitEmpty: "给几部作品打分，我们就为你画出口味画像。",
     harshMild: "你打分比平均更宽松。",
@@ -1690,6 +1726,12 @@ const I18N = {
     yourCatalog: "あなたのカタログ",
     yourCatalogHint: "評価した作品。",
     allGenres: "すべて",
+    catalogSearchPh: "カタログを検索…",
+    sortRecent: "最近評価した順",
+    sortRating: "評価の高い順",
+    sortTitle: "五十音順",
+    sortYear: "公開年",
+    catalogEmpty: "この条件に一致するものはありません。",
     tastePortrait: "好みの傾向",
     portraitEmpty: "いくつか評価すると、あなたの好みの傾向を描きます。",
     harshMild: "平均より甘めに評価しています。",
@@ -2672,6 +2714,8 @@ function renderGrid(container, list, onClick) {
 
 let catalogItems = []; // Twoje ocenione tytuły (z gatunkami)
 let catalogGenre = null; // wybrany gatunek do filtrowania (null = wszystkie)
+let catalogQuery = ""; // szukanie po tytule w obrębie katalogu
+let catalogSort = "recent"; // recent | rating | title | year
 
 async function loadCatalog() {
   allMedia = await api("/media"); // pełna lista — potrzebna tylko do znajdowania mediaId
@@ -2683,17 +2727,53 @@ async function loadCatalog() {
   ) {
     catalogGenre = null; // wybrany gatunek zniknął z katalogu → wróć do „Wszystkie"
   }
+  $("catalogTools").classList.toggle("hidden", catalogItems.length === 0);
   renderCatalogFilter();
   renderCatalog();
 }
 
-// Filtruje katalog po wybranym gatunku i rysuje siatkę.
+/**
+ * Sortuje katalog wg wybranego kryterium. Zwraca KOPIĘ — „recent" opiera się na
+ * oryginalnej kolejności z API (recenzje przychodzą po createdAt malejąco), więc
+ * przestawienie catalogItems w miejscu bezpowrotnie zgubiłoby to uszeregowanie.
+ * Tytuł jest wszędzie ostatnim kryterium, żeby remisy nie układały się losowo.
+ */
+function sortCatalog(items) {
+  const tytul = (m) => m.title ?? "";
+  const out = [...items];
+  if (catalogSort === "rating") {
+    out.sort(
+      (a, b) => (b.myRating ?? 0) - (a.myRating ?? 0) || tytul(a).localeCompare(tytul(b)),
+    );
+  } else if (catalogSort === "title") {
+    out.sort((a, b) => tytul(a).localeCompare(tytul(b)));
+  } else if (catalogSort === "year") {
+    // Tytuły bez roku na koniec (0), zamiast mieszać się między datowane.
+    out.sort((a, b) => (b.year ?? 0) - (a.year ?? 0) || tytul(a).localeCompare(tytul(b)));
+  }
+  return out; // "recent" = kolejność z API, bez ruszania
+}
+
+/** Katalog po nałożeniu gatunku i frazy, w wybranej kolejności. */
+function visibleCatalog() {
+  const q = catalogQuery.trim().toLowerCase();
+  let items = catalogItems;
+  if (catalogGenre) items = items.filter((m) => (m.genres ?? []).includes(catalogGenre));
+  if (q) items = items.filter((m) => (m.title ?? "").toLowerCase().includes(q));
+  return sortCatalog(items);
+}
+
+// Filtruje katalog (gatunek + fraza), sortuje i rysuje siatkę.
 function renderCatalog() {
-  const items = catalogGenre
-    ? catalogItems.filter((m) => (m.genres ?? []).includes(catalogGenre))
-    : catalogItems;
+  const items = visibleCatalog();
   renderGrid($("catalog"), items, (m) =>
     openDetail(toDetail(m, m.type, m.id, m.myRating)),
+  );
+  // Komunikat tylko wtedy, gdy to FILTRY wyczyściły widok — przy pustym katalogu
+  // „nic nie pasuje" byłoby mylące, bo nie ma jeszcze czego szukać.
+  $("catalogEmpty").classList.toggle(
+    "hidden",
+    items.length > 0 || catalogItems.length === 0,
   );
 }
 
@@ -5516,6 +5596,14 @@ async function init() {
     setAuthMode(authMode === "login" ? "register" : "login"),
   );
   $("authForm").addEventListener("submit", submitAuth);
+  $("catalogSearch").addEventListener("input", (e) => {
+    catalogQuery = e.target.value;
+    renderCatalog();
+  });
+  $("catalogSort").addEventListener("change", (e) => {
+    catalogSort = e.target.value;
+    renderCatalog();
+  });
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", openProfile);
   $("topBack").addEventListener("click", () => {

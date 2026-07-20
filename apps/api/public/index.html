@@ -183,7 +183,27 @@
           <section>
             <h2 data-i18n="yourCatalog">Twój katalog</h2>
             <p class="hint" data-i18n="yourCatalogHint">Tytuły, które oceniłeś.</p>
+            <!-- Chowane, gdy katalog jest pusty (patrz loadCatalog) — nie ma czego
+                 sortować ani przeszukiwać. -->
+            <div id="catalogTools" class="catalog-tools hidden">
+              <input
+                id="catalogSearch"
+                type="search"
+                data-i18n-ph="catalogSearchPh"
+                placeholder="Szukaj w katalogu…"
+                autocomplete="off"
+              />
+              <select id="catalogSort">
+                <option value="recent" data-i18n="sortRecent">Ostatnio ocenione</option>
+                <option value="rating" data-i18n="sortRating">Najwyżej ocenione</option>
+                <option value="title" data-i18n="sortTitle">Alfabetycznie</option>
+                <option value="year" data-i18n="sortYear">Rok premiery</option>
+              </select>
+            </div>
             <div id="catalogGenres" class="genre-filter"></div>
+            <p id="catalogEmpty" class="muted hidden" data-i18n="catalogEmpty">
+              Nic nie pasuje do tych filtrów.
+            </p>
             <div id="catalog" class="poster-grid"></div>
           </section>
         </div>

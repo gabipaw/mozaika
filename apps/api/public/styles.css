@@ -393,6 +393,32 @@ h2 {
   margin: 0 0 16px;
 }
 
+/* Pasek nad katalogiem: szukanie + sortowanie. Na wąskim ekranie zawija się,
+   a pole szukania rozpycha się na całą dostępną szerokość. */
+.catalog-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.catalog-tools input {
+  flex: 1 1 200px;
+  min-width: 0; /* bez tego input nie zwęzi się poniżej naturalnej szerokości */
+  padding: 9px 12px;
+  background: var(--bg-2);
+}
+
+.catalog-tools select {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--bg-2);
+  color: var(--text);
+  border: 1px solid var(--border, #2a2a35);
+  cursor: pointer;
+}
+
 .genre-chip.filter {
   cursor: pointer;
   font-family: inherit;
