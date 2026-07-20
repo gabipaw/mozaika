@@ -152,15 +152,6 @@ h2 {
   font-size: 0.85rem;
 }
 
-.section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
 .match {
   display: flex;
   align-items: center;
@@ -174,11 +165,6 @@ h2 {
   color: var(--text);
   border: 1px solid var(--line);
   padding: 6px 10px;
-}
-
-.match-result {
-  color: var(--gold);
-  font-weight: 700;
 }
 
 /* Poster grid + row */
@@ -2703,11 +2689,6 @@ h2 {
   padding: 8px;
 }
 
-/* Nakładka Ustawienia. */
-.settings-card {
-  max-width: 340px;
-}
-
 /* Ustawienia jako wysuwany panel z prawej (drawer). Panel jest zawsze w DOM
    (nie display:none), a widoczność steruje klasa .open — dzięki temu transform
    i przyciemnienie tła płynnie się animują. Zamknięty: tło przezroczyste i
@@ -2769,12 +2750,6 @@ h2 {
   background: #ff6b6b;
   color: #2a0b0b;
   border-color: transparent;
-}
-
-.settings-label {
-  font-size: 0.8rem;
-  color: var(--muted);
-  margin-bottom: 8px;
 }
 
 /* Odstępy między sekcjami ustawień (gdy grupy nie mają własnego marginesu). */

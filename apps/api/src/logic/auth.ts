@@ -11,6 +11,17 @@ import { ValidationError } from "../errors.js";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+/**
+ * Górne limity przy rejestracji. Wcześniej sprawdzaliśmy TYLKO minima, więc dało się
+ * założyć konto z nazwą na sto tysięcy znaków — a zmiana nazwy w ustawieniach wymusza
+ * 40. Nazwa wyświetla się wszędzie (czat, listy, komentarze), więc rozjazd był groźny.
+ * Limit hasła chroni dodatkowo pętlę zdarzeń: hashPassword używa synchronicznego
+ * scryptSync, który na bardzo długim wejściu zatrzymałby cały serwer.
+ */
+const MAX_NAME = 40;
+const MAX_EMAIL = 254; // maksimum adresu e-mail wg RFC 5321
+const MAX_PASSWORD = 200;
+
 export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
@@ -44,9 +55,17 @@ export async function register(input: {
   const displayName = String(input.displayName ?? "").trim();
   const password = String(input.password ?? "");
 
-  if (!EMAIL_RE.test(email)) throw new ValidationError("Nieprawidłowy e-mail.");
+  if (!EMAIL_RE.test(email) || email.length > MAX_EMAIL) {
+    throw new ValidationError("Nieprawidłowy e-mail.");
+  }
   if (displayName.length < 2) throw new ValidationError("Nazwa musi mieć min. 2 znaki.");
+  if (displayName.length > MAX_NAME) {
+    throw new ValidationError(`Nazwa może mieć najwyżej ${MAX_NAME} znaków.`);
+  }
   if (password.length < 6) throw new ValidationError("Hasło musi mieć min. 6 znaków.");
+  if (password.length > MAX_PASSWORD) {
+    throw new ValidationError(`Hasło może mieć najwyżej ${MAX_PASSWORD} znaków.`);
+  }
 
   const exists = await prisma.user.findUnique({ where: { email } });
   if (exists) throw new ValidationError("Konto z tym e-mailem już istnieje.");

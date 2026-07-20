@@ -11,6 +11,14 @@ import { notifyWatchlistWatchers } from "./notifications.js";
 export const MIN_RATING = 0.5;
 export const MAX_RATING = 10;
 
+/**
+ * Górny limit długości recenzji. 2000 znaków = tyle co wiadomość na czacie i dwa razy
+ * tyle co komentarz — na opinię o tytule z zapasem. Bez limitu (tak było) jedna
+ * recenzja mogła mieć megabajty i szła potem w KAŻDEJ odpowiedzi `/media/:id/reviews`
+ * oraz w profilu autora, więc obciążała wszystkich czytających, nie tylko piszącego.
+ */
+export const MAX_REVIEW_LEN = 2000;
+
 export interface ReviewInput {
   userId: number;
   mediaId: number;
@@ -49,6 +57,9 @@ export function validateReviewInput(input: ReviewInput): ValidReviewInput {
 
   // Recenzja jest publiczna (widzi ją każdy pod tytułem), więc idzie przez filtr.
   const trimmed = input.text?.trim();
+  if (trimmed && trimmed.length > MAX_REVIEW_LEN) {
+    throw new ValidationError(`Recenzja może mieć najwyżej ${MAX_REVIEW_LEN} znaków.`);
+  }
   return { userId, mediaId, rating, text: trimmed ? censor(trimmed) : null };
 }
 

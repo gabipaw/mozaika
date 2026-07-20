@@ -12,6 +12,7 @@ import {
   pickTopGenres,
   pickYearWindow,
   shuffle,
+  typesForKey,
   type DiscoverItem,
   type RatedSeed,
 } from "./discovery.js";
@@ -40,7 +41,9 @@ test("pickDiscoverTypes bierze najlubianiejsze, tylko odkrywalne rodzaje", () =>
   assert.ok(types.indexOf("ANIME") < types.indexOf("FILM"));
 });
 
-test("pickDiscoverTypes: MUZYKA jest odkrywalna (iTunes RSS), SERIAL nie ma źródła", () => {
+test("pickDiscoverTypes: MUZYKA i SERIAL sa odkrywalne", () => {
+  // SERIAL dlugo nie mial zrodla (TMDB bylo zahardkodowane na filmy) — od czasu
+  // sparametryzowania tmdb.ts rodzajem odkrywa sie przez /discover/tv.
   const mixed: TasteReview[] = [
     { mediaId: 1, rating: 9, favorite: false, type: "MUZYKA", year: 2013, genres: [] },
     { mediaId: 2, rating: 8, favorite: false, type: "MUZYKA", year: 2016, genres: [] },
@@ -48,8 +51,17 @@ test("pickDiscoverTypes: MUZYKA jest odkrywalna (iTunes RSS), SERIAL nie ma źr�
     { mediaId: 4, rating: 8, favorite: false, type: "SERIAL", year: 2020, genres: [] },
   ];
   const types = pickDiscoverTypes(computeTasteProfile(mixed));
-  assert.ok(types.includes("MUZYKA"), "muzyka ma teraz źródło odkrywania");
-  assert.ok(!types.includes("SERIAL"), "serial nie ma własnego źródła");
+  assert.ok(types.includes("MUZYKA"), "muzyka ma źródło odkrywania");
+  assert.ok(types.includes("SERIAL"), "serial ma źródło odkrywania (TMDB /discover/tv)");
+});
+
+test("kazdy typ MediaType ma teraz zrodlo odkrywania", () => {
+  // Wartosc enuma bez wpisu w DISCOVERABLE = typ, ktorego uzytkownik moze ocenic,
+  // ale ktory nigdy nie wroci w „Pod Twoj gust". Tak wlasnie przepadl SERIAL.
+  const wszystkie = ["FILM", "SERIAL", "KSIAZKA", "GRA", "MUZYKA", "MANGA", "ANIME"];
+  for (const typ of wszystkie) {
+    assert.ok(typesForKey().includes(typ), `${typ} nie ma zrodla odkrywania`);
+  }
 });
 
 test("pickYearWindow zwraca ulubioną dekadę, gdy ma poparcie", () => {

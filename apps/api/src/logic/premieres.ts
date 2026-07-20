@@ -21,8 +21,18 @@ import { notifyPremiere } from "./notifications.js";
 import { sendPushToUser } from "./push.js";
 import { tmdbReleaseDate, tmdbTvReleaseDate } from "./tmdb.js";
 
-/** Typy, dla których zewnętrzne API zna dzień premiery. */
-const ANNOUNCED_TYPES: MediaType[] = [MediaType.FILM, MediaType.ANIME, MediaType.GRA];
+/**
+ * Typy, dla których zewnętrzne API zna dzień premiery.
+ * Ta tablica MUSI iść w parze z gałęziami `fetchReleaseDate` niżej — typ obecny tam,
+ * a nieobecny tutaj, daje martwy kod: `ensureReleaseDate` i cron odsiewają go wcześniej.
+ */
+const ANNOUNCED_TYPES: MediaType[] = [
+  MediaType.FILM,
+  MediaType.SERIAL,
+  MediaType.ANIME,
+  MediaType.MANGA,
+  MediaType.GRA,
+];
 
 /** Jak długo ufamy zapamiętanej dacie premiery, zanim zapytamy API ponownie. */
 const RECHECK_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
@@ -73,6 +83,8 @@ function fetchReleaseDate(m: Media): Promise<Date | null> {
       return tmdbTvReleaseDate(id);
     case MediaType.ANIME:
       return aniListReleaseDate("ANIME", id);
+    case MediaType.MANGA:
+      return aniListReleaseDate("MANGA", id);
     case MediaType.GRA:
       return gameReleaseDate(id);
     default:

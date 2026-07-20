@@ -37,8 +37,12 @@ import {
 import {
   discoverTmdb,
   discoverTmdbByGenre,
+  discoverTmdbTv,
+  discoverTmdbTvByGenre,
   similarTmdb,
+  similarTmdbTv,
   TMDB_GENRE_IDS,
+  tvRecognizesGenre,
 } from "./tmdb.js";
 
 /** Ile rodzajów mediów (najbardziej lubianych) odkrywamy przez popularność. */
@@ -73,6 +77,15 @@ const DISCOVERABLE: Record<string, Source> = {
     similar: (id) => similarTmdb(id),
     discoverByGenre: (g, f, t) => discoverTmdbByGenre(TMDB_GENRE_IDS[g], f, t),
     recognizesGenre: (g) => g in TMDB_GENRE_IDS,
+  },
+  SERIAL: {
+    key: "serial",
+    discover: (f, t) => discoverTmdbTv(f, t),
+    similar: (id) => similarTmdbTv(id),
+    // Po NAZWIE gatunku, nie po id: seriale maja w TMDB wlasne id gatunkow,
+    // wiec mapowanie nazwa→id siedzi po stronie tmdb.ts.
+    discoverByGenre: (g, f, t) => discoverTmdbTvByGenre(g, f, t),
+    recognizesGenre: (g) => tvRecognizesGenre(g),
   },
   ANIME: {
     key: "anime",

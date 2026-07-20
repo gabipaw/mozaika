@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
+import { bodyLimit } from "hono/body-limit";
 import { Hono } from "hono";
 import type { Context, MiddlewareHandler } from "hono";
 import { sign, verify } from "hono/jwt";
@@ -180,6 +181,19 @@ const withLanguage: MiddlewareHandler<Vars> = async (c, next) => {
     headers,
   });
 };
+/**
+ * Górny limit ciała żądania dla całego API. Najcięższe, co wysyła front, to awatar
+ * (data:image, własny limit 600 kB w /me/avatar) i zdjęcie w czacie — 2 MB mieści
+ * je z zapasem. Bez tego dowolna trasa przyjmowała nieograniczony ładunek, a
+ * `scryptSync` przy logowaniu blokowałby pętlę zdarzeń na bardzo długim haśle.
+ */
+api.use(
+  "*",
+  bodyLimit({
+    maxSize: 2 * 1024 * 1024,
+    onError: (c) => c.json({ error: "Żądanie jest za duże." }, 413),
+  }),
+);
 api.use("*", withLanguage);
 
 // Health + wersja. `commit` odpowiada na pytanie „czy mój push już wszedł?" bez
@@ -714,7 +728,25 @@ async function searchByType(type: string, q: string) {
   return searchTmdb(q);
 }
 
+/**
+ * Dławi publiczne trasy, które pod spodem wołają ZEWNĘTRZNE API naszymi kluczami
+ * (TMDB, RAWG, AniList, iTunes, Open Library). Bez tego `/search` i `/details` były
+ * otwartym proxy: ktoś obcy mógł przepalić nasz limit u dostawcy i wyłączyć
+ * wyszukiwarkę wszystkim. Ta sama ochrona co przy /translate, tylko luźniejsza —
+ * wpisywanie w wyszukiwarkę generuje żądanie co kilkaset ms.
+ */
+const EXTERNAL_MAX = 60;
+const EXTERNAL_WINDOW_MS = 60 * 1000;
+function guardExternal(c: Context<Vars>): void {
+  const key = `ext:${clientIp(c)}`;
+  const { allowed, retryAfter } = rateLimit(key, EXTERNAL_MAX, EXTERNAL_WINDOW_MS);
+  if (!allowed) {
+    throw new TooManyRequestsError(`Za dużo zapytań. Odczekaj ${retryAfter} s.`);
+  }
+}
+
 api.get("/search", async (c) => {
+  guardExternal(c);
   const q = c.req.query("q") ?? "";
   return c.json(await searchByType(c.req.query("type") ?? "film", q));
 });
@@ -738,6 +770,7 @@ api.post("/media", requireAuth, async (c) => {
 
 // Opis tytułu (do widoku szczegółów). ?type=&externalId=
 api.get("/details", async (c) => {
+  guardExternal(c);
   const type = c.req.query("type") ?? "film";
   const externalId = c.req.query("externalId") ?? "";
   // Opis i zwiastun idą równolegle — zwiastun jest dodatkiem, więc jego brak

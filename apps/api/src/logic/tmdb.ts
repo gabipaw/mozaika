@@ -82,6 +82,31 @@ const TMDB_TV_GENRES: Record<number, string> = {
   37: "Western",
 };
 
+/**
+ * Odwrotnie dla seriali: nazwa → KANONICZNE id TMDB. Kilka id mapuje się na tę samą
+ * nazwę (Family ← 10751 i 10762), więc do zapytania wybieramy jedno, szersze.
+ */
+const TMDB_TV_GENRE_IDS: Record<string, number> = {
+  Action: 10759,
+  Animation: 16,
+  Comedy: 35,
+  Crime: 80,
+  Documentary: 99,
+  Drama: 18,
+  Family: 10751,
+  Mystery: 9648,
+  Reality: 10764,
+  "Sci-Fi": 10765,
+  Talk: 10767,
+  War: 10768,
+  Western: 37,
+};
+
+/** Czy TMDB potrafi filtrować seriale po tym gatunku. */
+export function tvRecognizesGenre(genre: string): boolean {
+  return genre in TMDB_TV_GENRE_IDS;
+}
+
 // Odwrotnie: nazwa EN → id (do zapytań discover po gatunku).
 export const TMDB_GENRE_IDS: Record<string, number> = Object.fromEntries(
   Object.entries(TMDB_GENRES).map(([id, name]) => [name, Number(id)]),
@@ -115,8 +140,6 @@ function toMedia(kind: TmdbKind, m: TmdbItem): ExternalMedia {
   };
 }
 
-const toFilm = (m: TmdbItem): ExternalMedia => toMedia("movie", m);
-
 /** Szuka w TMDB filmów albo seriali. Zwraca do 18 wyników (bez zapisywania w bazie). */
 export async function searchTmdbKind(
   kind: TmdbKind,
@@ -145,54 +168,91 @@ export const searchTmdbTv = (query: string) => searchTmdbKind("tv", query);
  * Wspólny pobieracz list filmów dla discovery: buduje URL (w try, więc brak klucza
  * też daje []), pobiera i mapuje wyniki. Jedno źródło nie może wywalić discovery.
  */
-async function discoverMovies(buildUrl: () => string): Promise<ExternalMedia[]> {
+async function discoverItems(
+  kind: TmdbKind,
+  buildUrl: () => string,
+): Promise<ExternalMedia[]> {
   try {
     const res = await fetch(buildUrl());
     if (!res.ok) return [];
     const data = (await res.json()) as { results?: TmdbItem[] };
     return (data.results ?? [])
-      .filter((m) => m.title && !isAnime(m)) // anime → osobna zakładka
+      .filter((m) => itemTitle(m) && !isAnime(m)) // anime → osobna zakładka
       .slice(0, 18)
-      .map(toFilm);
+      .map((m) => toMedia(kind, m));
   } catch {
     return [];
   }
 }
 
-/** „Odkrywanie" filmów: najpopularniejsze premiery z okna lat (NOWE, bez zapisu). */
-export function discoverTmdb(yearFrom: number, yearTo: number): Promise<ExternalMedia[]> {
-  return discoverMovies(
+/**
+ * „Odkrywanie": najpopularniejsze premiery z okna lat (NOWE, bez zapisu).
+ * Serial filtrujemy po `first_air_date`, film po `primary_release_date` — TMDB
+ * nie rozumie parametru drugiego rodzaju i po cichu zwróciłby cały ranking.
+ */
+export function discoverTmdbKind(
+  kind: TmdbKind,
+  yearFrom: number,
+  yearTo: number,
+): Promise<ExternalMedia[]> {
+  const pole = kind === "tv" ? "first_air_date" : "primary_release_date";
+  return discoverItems(
+    kind,
     () =>
-      `${TMDB}/discover/movie?api_key=${apiKey()}&language=${tmdbLocale()}` +
+      `${TMDB}/discover/${kind}?api_key=${apiKey()}&language=${tmdbLocale()}` +
       `&include_adult=false&sort_by=popularity.desc&vote_count.gte=100` +
-      `&primary_release_date.gte=${yearFrom}-01-01&primary_release_date.lte=${yearTo}-12-31`,
+      `&${pole}.gte=${yearFrom}-01-01&${pole}.lte=${yearTo}-12-31`,
   );
 }
 
+export const discoverTmdb = (yearFrom: number, yearTo: number) =>
+  discoverTmdbKind("movie", yearFrom, yearTo);
+export const discoverTmdbTv = (yearFrom: number, yearTo: number) =>
+  discoverTmdbKind("tv", yearFrom, yearTo);
+
 /** „Odkrywanie" filmów danego GATUNKU (id TMDB) w oknie lat — „lubisz sci-fi → oto sci-fi". */
-export function discoverTmdbByGenre(
+export function discoverTmdbByGenreKind(
+  kind: TmdbKind,
   genreId: number,
   yearFrom: number,
   yearTo: number,
 ): Promise<ExternalMedia[]> {
-  return discoverMovies(
+  const pole = kind === "tv" ? "first_air_date" : "primary_release_date";
+  return discoverItems(
+    kind,
     () =>
-      `${TMDB}/discover/movie?api_key=${apiKey()}&language=${tmdbLocale()}` +
+      `${TMDB}/discover/${kind}?api_key=${apiKey()}&language=${tmdbLocale()}` +
       `&include_adult=false&sort_by=popularity.desc&vote_count.gte=100` +
       `&with_genres=${genreId}` +
-      `&primary_release_date.gte=${yearFrom}-01-01&primary_release_date.lte=${yearTo}-12-31`,
+      `&${pole}.gte=${yearFrom}-01-01&${pole}.lte=${yearTo}-12-31`,
   );
 }
 
+export const discoverTmdbByGenre = (g: number, from: number, to: number) =>
+  discoverTmdbByGenreKind("movie", g, from, to);
+
+/** Seriale danego gatunku — po nazwie, bo id gatunków seriali są inne niż filmowe. */
+export const discoverTmdbTvByGenre = (nazwa: string, from: number, to: number) =>
+  TMDB_TV_GENRE_IDS[nazwa]
+    ? discoverTmdbByGenreKind("tv", TMDB_TV_GENRE_IDS[nazwa], from, to)
+    : Promise.resolve([]);
+
 /** „Podobne filmy" wg TMDB (recommendations — dobiera po gatunku/treści). */
-export function similarTmdb(externalId: string): Promise<ExternalMedia[]> {
+export function similarTmdbKind(
+  kind: TmdbKind,
+  externalId: string,
+): Promise<ExternalMedia[]> {
   const id = externalId.trim();
   if (!/^\d+$/.test(id)) return Promise.resolve([]);
-  return discoverMovies(
+  return discoverItems(
+    kind,
     () =>
-      `${TMDB}/movie/${id}/recommendations?api_key=${apiKey()}&language=${tmdbLocale()}`,
+      `${TMDB}/${kind}/${id}/recommendations?api_key=${apiKey()}&language=${tmdbLocale()}`,
   );
 }
+
+export const similarTmdb = (externalId: string) => similarTmdbKind("movie", externalId);
+export const similarTmdbTv = (externalId: string) => similarTmdbKind("tv", externalId);
 
 /** Dodaje film albo serial z TMDB do katalogu (upsert po externalId). */
 export async function addFromTmdb(kind: TmdbKind, externalId: string) {
