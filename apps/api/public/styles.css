@@ -2985,7 +2985,8 @@ h2 {
   display: flex;
 }
 
-#authForm .pw-field input {
+/* Nieograniczone do ekranu logowania — to samo pole z oczkiem jest w ustawieniach. */
+.pw-field input {
   flex: 1;
   padding-right: 46px; /* miejsce na oczko „pokaż hasło" */
   /* Bez min-width: 0 input nie zwęzi się poniżej swojej naturalnej szerokości
@@ -2994,7 +2995,10 @@ h2 {
   min-width: 0;
 }
 
-.pw-toggle {
+/* Selektor z rodzicem CELOWO: samo `.pw-toggle` (0,1,0) przegrywa specyficznością
+   z `.settings-form button` (0,1,1) i oko w ustawieniach dostawało zielone tło
+   oraz padding przycisku akcji. `.pw-field .pw-toggle` (0,2,0) wygrywa. */
+.pw-field .pw-toggle {
   position: absolute;
   right: 10px;
   top: 50%;
@@ -3003,6 +3007,7 @@ h2 {
   place-items: center;
   background: transparent;
   border: none;
+  border-radius: 0;
   color: var(--text);
   padding: 0;
   cursor: pointer;
@@ -3017,7 +3022,7 @@ h2 {
 }
 
 /* Nie pozwól, by globalny button:active (scale) skasował wyśrodkowanie i zrzucił oko w dół. */
-.pw-toggle:active {
+.pw-field .pw-toggle:active {
   transform: translateY(-50%);
 }
 

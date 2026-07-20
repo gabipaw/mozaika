@@ -5446,6 +5446,22 @@ function wireAccountSettings() {
   });
 }
 
+/**
+ * Podpina ikonkę oka (podgląd hasła) do pola. Trzy pola haseł w aplikacji — logowanie
+ * i dwa w ustawieniach — dzielą ten sam mechanizm, stąd parametry zamiast trzech kopii.
+ */
+function wirePwEye(toggleId, inputId) {
+  const btn = $(toggleId);
+  btn.innerHTML = pwIcon(false);
+  btn.addEventListener("click", () => {
+    const pw = $(inputId);
+    const show = pw.type === "password";
+    pw.type = show ? "text" : "password";
+    btn.innerHTML = pwIcon(show);
+    btn.setAttribute("aria-label", show ? t("hidePassword") : t("showPassword"));
+  });
+}
+
 function setAuthMode(mode) {
   authMode = mode;
   const login = mode === "login";
@@ -5648,17 +5664,9 @@ async function init() {
     else if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
     else if (!$("detailView").classList.contains("hidden")) closeDetail();
   });
-  $("pwToggle").innerHTML = pwIcon(false);
-  $("pwToggle").addEventListener("click", () => {
-    const pw = $("password");
-    const show = pw.type === "password";
-    pw.type = show ? "text" : "password";
-    $("pwToggle").innerHTML = pwIcon(show);
-    $("pwToggle").setAttribute(
-      "aria-label",
-      show ? t("hidePassword") : t("showPassword"),
-    );
-  });
+  wirePwEye("pwToggle", "password"); // logowanie
+  wirePwEye("pwCurrentToggle", "pwCurrent"); // ustawienia: obecne hasło
+  wirePwEye("pwNewToggle", "pwNew"); // ustawienia: nowe hasło
   applyStaticI18n();
   applySearchPlaceholder();
   setAuthMode("login");

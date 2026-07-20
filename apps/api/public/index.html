@@ -451,20 +451,36 @@
                   Zmień hasło
                 </button>
                 <form id="pwForm" class="settings-form col hidden">
-                  <input
-                    id="pwCurrent"
-                    type="password"
-                    autocomplete="current-password"
-                    data-i18n-ph="currentPw"
-                    placeholder="Obecne hasło"
-                  />
-                  <input
-                    id="pwNew"
-                    type="password"
-                    autocomplete="new-password"
-                    data-i18n-ph="newPw"
-                    placeholder="Nowe hasło"
-                  />
+                  <div class="pw-field">
+                    <input
+                      id="pwCurrent"
+                      type="password"
+                      autocomplete="current-password"
+                      data-i18n-ph="currentPw"
+                      placeholder="Obecne hasło"
+                    />
+                    <button
+                      id="pwCurrentToggle"
+                      type="button"
+                      class="pw-toggle"
+                      aria-label="Pokaż hasło"
+                    ></button>
+                  </div>
+                  <div class="pw-field">
+                    <input
+                      id="pwNew"
+                      type="password"
+                      autocomplete="new-password"
+                      data-i18n-ph="newPw"
+                      placeholder="Nowe hasło"
+                    />
+                    <button
+                      id="pwNewToggle"
+                      type="button"
+                      class="pw-toggle"
+                      aria-label="Pokaż hasło"
+                    ></button>
+                  </div>
                   <button type="submit" data-i18n="savePw">Zmień hasło</button>
                 </form>
               </div>
