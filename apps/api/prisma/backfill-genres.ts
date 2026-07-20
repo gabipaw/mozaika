@@ -9,9 +9,10 @@ import { MediaType } from "@prisma/client";
 
 import { prisma } from "../src/db.js";
 import { addFromAniList } from "../src/logic/anilist.js";
+import { addBookFromOpenLibrary } from "../src/logic/books.js";
 import { addGameFromRawg } from "../src/logic/games.js";
 import { addMusicFromItunes } from "../src/logic/music.js";
-import { addMediaFromTmdb } from "../src/logic/tmdb.js";
+import { addMediaFromTmdb, addSerialFromTmdb } from "../src/logic/tmdb.js";
 
 function refill(type: MediaType, externalId: string) {
   switch (type) {
@@ -25,8 +26,12 @@ function refill(type: MediaType, externalId: string) {
       return addGameFromRawg(externalId);
     case MediaType.MUZYKA:
       return addMusicFromItunes(externalId);
+    case MediaType.KSIAZKA:
+      return addBookFromOpenLibrary(externalId);
+    case MediaType.SERIAL:
+      return addSerialFromTmdb(externalId);
     default:
-      return null; // KSIAZKA / SERIAL — brak źródła gatunków
+      return null;
   }
 }
 

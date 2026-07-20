@@ -78,7 +78,11 @@ function toBook(d: OlDoc): ExternalMedia {
     title: author ? `${title} — ${author}` : title,
     year: d.first_publish_year ?? null,
     posterUrl: coverUrl(d.cover_i),
-    genres: [], // Open Library ma tylko „subjects" (zbyt zaszumione) — pomijamy
+    // Pusto CELOWO: wyniki wyszukiwania nigdy nie trafiają do bazy — zapisuje je
+    // dopiero addBookFromOpenLibrary, które pyta /works/{id} i stamtąd bierze
+    // gatunki (genresFromSubjects). Ciągnięcie „subjects" dla 60 wyników naraz
+    // byłoby czystym marnotrawstwem, bo karty i tak ich nie pokazują.
+    genres: [],
   };
 }
 
@@ -123,8 +127,8 @@ export async function searchBooks(query: string): Promise<ExternalMedia[]> {
 /**
  * Nasze nazwy gatunków (z TMDB/AniList) → „subject_key" w Open Library. Dzięki temu
  * gust nauczony na filmach przenosi się na książki: lubisz sci-fi → dostajesz książki
- * sci-fi. Książki NIE mają gatunków w bazie (OL podaje tylko zaszumione „subjects",
- * patrz toBook), więc to jedyny sposób na afinność gatunkową dla tej kategorii.
+ * sci-fi. To mapowanie służy PYTANIU Open Library o gatunek; w drugą stronę (czytanie
+ * gatunku dodawanej książki) działa `genresFromSubjects` niżej.
  *
  * Mapujemy TYLKO gatunki, w których OL jest wiarygodne — sprawdzone na żywym API.
  * Pominięte celowo: War/History (zwracają fantasy i przypadkowe non-fiction),
@@ -201,6 +205,94 @@ export function discoverBooksByGenre(
   );
 }
 
+/**
+ * „Subjects" z Open Library → gatunki w TYM SAMYM słowniku co filmy, seriale i gry.
+ *
+ * Surowych subjectów wziąć się nie da — obok sensownych („Science fiction") lecą
+ * „New York Times reviewed", „award:hugo_award=1966", „Anglais (langue)" czy nazwy
+ * miejsc. Dlatego nie bierzemy ich hurtem, tylko wyławiamy rozpoznawalne gatunki.
+ *
+ * Nazwy MUSZĄ być te same co w TMDB/RAWG: afinność gatunkowa (tasteProfile) grupuje
+ * po nazwie, więc osobne „Science fiction" dla książek rozbiłoby profil na połówki.
+ *
+ * Dopasowanie po CAŁYCH słowach, nie po fragmencie — inaczej „war" łapałoby się
+ * w „Warsaw" i „award", a takich subjectów jest tu pełno.
+ */
+const BOOK_GENRE_RULES: Array<{ wzorzec: RegExp; gatunek: string }> = [
+  { wzorzec: /\bscience fiction\b|\bsci fi\b/, gatunek: "Sci-Fi" },
+  { wzorzec: /\bfantasy\b|\bfantastyczn\w*\b/, gatunek: "Fantasy" },
+  { wzorzec: /\bhorror\w*\b|\bghost stories\b/, gatunek: "Horror" },
+  { wzorzec: /\bthriller\w*\b|\bsuspense\b/, gatunek: "Thriller" },
+  {
+    wzorzec: /\bmystery\b|\bmysteries\b|\bdetective\w*\b|\bkryminal\w*\b/,
+    gatunek: "Mystery",
+  },
+  { wzorzec: /\bromance\b|\blove stories\b|\bromans\w*\b/, gatunek: "Romance" },
+  { wzorzec: /\bcrime\b|\bcriminal\w*\b/, gatunek: "Crime" },
+  { wzorzec: /\bwestern\w*\b/, gatunek: "Western" },
+  { wzorzec: /\bwar\b|\bwars\b|\bwojenn\w*\b/, gatunek: "War" },
+  { wzorzec: /\bhistory\b|\bhistorical\b|\bhistoryczn\w*\b/, gatunek: "History" },
+  { wzorzec: /\bhumor\w*\b|\bcomedy\b|\bsatire\b|\bcomic\b/, gatunek: "Comedy" },
+  { wzorzec: /\badventure\w*\b|\bprzygod\w*\b/, gatunek: "Adventure" },
+  { wzorzec: /\bjuvenile\b|\bchildren\w*\b|\bpicture books\b/, gatunek: "Family" },
+  { wzorzec: /\bbiography\b|\bautobiography\b|\bmemoir\w*\b/, gatunek: "Documentary" },
+  { wzorzec: /\bdrama\b|\bdramat\w*\b/, gatunek: "Drama" },
+];
+
+/** Ile gatunków najwyżej przypisujemy — dłuższa lista to już nie opis, tylko szum. */
+const MAX_BOOK_GENRES = 4;
+
+/** Do dopasowania: małe litery, bez znaków diakrytycznych, same słowa. */
+function normalizeSubject(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Od ilu subjectów lista jest na tyle długa, że pojedyncze trafienie to już szum.
+ * Popularne książki mają ich po sto — „Harry Potter" dostawał Sci-Fi od JEDNEJ
+ * etykiety półki „Science fiction & fantasy" wśród 108 pozycji.
+ */
+const DUZO_SUBJECTOW = 10;
+
+/**
+ * Wyławia gatunki z listy „subjects". Pusta lista, gdy nic rozpoznawalnego nie ma.
+ *
+ * Liczymy, ILE subjectów wskazuje na dany gatunek, zamiast przyjmować pierwsze
+ * trafienie: przy długich listach jedno przypadkowe słowo trafia się prawie zawsze,
+ * a sygnał prawdziwy powtarza się („Juvenile fiction", „Children's stories",
+ * „Juvenile literature" → Family). Gatunki z jednym trafieniem w długiej liście
+ * odrzucamy, w krótkiej zostawiamy — tam jedno wskazanie to często całość opisu.
+ */
+export function genresFromSubjects(subjects: unknown): string[] {
+  if (!Array.isArray(subjects)) return [];
+  const teksty = subjects
+    .filter((s): s is string => typeof s === "string")
+    .map(normalizeSubject)
+    .filter(Boolean);
+  if (!teksty.length) return [];
+
+  const prog = teksty.length > DUZO_SUBJECTOW ? 2 : 1;
+  const trafienia = BOOK_GENRE_RULES.map(({ wzorzec, gatunek }) => ({
+    gatunek,
+    ile: teksty.filter((t) => wzorzec.test(t)).length,
+  })).filter((g) => g.ile >= prog);
+
+  // Najmocniejszy sygnał na początek; przy remisie zostaje kolejność z reguł
+  // (a ta idzie od gatunków najbardziej charakterystycznych).
+  trafienia.sort((a, b) => b.ile - a.ile);
+  const out: string[] = [];
+  for (const { gatunek } of trafienia) {
+    if (out.length >= MAX_BOOK_GENRES) break;
+    if (!out.includes(gatunek)) out.push(gatunek);
+  }
+  return out;
+}
+
 /** Czy klucz tytułu książki pasuje do którejś mangi (zawiera się / jest zawarty). */
 function isManga(bookKey: string, mangaKeys: string[]): boolean {
   if (bookKey.length < 5) return false;
@@ -224,6 +316,7 @@ export async function addBookFromOpenLibrary(externalId: string) {
     covers?: number[];
     first_publish_date?: string;
     authors?: { author?: { key?: string } }[];
+    subjects?: string[];
   };
   const year = work.first_publish_date
     ? Number((work.first_publish_date.match(/\d{4}/) ?? [])[0]) || null
@@ -235,7 +328,7 @@ export async function addBookFromOpenLibrary(externalId: string) {
     title: author ? `${baseTitle} — ${author}` : baseTitle,
     year,
     posterUrl: coverUrl(work.covers?.[0]),
-    genres: [],
+    genres: genresFromSubjects(work.subjects),
   });
 }
 
