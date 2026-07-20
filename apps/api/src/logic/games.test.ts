@@ -4,7 +4,12 @@ import { test } from "node:test";
 import { rankGames, type RawgGame } from "./games.js";
 
 /** Skrót do budowania atrap wyników RAWG. */
-const gra = (name: string, added: number, id = 1): RawgGame => ({ id, name, added });
+const gra = (name: string, added: number, id = 1, released?: string): RawgGame => ({
+  id,
+  name,
+  added,
+  released,
+});
 
 const tytuly = (gry: RawgGame[]) => gry.map((g) => g.name);
 
@@ -46,6 +51,34 @@ test("brak `added` nie wywala sortowania — uzywa ratings_count", () => {
 test("pusta fraza sortuje sama popularnoscia i nie rzuca", () => {
   const wynik = rankGames("", [gra("Niszowa", 3, 1), gra("Popularna", 9000, 2)]);
   assert.deepEqual(tytuly(wynik), ["Popularna", "Niszowa"]);
+});
+
+test("seria o zblizonej popularnosci szereguje sie od najnowszej", () => {
+  // Przypadek z produkcji: FIFA wychodzily w kolejnosci 18, 17, 15, 19 — roznice
+  // w liczbie graczy sa tu male i przypadkowe, wiec o kolejnosci ma decydowac rok.
+  const wynik = rankGames("fifa", [
+    gra("FIFA 15", 1000, 1, "2014-09-23"),
+    gra("FIFA 20", 1100, 2, "2019-09-27"),
+    gra("FIFA 17", 1050, 3, "2016-09-27"),
+  ]);
+  assert.deepEqual(tytuly(wynik), ["FIFA 20", "FIFA 17", "FIFA 15"]);
+});
+
+test("rok NIE przebija duzej roznicy popularnosci", () => {
+  // Nowa niszowa gra nie ma wyprzedzac klasyka tylko dlatego, ze jest swiezsza.
+  const wynik = rankGames("witcher", [
+    gra("Witcher Fan Remake", 4, 1, "2024-01-01"),
+    gra("The Witcher 3: Wild Hunt", 21000, 2, "2015-05-18"),
+  ]);
+  assert.equal(tytuly(wynik)[0], "The Witcher 3: Wild Hunt");
+});
+
+test("gra bez daty premiery ladzie za datowanymi z tego samego kubelka", () => {
+  const wynik = rankGames("fifa", [
+    gra("FIFA bez daty", 1000, 1),
+    gra("FIFA 20", 1000, 2, "2019-09-27"),
+  ]);
+  assert.deepEqual(tytuly(wynik), ["FIFA 20", "FIFA bez daty"]);
 });
 
 test("nie mutuje tablicy wejsciowej", () => {

@@ -60,8 +60,22 @@ export function rankGames(query: string, games: RawgGame[]): RawgGame[] {
     else if (title.includes(q)) trafnosc = 0.5;
     return popularity + trafnosc;
   };
+  const rok = (g: RawgGame): number =>
+    g.released ? Number(g.released.slice(0, 4)) || 0 : 0;
+
   // Kopia, bo sort mutuje — wołający dostaje wynik, nie przestawioną własną tablicę.
-  return [...games].sort((a, b) => score(b) - score(a));
+  return [...games].sort((a, b) => {
+    // Rok jako DRUGI czynnik, ale tylko przy zbliżonej popularności — inaczej nowa
+    // niszowa gra przebijałaby klasyka. „Zbliżona" = ten sam kubełek wyniku; kubełek
+    // ma 0.5 w skali log10, czyli mieści gry różniące się popularnością do ~3x.
+    // Dzięki temu FIFA 14–20 lądują razem i szeregują się od najnowszej, a Wiedźmin 3
+    // (tysiące razy popularniejszy od amatorskiego „witcher") zostaje na górze.
+    const kubelek = Math.floor(score(b) / 0.5) - Math.floor(score(a) / 0.5);
+    if (kubelek !== 0) return kubelek;
+    const lata = rok(b) - rok(a);
+    if (lata !== 0) return lata;
+    return score(b) - score(a); // remis: rozstrzyga dokładny wynik
+  });
 }
 
 function toGame(g: RawgGame): ExternalMedia {
