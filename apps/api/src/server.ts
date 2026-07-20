@@ -19,6 +19,7 @@ import {
   ValidationError,
 } from "./errors.js";
 import { login, register } from "./logic/auth.js";
+import { requestPasswordReset, resetPassword } from "./logic/passwordReset.js";
 import { rateLimit, rateLimitReset } from "./logic/rateLimit.js";
 import { blockUser, unblockUser, listBlocked } from "./logic/blocks.js";
 import { listComments, addComment, deleteComment } from "./logic/comments.js";
@@ -219,6 +220,33 @@ api.post("/auth/login", async (c) => {
   const user = await login(await c.req.json());
   rateLimitReset(key); // udane logowanie nie ma karać kolejnych prób
   return c.json({ token: await makeToken(user.id), user });
+});
+
+/**
+ * Prośba o link do zmiany hasła.
+ *
+ * Odpowiedź jest ZAWSZE taka sama — również dla adresu bez konta. Inaczej ten
+ * endpoint byłby wygodną wyszukiwarką „czy X ma konto w Mozaice".
+ *
+ * Limit ostrzejszy niż przy logowaniu (3 na 15 min), bo każde żądanie wysyła
+ * maila: bez tego dałoby się zasypać cudzą skrzynkę z naszego serwera.
+ */
+api.post("/auth/forgot", async (c) => {
+  const { allowed, retryAfter } = rateLimit(`forgot:${clientIp(c)}`, 3, 15 * 60 * 1000);
+  if (!allowed) {
+    throw new TooManyRequestsError(`Za dużo prób. Spróbuj ponownie za ${retryAfter} s.`);
+  }
+  const body = await c.req.json();
+  await requestPasswordReset(body.email);
+  return c.json({ ok: true });
+});
+
+/** Ustawienie nowego hasła tokenem z linku. */
+api.post("/auth/reset", async (c) => {
+  guardAuth(c);
+  const body = await c.req.json();
+  await resetPassword(body.token, body.password);
+  return c.json({ ok: true });
 });
 
 // --- Ustawienia konta ---

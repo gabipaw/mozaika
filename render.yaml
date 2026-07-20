@@ -36,6 +36,13 @@ services:
         sync: false # np. mailto:twoj@email — wymagane przez bramki push
       - key: CRON_SECRET
         sync: false # sekret dla /api/cron/premieres — ten sam wpisz w GitHub → Secrets
+      - key: GMAIL_USER
+        # Adres Gmaila, z którego wychodzą maile z linkiem „nie pamiętam hasła".
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        # HASŁO APLIKACJI z konta Google (Bezpieczeństwo → Hasła aplikacji), NIE zwykłe
+        # hasło. Bez tej pary reset hasła nie wysyła maili, reszta apki działa normalnie.
+        sync: false
       - key: JWT_SECRET
         sync: false # SEKRET do podpisu tokenow — WYMAGANY, bez niego serwer nie wstanie
         # Wygeneruj np.: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"

@@ -65,7 +65,7 @@
     <main>
       <!-- Ekran logowania / rejestracji -->
       <section id="authView" class="auth">
-        <div class="auth-card">
+        <div class="auth-card" id="loginCard">
           <div class="auth-head">
             <div class="auth-logo">🎨</div>
             <h1 class="auth-title">Mozaika</h1>
@@ -75,7 +75,7 @@
             </p>
           </div>
 
-          <form id="authForm" autocomplete="on">
+          <form id="authForm" class="auth-form" autocomplete="on">
             <input
               id="displayName"
               class="hidden"
@@ -106,12 +106,105 @@
                 aria-label="Pokaż hasło"
               ></button>
             </div>
-            <button id="authSubmit" type="submit">Zaloguj się</button>
+            <button id="authSubmit" class="auth-submit" type="submit">Zaloguj się</button>
           </form>
           <p id="authMsg" class="err"></p>
           <p class="auth-switch">
             <span id="switchText">Nie masz jeszcze konta?</span>
             <button id="switchBtn" type="button" class="linkbtn">Załóż konto</button>
+          </p>
+          <p class="auth-switch">
+            <button id="forgotBtn" type="button" class="linkbtn" data-i18n="forgotLink">
+              Nie pamiętasz hasła?
+            </button>
+          </p>
+        </div>
+
+        <!-- Krok 1: prośba o link (podanie e-maila) -->
+        <div class="auth-card hidden" id="forgotCard">
+          <div class="auth-head">
+            <div class="auth-logo">🔑</div>
+            <h1 class="auth-title" data-i18n="forgotTitle">Odzyskaj hasło</h1>
+            <p class="auth-tagline" data-i18n="forgotIntro">
+              Podaj e-mail konta — wyślemy link do ustawienia nowego hasła.
+            </p>
+          </div>
+          <form id="forgotForm" class="auth-form" autocomplete="on">
+            <input
+              id="forgotEmail"
+              type="email"
+              placeholder="E-mail"
+              data-i18n-ph="email"
+              autocomplete="email"
+              required
+            />
+            <button
+              id="forgotSubmit"
+              class="auth-submit"
+              type="submit"
+              data-i18n="forgotSubmit"
+            >
+              Wyślij link
+            </button>
+          </form>
+          <p id="forgotMsg" class="err"></p>
+          <p class="auth-switch">
+            <button
+              id="forgotBackBtn"
+              type="button"
+              class="linkbtn"
+              data-i18n="backToLogin"
+            >
+              ← Wróć do logowania
+            </button>
+          </p>
+        </div>
+
+        <!-- Krok 2: ustawienie nowego hasła (po wejściu z linku ?reset=…) -->
+        <div class="auth-card hidden" id="resetCard">
+          <div class="auth-head">
+            <div class="auth-logo">🔒</div>
+            <h1 class="auth-title" data-i18n="resetTitle">Ustaw nowe hasło</h1>
+            <p class="auth-tagline" data-i18n="resetIntro">
+              Wpisz nowe hasło do swojego konta.
+            </p>
+          </div>
+          <form id="resetForm" class="auth-form" autocomplete="on">
+            <div class="pw-field">
+              <input
+                id="resetPassword"
+                type="password"
+                placeholder="Nowe hasło (min. 6 znaków)"
+                data-i18n-ph="newPasswordPh"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                id="resetPwToggle"
+                type="button"
+                class="pw-toggle"
+                aria-label="Pokaż hasło"
+              ></button>
+            </div>
+            <button
+              id="resetSubmit"
+              class="auth-submit"
+              type="submit"
+              data-i18n="resetSubmit"
+            >
+              Zapisz hasło
+            </button>
+          </form>
+          <p id="resetMsg" class="err"></p>
+          <p class="auth-switch">
+            <button
+              id="resetBackBtn"
+              type="button"
+              class="linkbtn"
+              data-i18n="backToLogin"
+            >
+              ← Wróć do logowania
+            </button>
           </p>
         </div>
       </section>
@@ -442,7 +535,12 @@
                     <button type="submit" data-i18n="save">Zapisz</button>
                   </div>
                 </form>
-                <button id="pwToggle" class="linkbtn" type="button" data-i18n="changePw">
+                <button
+                  id="changePwBtn"
+                  class="linkbtn"
+                  type="button"
+                  data-i18n="changePw"
+                >
                   Zmień hasło
                 </button>
                 <form id="pwForm" class="settings-form col hidden">
