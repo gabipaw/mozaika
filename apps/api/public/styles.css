@@ -674,25 +674,23 @@ h2 {
   font-weight: 700;
 }
 
-/* --- Osiągnięcia (odznaki) --- */
+/* --- Osiągnięcia (odznaki) — lista: ikona | nazwa+opis | postęp --- */
 .achievements {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   margin: 0 0 8px;
 }
 .ach {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-  gap: 2px;
-  padding: 10px 6px;
+  gap: 10px;
+  padding: 8px 10px;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 12px;
   /* Niezdobyte są przygaszone i odbarwione — zdobyte wyróżniają się od razu. */
-  opacity: 0.5;
+  opacity: 0.55;
   filter: grayscale(0.85);
 }
 .ach.earned {
@@ -701,18 +699,33 @@ h2 {
   border-color: var(--accent);
 }
 .ach-ic {
-  font-size: 1.6rem;
+  flex: 0 0 auto;
+  font-size: 1.5rem;
   line-height: 1;
 }
+.ach-mid {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .ach-name {
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.2;
+}
+.ach-desc {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.25;
 }
 .ach-prog {
-  font-size: 0.7rem;
+  flex: 0 0 auto;
+  font-size: 0.8rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+.ach.earned .ach-prog {
+  color: var(--accent);
+  font-weight: 700;
 }
 
 /* Pełna szerokość kolumny z opisem — zwiastun ma sięgać tak daleko jak tekst. */

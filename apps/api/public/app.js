@@ -213,6 +213,16 @@ const I18N = {
     achMeloman: "Meloman",
     achCritic: "Krytyk",
     achSocial: "Towarzyski",
+    achDebutDesc: "Oceń swój pierwszy tytuł",
+    achCountDesc: "Oceń {n} tytułów",
+    achCinephileDesc: "Oceń {n} filmów",
+    achBingerDesc: "Oceń {n} seriali",
+    achBookwormDesc: "Oceń {n} książek",
+    achGamerDesc: "Oceń {n} gier",
+    achOtakuDesc: "Oceń {n} anime lub mangi",
+    achMelomanDesc: "Oceń {n} albumów",
+    achCriticDesc: "Napisz {n} recenzji z tekstem",
+    achSocialDesc: "Zdobądź {n} znajomych",
     notifPremiere: "jest już dostępne — masz to na liście do obejrzenia",
     notifComment: "skomentował(-a) Twoją recenzję",
     notifReply: "odpowiedział(-a) na Twój komentarz",
@@ -545,6 +555,16 @@ const I18N = {
     achMeloman: "Audiophile",
     achCritic: "Critic",
     achSocial: "Social",
+    achDebutDesc: "Rate your first title",
+    achCountDesc: "Rate {n} titles",
+    achCinephileDesc: "Rate {n} movies",
+    achBingerDesc: "Rate {n} TV shows",
+    achBookwormDesc: "Rate {n} books",
+    achGamerDesc: "Rate {n} games",
+    achOtakuDesc: "Rate {n} anime or manga",
+    achMelomanDesc: "Rate {n} albums",
+    achCriticDesc: "Write {n} reviews with text",
+    achSocialDesc: "Get {n} friends",
     notifPremiere: "is out now — it's on your watchlist",
     notifComment: "commented on your review",
     notifReply: "replied to your comment",
@@ -879,6 +899,16 @@ const I18N = {
     achMeloman: "Audiophiler",
     achCritic: "Kritiker",
     achSocial: "Gesellig",
+    achDebutDesc: "Bewerte deinen ersten Titel",
+    achCountDesc: "Bewerte {n} Titel",
+    achCinephileDesc: "Bewerte {n} Filme",
+    achBingerDesc: "Bewerte {n} Serien",
+    achBookwormDesc: "Bewerte {n} Bücher",
+    achGamerDesc: "Bewerte {n} Spiele",
+    achOtakuDesc: "Bewerte {n} Anime oder Manga",
+    achMelomanDesc: "Bewerte {n} Alben",
+    achCriticDesc: "Schreibe {n} Rezensionen mit Text",
+    achSocialDesc: "Finde {n} Freunde",
     notifPremiere: "ist jetzt verfügbar — steht auf deiner Merkliste",
     notifComment: "hat deine Rezension kommentiert",
     notifReply: "hat auf deinen Kommentar geantwortet",
@@ -1205,6 +1235,16 @@ const I18N = {
     achMeloman: "Melómano",
     achCritic: "Crítico",
     achSocial: "Sociable",
+    achDebutDesc: "Puntúa tu primer título",
+    achCountDesc: "Puntúa {n} títulos",
+    achCinephileDesc: "Puntúa {n} películas",
+    achBingerDesc: "Puntúa {n} series",
+    achBookwormDesc: "Puntúa {n} libros",
+    achGamerDesc: "Puntúa {n} juegos",
+    achOtakuDesc: "Puntúa {n} anime o manga",
+    achMelomanDesc: "Puntúa {n} álbumes",
+    achCriticDesc: "Escribe {n} reseñas con texto",
+    achSocialDesc: "Consigue {n} amigos",
     notifPremiere: "ya está disponible — lo tienes en tu lista",
     notifComment: "comentó tu reseña",
     notifReply: "respondió a tu comentario",
@@ -1532,6 +1572,16 @@ const I18N = {
     achMeloman: "Melómano",
     achCritic: "Crítico",
     achSocial: "Sociável",
+    achDebutDesc: "Avalia o teu primeiro título",
+    achCountDesc: "Avalia {n} títulos",
+    achCinephileDesc: "Avalia {n} filmes",
+    achBingerDesc: "Avalia {n} séries",
+    achBookwormDesc: "Avalia {n} livros",
+    achGamerDesc: "Avalia {n} jogos",
+    achOtakuDesc: "Avalia {n} anime ou manga",
+    achMelomanDesc: "Avalia {n} álbuns",
+    achCriticDesc: "Escreve {n} críticas com texto",
+    achSocialDesc: "Consegue {n} amigos",
     notifPremiere: "já está disponível — tens na tua lista",
     notifComment: "comentou a tua crítica",
     notifReply: "respondeu ao teu comentário",
@@ -1856,6 +1906,16 @@ const I18N = {
     achMeloman: "乐迷",
     achCritic: "评论家",
     achSocial: "社交达人",
+    achDebutDesc: "评价你的第一部作品",
+    achCountDesc: "评价 {n} 部作品",
+    achCinephileDesc: "评价 {n} 部电影",
+    achBingerDesc: "评价 {n} 部剧集",
+    achBookwormDesc: "评价 {n} 本书",
+    achGamerDesc: "评价 {n} 款游戏",
+    achOtakuDesc: "评价 {n} 部动画或漫画",
+    achMelomanDesc: "评价 {n} 张专辑",
+    achCriticDesc: "写 {n} 条带文字的评论",
+    achSocialDesc: "结识 {n} 位好友",
     notifPremiere: "已经上线——在你的想看清单里",
     notifComment: "评论了你的评论",
     notifReply: "回复了你的评论",
@@ -2175,6 +2235,16 @@ const I18N = {
     achMeloman: "音楽通",
     achCritic: "評論家",
     achSocial: "社交家",
+    achDebutDesc: "最初の作品を評価する",
+    achCountDesc: "{n} 作品を評価する",
+    achCinephileDesc: "映画を {n} 本評価する",
+    achBingerDesc: "ドラマを {n} 本評価する",
+    achBookwormDesc: "書籍を {n} 冊評価する",
+    achGamerDesc: "ゲームを {n} 本評価する",
+    achOtakuDesc: "アニメまたはマンガを {n} 本評価する",
+    achMelomanDesc: "アルバムを {n} 枚評価する",
+    achCriticDesc: "本文付きレビューを {n} 件書く",
+    achSocialDesc: "友達を {n} 人つくる",
     notifPremiere: "が公開されました — あなたのリストにあります",
     notifComment: "があなたのレビューにコメントしました",
     notifReply: "があなたのコメントに返信しました",
@@ -4047,25 +4117,69 @@ async function createListFromPicker() {
 // --- Osiągnięcia (odznaki) — liczone z ocen/znajomych, bez bazy. Widoczne na profilu. ---
 // goal = próg; cur(stats) = aktualny postęp. Zdobyte, gdy cur >= goal.
 const ACHIEVEMENTS = [
-  { icon: "🎬", key: "achDebut", goal: 1, cur: (s) => s.total },
-  { icon: "📚", key: "achCollector", goal: 10, cur: (s) => s.total },
-  { icon: "🏆", key: "achVeteran", goal: 50, cur: (s) => s.total },
-  { icon: "👑", key: "achLegend", goal: 100, cur: (s) => s.total },
-  { icon: "🍿", key: "achCinephile", goal: 25, cur: (s) => s.byType.FILM ?? 0 },
-  { icon: "📺", key: "achBinger", goal: 25, cur: (s) => s.byType.SERIAL ?? 0 },
-  { icon: "📖", key: "achBookworm", goal: 25, cur: (s) => s.byType.KSIAZKA ?? 0 },
-  { icon: "🎮", key: "achGamer", goal: 25, cur: (s) => s.byType.GRA ?? 0 },
+  { icon: "🎬", key: "achDebut", desc: "achDebutDesc", goal: 1, cur: (s) => s.total },
+  {
+    icon: "📚",
+    key: "achCollector",
+    desc: "achCountDesc",
+    goal: 10,
+    cur: (s) => s.total,
+  },
+  { icon: "🏆", key: "achVeteran", desc: "achCountDesc", goal: 50, cur: (s) => s.total },
+  { icon: "👑", key: "achLegend", desc: "achCountDesc", goal: 100, cur: (s) => s.total },
+  {
+    icon: "🍿",
+    key: "achCinephile",
+    desc: "achCinephileDesc",
+    goal: 25,
+    cur: (s) => s.byType.FILM ?? 0,
+  },
+  {
+    icon: "📺",
+    key: "achBinger",
+    desc: "achBingerDesc",
+    goal: 25,
+    cur: (s) => s.byType.SERIAL ?? 0,
+  },
+  {
+    icon: "📖",
+    key: "achBookworm",
+    desc: "achBookwormDesc",
+    goal: 25,
+    cur: (s) => s.byType.KSIAZKA ?? 0,
+  },
+  {
+    icon: "🎮",
+    key: "achGamer",
+    desc: "achGamerDesc",
+    goal: 25,
+    cur: (s) => s.byType.GRA ?? 0,
+  },
   {
     icon: "🌸",
     key: "achOtaku",
+    desc: "achOtakuDesc",
     goal: 25,
     cur: (s) => (s.byType.ANIME ?? 0) + (s.byType.MANGA ?? 0),
   },
-  { icon: "🎵", key: "achMeloman", goal: 25, cur: (s) => s.byType.MUZYKA ?? 0 },
-  { icon: "✍️", key: "achCritic", goal: 10, cur: (s) => s.withText },
+  {
+    icon: "🎵",
+    key: "achMeloman",
+    desc: "achMelomanDesc",
+    goal: 25,
+    cur: (s) => s.byType.MUZYKA ?? 0,
+  },
+  {
+    icon: "✍️",
+    key: "achCritic",
+    desc: "achCriticDesc",
+    goal: 10,
+    cur: (s) => s.withText,
+  },
   {
     icon: "🤝",
     key: "achSocial",
+    desc: "achSocialDesc",
     goal: 5,
     cur: (s) => Math.max(s.followers, s.following),
   },
@@ -4100,17 +4214,22 @@ function renderAchievements(data) {
   for (const a of items) {
     const el = document.createElement("div");
     el.className = "ach" + (a.earned ? " earned" : "");
-    el.title = t(a.key);
     const ic = document.createElement("div");
     ic.className = "ach-ic";
     ic.textContent = a.icon;
+    const mid = document.createElement("div");
+    mid.className = "ach-mid";
     const nm = document.createElement("div");
     nm.className = "ach-name";
     nm.textContent = t(a.key);
+    const ds = document.createElement("div");
+    ds.className = "ach-desc";
+    ds.textContent = t(a.desc, { n: a.goal });
+    mid.append(nm, ds);
     const pr = document.createElement("div");
     pr.className = "ach-prog";
     pr.textContent = a.earned ? "✓" : `${Math.min(a.current, a.goal)}/${a.goal}`;
-    el.append(ic, nm, pr);
+    el.append(ic, mid, pr);
     box.append(el);
   }
 }
