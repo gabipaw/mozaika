@@ -202,7 +202,25 @@
                 <option value="title" data-i18n="sortTitle">Alfabetycznie</option>
                 <option value="year" data-i18n="sortYear">Rok premiery</option>
               </select>
+              <button
+                id="surpriseBtn"
+                type="button"
+                class="catalog-btn"
+                data-i18n="surpriseBtn"
+              >
+                🎲 Zaskocz mnie
+              </button>
+              <button
+                id="statsBtn"
+                type="button"
+                class="catalog-btn"
+                data-i18n="statsBtn"
+              >
+                📊 Statystyki
+              </button>
             </div>
+            <div id="catalogStats" class="catalog-stats hidden"></div>
+            <div id="catalogTypes" class="genre-filter"></div>
             <div id="catalogGenres" class="genre-filter"></div>
             <p id="catalogEmpty" class="muted hidden" data-i18n="catalogEmpty">
               Nic nie pasuje do tych filtrów.
@@ -320,6 +338,14 @@
                       type="button"
                     >
                       Zablokuj
+                    </button>
+                    <button
+                      id="shareProfileBtn"
+                      class="follow-btn ghost hidden"
+                      type="button"
+                      data-i18n="shareProfileBtn"
+                    >
+                      🔗 Kopiuj link
                     </button>
                   </div>
                   <div id="profileCounts" class="profile-counts"></div>

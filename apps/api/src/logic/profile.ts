@@ -41,6 +41,7 @@ export async function profilePayload(
         rating: true,
         text: true,
         favorite: true,
+        createdAt: true, // katalog: sortowanie „ostatnio" + statystyki „w tym roku"
         media: { select: mediaSelect },
       },
     }),

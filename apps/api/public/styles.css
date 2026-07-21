@@ -466,6 +466,40 @@ h2 {
   font-weight: 600;
 }
 
+/* Przyciski w pasku katalogu („Zaskocz mnie", „Statystyki") — wygląd jak select obok. */
+.catalog-tools button.catalog-btn {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--bg-2);
+  color: var(--text);
+  border: 1px solid var(--border, #2a2a35);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.catalog-tools button.catalog-btn:hover {
+  border-color: var(--muted);
+}
+
+/* Mini-dashboard statystyk katalogu (rozwijany „Statystyki"). Paski jak w portrecie gustu. */
+.catalog-stats {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.catalog-stats .stat-head {
+  margin: 0 0 4px;
+}
+
 .detail-desc {
   color: var(--text);
   font-size: 0.95rem;

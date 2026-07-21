@@ -96,6 +96,13 @@ const I18N = {
     siteAvg: "serwis",
     topGenres: "Twoje gatunki",
     topTypes: "Rodzaje mediów",
+    surpriseBtn: "🎲 Zaskocz mnie",
+    statsBtn: "📊 Statystyki",
+    statRatings: "Rozkład ocen",
+    statThisYear: "W tym roku",
+    statTotal: "Razem",
+    shareProfileBtn: "🔗 Kopiuj link",
+    shareCopied: "Skopiowano link do profilu",
     favDecade: "Ulubiona dekada: lata {decade}.",
     recBy: "poleca {n} os.",
     noRecs: "Brak — oceń kilka tytułów, a coś dobierzemy.",
@@ -373,6 +380,13 @@ const I18N = {
     siteAvg: "site",
     topGenres: "Your genres",
     topTypes: "Media types",
+    surpriseBtn: "🎲 Surprise me",
+    statsBtn: "📊 Stats",
+    statRatings: "Rating spread",
+    statThisYear: "This year",
+    statTotal: "Total",
+    shareProfileBtn: "🔗 Copy link",
+    shareCopied: "Profile link copied",
     favDecade: "Favourite decade: the {decade}s.",
     recBy: "recommended by {n}",
     noRecs: "Nothing yet — rate a few titles and we'll find some.",
@@ -652,6 +666,13 @@ const I18N = {
     siteAvg: "Website",
     topGenres: "Deine Genres",
     topTypes: "Medienarten",
+    surpriseBtn: "🎲 Überrasch mich",
+    statsBtn: "📊 Statistik",
+    statRatings: "Bewertungsverteilung",
+    statThisYear: "Dieses Jahr",
+    statTotal: "Gesamt",
+    shareProfileBtn: "🔗 Link kopieren",
+    shareCopied: "Profil-Link kopiert",
     favDecade: "Lieblingsjahrzehnt: die {decade}er.",
     recBy: "empfohlen von {n} Pers.",
     noRecs: "Nichts — bewerte ein paar Titel, dann finden wir etwas.",
@@ -923,6 +944,13 @@ const I18N = {
     siteAvg: "sitio",
     topGenres: "Tus géneros",
     topTypes: "Tipos de medios",
+    surpriseBtn: "🎲 Sorpréndeme",
+    statsBtn: "📊 Estadísticas",
+    statRatings: "Distribución de notas",
+    statThisYear: "Este año",
+    statTotal: "Total",
+    shareProfileBtn: "🔗 Copiar enlace",
+    shareCopied: "Enlace del perfil copiado",
     favDecade: "Década favorita: los {decade}.",
     recBy: "recomendado por {n} pers.",
     noRecs: "Nada — puntúa algunos títulos y elegiremos algo.",
@@ -1195,6 +1223,13 @@ const I18N = {
     siteAvg: "site",
     topGenres: "Os teus géneros",
     topTypes: "Tipos de media",
+    surpriseBtn: "🎲 Surpreende-me",
+    statsBtn: "📊 Estatísticas",
+    statRatings: "Distribuição de notas",
+    statThisYear: "Este ano",
+    statTotal: "Total",
+    shareProfileBtn: "🔗 Copiar link",
+    shareCopied: "Link do perfil copiado",
     favDecade: "Década favorita: os anos {decade}.",
     recBy: "recomendado por {n} pess.",
     noRecs: "Nada — avalia alguns títulos e escolhemos algo.",
@@ -1466,6 +1501,13 @@ const I18N = {
     siteAvg: "全站",
     topGenres: "你的类型",
     topTypes: "媒体类型",
+    surpriseBtn: "🎲 随便选一个",
+    statsBtn: "📊 统计",
+    statRatings: "评分分布",
+    statThisYear: "今年",
+    statTotal: "总计",
+    shareProfileBtn: "🔗 复制链接",
+    shareCopied: "已复制个人资料链接",
     favDecade: "最爱的年代：{decade} 年代。",
     recBy: "{n} 人推荐",
     noRecs: "暂无——先打几个分，我们就来挑。",
@@ -1730,6 +1772,13 @@ const I18N = {
     siteAvg: "サイト",
     topGenres: "あなたのジャンル",
     topTypes: "メディアの種類",
+    surpriseBtn: "🎲 おまかせ",
+    statsBtn: "📊 統計",
+    statRatings: "評価の分布",
+    statThisYear: "今年",
+    statTotal: "合計",
+    shareProfileBtn: "🔗 リンクをコピー",
+    shareCopied: "プロフィールのリンクをコピーしました",
     favDecade: "好きな年代：{decade} 年代。",
     recBy: "{n} 人がおすすめ",
     noRecs: "なし — いくつか評価すると選びます。",
@@ -2717,22 +2766,44 @@ function renderGrid(container, list, onClick) {
 
 let catalogItems = []; // Twoje ocenione tytuły (z gatunkami)
 let catalogGenre = null; // wybrany gatunek do filtrowania (null = wszystkie)
+let catalogType = null; // wybrany typ medium do filtrowania (null = wszystkie)
 let catalogQuery = ""; // szukanie po tytule w obrębie katalogu
 let catalogSort = "recent"; // recent | rating | title | year
+let statsOpen = false; // czy panel statystyk katalogu jest rozwinięty
+
+// Enum typu w bazie (WIELKIE) → klucz i18n etykiety (te same, których używa pasek typów).
+const CATALOG_TYPE_LABEL = {
+  FILM: "typeFilm",
+  SERIAL: "typeSerial",
+  KSIAZKA: "typeBook",
+  MANGA: "typeManga",
+  ANIME: "typeAnime",
+  MUZYKA: "typeMusic",
+  GRA: "typeGame",
+};
 
 async function loadCatalog() {
   allMedia = await api("/media"); // pełna lista — potrzebna tylko do znajdowania mediaId
   // Katalog pokazuje WYŁĄCZNIE Twoje ocenione tytuły (nie cudze).
-  catalogItems = myProfile.reviews.map((r) => ({ ...r.media, myRating: r.rating }));
+  catalogItems = myProfile.reviews.map((r) => ({
+    ...r.media,
+    myRating: r.rating,
+    addedAt: r.createdAt, // do statystyk „w tym roku" (sort „ostatnio" to kolejność z API)
+  }));
   if (
     catalogGenre &&
     !catalogItems.some((m) => (m.genres ?? []).includes(catalogGenre))
   ) {
     catalogGenre = null; // wybrany gatunek zniknął z katalogu → wróć do „Wszystkie"
   }
+  if (catalogType && !catalogItems.some((m) => m.type === catalogType)) {
+    catalogType = null; // wybrany typ zniknął z katalogu → wróć do „Wszystkie"
+  }
   $("catalogTools").classList.toggle("hidden", catalogItems.length === 0);
+  renderCatalogTypes();
   renderCatalogFilter();
   renderCatalog();
+  if (statsOpen) renderStats(); // panel otwarty (np. po zmianie języka) — przelicz na nowo
 }
 
 /**
@@ -2761,6 +2832,7 @@ function sortCatalog(items) {
 function visibleCatalog() {
   const q = catalogQuery.trim().toLowerCase();
   let items = catalogItems;
+  if (catalogType) items = items.filter((m) => m.type === catalogType);
   if (catalogGenre) items = items.filter((m) => (m.genres ?? []).includes(catalogGenre));
   if (q) items = items.filter((m) => (m.title ?? "").toLowerCase().includes(q));
   return sortCatalog(items);
@@ -2803,6 +2875,167 @@ function renderCatalogFilter() {
   for (const g of genres) box.append(chip(g, g));
 }
 
+// Chipy typu medium nad katalogiem (tylko gdy są min. 2 różne typy). Ten sam wzorzec
+// co gatunki, ale filtruje po polu `type` (enum bazy). Kolejność jak w pasku wyszukiwania.
+const CATALOG_TYPE_ORDER = [
+  "FILM",
+  "SERIAL",
+  "KSIAZKA",
+  "MANGA",
+  "ANIME",
+  "MUZYKA",
+  "GRA",
+];
+function renderCatalogTypes() {
+  const box = $("catalogTypes");
+  box.innerHTML = "";
+  const present = new Set(catalogItems.map((m) => m.type));
+  if (present.size < 2) return;
+  const types = CATALOG_TYPE_ORDER.filter((ty) => present.has(ty));
+
+  const chip = (label, value) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "genre-chip filter" + (catalogType === value ? " active" : "");
+    b.textContent = label;
+    b.addEventListener("click", () => {
+      catalogType = catalogType === value ? null : value;
+      renderCatalogTypes();
+      renderCatalog();
+    });
+    return b;
+  };
+  box.append(chip(t("allGenres"), null));
+  for (const ty of types) box.append(chip(t(CATALOG_TYPE_LABEL[ty] ?? ty), ty));
+}
+
+// „Zaskocz mnie" — losuje jeden tytuł z aktualnie widocznych (po filtrach); gdy filtry
+// nic nie zostawiły, losuje z całego katalogu. Otwiera od razu jego szczegóły.
+function surpriseMe() {
+  const pool = visibleCatalog();
+  const src = pool.length ? pool : catalogItems;
+  if (!src.length) return;
+  const m = src[Math.floor(Math.random() * src.length)];
+  openDetail(toDetail(m, m.type, m.id, m.myRating));
+}
+
+// Rozwija/zwija mini-dashboard statystyk katalogu.
+function toggleStats() {
+  statsOpen = !statsOpen;
+  $("catalogStats").classList.toggle("hidden", !statsOpen);
+  if (statsOpen) renderStats();
+}
+
+// Mini-dashboard: liczba pozycji, rozbicie na typy, top gatunki i rozkład ocen.
+// Liczone po stronie klienta z catalogItems (te same dane, co katalog).
+function renderStats() {
+  const box = $("catalogStats");
+  const items = catalogItems;
+  if (!items.length) {
+    box.innerHTML = "";
+    return;
+  }
+  const bar = (name, val, max) => {
+    const pct = max > 0 ? Math.round((val / max) * 100) : 0;
+    const row = document.createElement("div");
+    row.className = "taste-bar";
+    const nm = document.createElement("span");
+    nm.className = "taste-bar-name";
+    nm.textContent = name;
+    const track = document.createElement("span");
+    track.className = "taste-bar-track";
+    const fill = document.createElement("span");
+    fill.className = "taste-bar-fill";
+    fill.style.width = `${pct}%`;
+    track.append(fill);
+    const v = document.createElement("span");
+    v.className = "taste-bar-val";
+    v.textContent = String(val);
+    row.append(nm, track, v);
+    return row;
+  };
+  const section = (label, rows) => {
+    if (!rows.length) return;
+    const h = document.createElement("div");
+    h.className = "taste-sec-label";
+    h.textContent = label;
+    box.append(h);
+    for (const r of rows) box.append(r);
+  };
+
+  box.innerHTML = "";
+  const thisYear = new Date().getFullYear();
+  const inYear = items.filter(
+    (m) => m.addedAt && new Date(m.addedAt).getFullYear() === thisYear,
+  ).length;
+  const head = document.createElement("p");
+  head.className = "taste-highlight stat-head";
+  head.textContent = `${t("statTotal")}: ${items.length} · ${t("statThisYear")}: ${inYear}`;
+  box.append(head);
+
+  // Typy mediów.
+  const byType = new Map();
+  for (const m of items) byType.set(m.type, (byType.get(m.type) ?? 0) + 1);
+  const typeRows = CATALOG_TYPE_ORDER.filter((ty) => byType.has(ty));
+  const typeMax = Math.max(...typeRows.map((ty) => byType.get(ty)), 1);
+  section(
+    t("topTypes"),
+    typeRows.map((ty) => bar(t(CATALOG_TYPE_LABEL[ty] ?? ty), byType.get(ty), typeMax)),
+  );
+
+  // Top gatunki (6).
+  const byGenre = new Map();
+  for (const m of items)
+    for (const g of m.genres ?? []) byGenre.set(g, (byGenre.get(g) ?? 0) + 1);
+  const genreTop = [...byGenre.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 6);
+  const genreMax = genreTop.length ? genreTop[0][1] : 1;
+  section(
+    t("topGenres"),
+    genreTop.map(([g, n]) => bar(g, n, genreMax)),
+  );
+
+  // Rozkład ocen — kubełki po 2 (1–2 … 9–10).
+  const buckets = [
+    ["9–10", 9, 10],
+    ["7–8", 7, 8.5],
+    ["5–6", 5, 6.5],
+    ["3–4", 3, 4.5],
+    ["1–2", 0.5, 2.5],
+  ];
+  const rated = items.filter((m) => typeof m.myRating === "number");
+  const bucketMax = Math.max(
+    ...buckets.map(
+      ([, lo, hi]) => rated.filter((m) => m.myRating >= lo && m.myRating <= hi).length,
+    ),
+    1,
+  );
+  section(
+    t("statRatings"),
+    buckets.map(([lbl, lo, hi]) =>
+      bar(
+        `★ ${lbl}`,
+        rated.filter((m) => m.myRating >= lo && m.myRating <= hi).length,
+        bucketMax,
+      ),
+    ),
+  );
+}
+
+// Udostępnianie profilu: kopiuje deep-link do własnego profilu (tryb read-only u odbiorcy).
+async function copyProfileLink() {
+  if (!me) return;
+  const url = `${location.origin}/?profile=${me.id}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    toast(t("shareCopied"));
+  } catch {
+    // clipboard bywa blokowany (brak HTTPS/uprawnień) — pokaż link do ręcznego skopiowania.
+    prompt(t("shareCopied"), url);
+  }
+}
+
 // Wyniki wyszukiwania vs przeglądanie (rekomendacje/profil/katalog).
 function showResults() {
   $("searchResults").classList.remove("hidden");
@@ -2815,14 +3048,6 @@ function showBrowse() {
   if (me) loadTasteRecommendations();
 }
 
-const SEARCH_SRC = {
-  film: "TMDB",
-  book: "Open Library",
-  manga: "AniList",
-  anime: "AniList",
-  music: "iTunes",
-  game: "RAWG",
-};
 async function runSearch(q) {
   $("searchTitle").textContent = t("results");
   const grid = $("searchGrid");
@@ -4259,6 +4484,8 @@ function renderProfileData(data, readOnly) {
   $("msgProfileBtn").classList.toggle("hidden", !(readOnly && data.mutualFriend));
   // „Zablokuj" tylko na cudzym profilu (stan ustawia setBlockBtn po pobraniu blokad).
   $("blockProfileBtn").classList.toggle("hidden", !readOnly);
+  // „Kopiuj link" — tylko na własnym profilu (udostępniasz swój, nie cudzy).
+  $("shareProfileBtn").classList.toggle("hidden", readOnly);
 
   // Liczniki obserwacji pod imieniem — KLIKALNE: pokazują listę osób.
   const fo = data.followersCount ?? 0;
@@ -5414,6 +5641,14 @@ async function showApp() {
     loadUpcoming(),
     loadCatalog(),
   ]);
+  // Wejście z linku „Kopiuj link do profilu" („/?profile=12") — otwórz od razu ten
+  // profil (własny lub cudzy, read-only). Adres czyścimy, by odświeżenie nie wracało tu.
+  const pid = Number(new URLSearchParams(location.search).get("profile"));
+  if (pid) {
+    history.replaceState(null, "", location.pathname);
+    if (pid === me.id) openProfile();
+    else openUserProfile(pid);
+  }
 }
 
 // Wejście na własny profil było zwykłym napisem „Cześć, X" — nie wyglądało na
@@ -5607,6 +5842,9 @@ async function init() {
     catalogSort = e.target.value;
     renderCatalog();
   });
+  $("surpriseBtn").addEventListener("click", surpriseMe);
+  $("statsBtn").addEventListener("click", toggleStats);
+  $("shareProfileBtn").addEventListener("click", copyProfileLink);
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", openProfile);
   $("topBack").addEventListener("click", () => {
