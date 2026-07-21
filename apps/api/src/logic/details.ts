@@ -11,6 +11,9 @@ import {
   tmdbTrailer,
   tmdbTvDescription,
   tmdbTvTrailer,
+  tmdbTvWatchProviders,
+  tmdbWatchProviders,
+  type WatchInfo,
 } from "./tmdb.js";
 
 export async function getDescription(type: string, externalId: string): Promise<string> {
@@ -51,4 +54,18 @@ export async function getTrailer(
           ? await tmdbTvTrailer(externalId)
           : null;
   return url ? { url, kind: "youtube" } : null;
+}
+
+/**
+ * „Gdzie obejrzeć" — na razie tylko film i serial (TMDB watch/providers, region PL).
+ * Pozostałe rodzaje nie mają takiego źródła → null (front chowa sekcję).
+ */
+export function getWatchProviders(
+  type: string,
+  externalId: string,
+): Promise<WatchInfo | null> {
+  const t = type.toLowerCase();
+  if (t === "film") return tmdbWatchProviders(externalId);
+  if (t === "serial") return tmdbTvWatchProviders(externalId);
+  return Promise.resolve(null);
 }

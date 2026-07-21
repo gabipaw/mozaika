@@ -10,6 +10,7 @@ import { type ExternalMedia, parseReleaseDate, upsertExternalMedia } from "./med
 
 const TMDB = "https://api.themoviedb.org/3";
 const IMG = "https://image.tmdb.org/t/p/w500";
+const LOGO = "https://image.tmdb.org/t/p/w92"; // małe logotypy serwisów (gdzie obejrzeć)
 
 function apiKey(): string {
   const key = process.env.TMDB_API_KEY;
@@ -406,3 +407,54 @@ export const tmdbDescription = (externalId: string) =>
   tmdbDescriptionKind("movie", externalId);
 export const tmdbTvDescription = (externalId: string) =>
   tmdbDescriptionKind("tv", externalId);
+
+export interface WatchProvider {
+  name: string;
+  logoUrl: string | null;
+}
+export interface WatchInfo {
+  link: string | null; // strona JustWatch (agregator) dla tego tytułu
+  flatrate: WatchProvider[]; // serwisy w abonamencie (streaming) — to interesuje najbardziej
+}
+
+/**
+ * „Gdzie obejrzeć" (TMDB watch/providers) dla regionu PL. Zwraca serwisy w abonamencie
+ * (flatrate); null, gdy brak danych dla Polski. Endpoint nie jest językowy, tylko
+ * regionalny — klucz `results.PL` decyduje.
+ */
+export async function tmdbWatchProvidersKind(
+  kind: TmdbKind,
+  externalId: string,
+): Promise<WatchInfo | null> {
+  const id = externalId.trim();
+  if (!/^\d+$/.test(id)) return null;
+  const res = await fetch(`${TMDB}/${kind}/${id}/watch/providers?api_key=${apiKey()}`);
+  if (!res.ok) return null;
+  const data = (await res.json()) as {
+    results?: Record<
+      string,
+      {
+        link?: string;
+        flatrate?: {
+          provider_name: string;
+          logo_path?: string | null;
+          display_priority?: number;
+        }[];
+      }
+    >;
+  };
+  const pl = data.results?.PL;
+  const flatrate = (pl?.flatrate ?? [])
+    .slice()
+    .sort((a, b) => (a.display_priority ?? 99) - (b.display_priority ?? 99))
+    .map((p) => ({
+      name: p.provider_name,
+      logoUrl: p.logo_path ? `${LOGO}${p.logo_path}` : null,
+    }));
+  if (!flatrate.length) return null;
+  return { link: pl?.link ?? null, flatrate };
+}
+export const tmdbWatchProviders = (externalId: string) =>
+  tmdbWatchProvidersKind("movie", externalId);
+export const tmdbTvWatchProviders = (externalId: string) =>
+  tmdbWatchProvidersKind("tv", externalId);

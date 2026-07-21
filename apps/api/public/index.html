@@ -271,6 +271,15 @@
               <div id="detailGenres" class="detail-genres"></div>
               <p id="detailDesc" class="detail-desc"></p>
 
+              <!-- „Gdzie obejrzeć" — serwisy streamingowe (TMDB, region PL). Ukryte,
+                   dopóki nie ma danych (tylko film/serial). -->
+              <div id="detailProviders" class="detail-providers hidden">
+                <h3 class="detail-providers-h" data-i18n="whereToWatch">
+                  Gdzie obejrzeć
+                </h3>
+                <div class="provider-logos"></div>
+              </div>
+
               <!-- Zwiastun. Ukryty, dopóki nie wiadomo, że jakiś jest.
                    Film i anime = osadzenie YouTube (iframe), gry = plik wideo z RAWG
                    (mp4, nie da się go wsadzić w iframe) — stąd dwa elementy. -->

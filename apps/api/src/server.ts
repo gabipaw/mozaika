@@ -32,7 +32,7 @@ import {
   deleteAccount,
 } from "./logic/account.js";
 import { addBookFromOpenLibrary, searchBooks } from "./logic/books.js";
-import { getDescription, getTrailer } from "./logic/details.js";
+import { getDescription, getTrailer, getWatchProviders } from "./logic/details.js";
 import { addGameFromRawg, searchGames } from "./logic/games.js";
 import { addFromAniList, searchAniList } from "./logic/anilist.js";
 import { addMusicFromItunes, searchMusic } from "./logic/music.js";
@@ -812,10 +812,11 @@ api.get("/details", async (c) => {
   // wiec rodzaj musi trafic do zapytania.
   const niski = type.toLowerCase();
   const tmdbKind = niski === "film" ? "movie" : niski === "serial" ? "tv" : null;
-  const [description, trailer, titles] = await Promise.all([
+  const [description, trailer, titles, watchProviders] = await Promise.all([
     getDescription(type, externalId),
     getTrailer(type, externalId).catch(() => null),
     tmdbKind ? tmdbTitles([externalId], currentLang(), tmdbKind) : null,
+    getWatchProviders(type, externalId).catch(() => null),
   ]);
   // trailerKind mówi frontowi, czym to odtworzyć: "youtube" (iframe) czy "video" (mp4 z RAWG).
   return c.json({
@@ -823,6 +824,7 @@ api.get("/details", async (c) => {
     description,
     trailerUrl: trailer?.url ?? null,
     trailerKind: trailer?.kind ?? null,
+    watchProviders, // { link, flatrate:[{name,logoUrl}] } | null (tylko film/serial, region PL)
   });
 });
 

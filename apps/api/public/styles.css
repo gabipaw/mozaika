@@ -564,6 +564,37 @@ h2 {
   font-size: 1rem;
 }
 
+/* „Gdzie obejrzeć" — nagłówek + rząd logotypów serwisów streamingowych. */
+.detail-providers {
+  margin: 12px 0;
+}
+.detail-providers-h {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.provider-logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.provider-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+.provider-name {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
 /* Pełna szerokość kolumny z opisem — zwiastun ma sięgać tak daleko jak tekst. */
 .trailer-frame {
   position: relative;

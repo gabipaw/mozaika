@@ -183,6 +183,7 @@ const I18N = {
     sortRelevance: "Trafność",
     ratingAny: "Ocena: dowolna",
     yearAny: "Rok: dowolny",
+    whereToWatch: "Gdzie obejrzeć",
     notifPremiere: "jest już dostępne — masz to na liście do obejrzenia",
     notifComment: "skomentował(-a) Twoją recenzję",
     notifReply: "odpowiedział(-a) na Twój komentarz",
@@ -485,6 +486,7 @@ const I18N = {
     sortRelevance: "Relevance",
     ratingAny: "Rating: any",
     yearAny: "Year: any",
+    whereToWatch: "Where to watch",
     notifPremiere: "is out now — it's on your watchlist",
     notifComment: "commented on your review",
     notifReply: "replied to your comment",
@@ -789,6 +791,7 @@ const I18N = {
     sortRelevance: "Relevanz",
     ratingAny: "Bewertung: alle",
     yearAny: "Jahr: alle",
+    whereToWatch: "Wo streamen",
     notifPremiere: "ist jetzt verfügbar — steht auf deiner Merkliste",
     notifComment: "hat deine Rezension kommentiert",
     notifReply: "hat auf deinen Kommentar geantwortet",
@@ -1085,6 +1088,7 @@ const I18N = {
     sortRelevance: "Relevancia",
     ratingAny: "Nota: cualquiera",
     yearAny: "Año: cualquiera",
+    whereToWatch: "Dónde ver",
     notifPremiere: "ya está disponible — lo tienes en tu lista",
     notifComment: "comentó tu reseña",
     notifReply: "respondió a tu comentario",
@@ -1382,6 +1386,7 @@ const I18N = {
     sortRelevance: "Relevância",
     ratingAny: "Nota: qualquer",
     yearAny: "Ano: qualquer",
+    whereToWatch: "Onde ver",
     notifPremiere: "já está disponível — tens na tua lista",
     notifComment: "comentou a tua crítica",
     notifReply: "respondeu ao teu comentário",
@@ -1676,6 +1681,7 @@ const I18N = {
     sortRelevance: "相关度",
     ratingAny: "评分：全部",
     yearAny: "年份：全部",
+    whereToWatch: "在哪观看",
     notifPremiere: "已经上线——在你的想看清单里",
     notifComment: "评论了你的评论",
     notifReply: "回复了你的评论",
@@ -1965,6 +1971,7 @@ const I18N = {
     sortRelevance: "関連度",
     ratingAny: "評価：すべて",
     yearAny: "年：すべて",
+    whereToWatch: "配信サービス",
     notifPremiere: "が公開されました — あなたのリストにあります",
     notifComment: "があなたのレビューにコメントしました",
     notifReply: "があなたのコメントに返信しました",
@@ -5309,8 +5316,39 @@ function buildStars(container, label) {
  * języka trzeba je pobrać na nowo (wracają z API przetłumaczone), a openDetail przy
  * okazji ustawia nawigację — wołanie go ponownie gubiłoby powrót do wyników wyszukiwania.
  */
+// Rysuje „Gdzie obejrzeć" — logotypy serwisów streamingowych (film/serial, region PL).
+// Chowa sekcję, gdy brak danych (inne rodzaje, brak dostępności w Polsce).
+function renderWatchProviders(watch) {
+  const box = $("detailProviders");
+  const logos = box.querySelector(".provider-logos");
+  logos.innerHTML = "";
+  const list = watch?.flatrate ?? [];
+  if (!list.length) {
+    box.classList.add("hidden");
+    return;
+  }
+  for (const p of list) {
+    if (p.logoUrl) {
+      const img = document.createElement("img");
+      img.src = p.logoUrl;
+      img.alt = p.name;
+      img.title = p.name;
+      img.className = "provider-logo";
+      img.loading = "lazy";
+      logos.append(img);
+    } else {
+      const s = document.createElement("span");
+      s.className = "provider-name";
+      s.textContent = p.name;
+      logos.append(s);
+    }
+  }
+  box.classList.remove("hidden");
+}
+
 function loadDetailTexts() {
   const item = detailCtx;
+  renderWatchProviders(null); // schowaj z poprzedniego tytułu, zanim przyjdą nowe dane
   if (!item?.type || !item?.externalId) {
     $("detailDesc").textContent = t("noDesc");
     return;
@@ -5328,6 +5366,7 @@ function loadDetailTexts() {
         $("detailTitle").textContent = d.title;
       }
       showTrailer(d.trailerUrl, d.trailerKind);
+      renderWatchProviders(d.watchProviders);
     })
     .catch(() => {
       $("detailDesc").textContent = t("noDesc");
