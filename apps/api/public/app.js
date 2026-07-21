@@ -201,28 +201,24 @@ const I18N = {
     confirmDeleteList: "Usunąć listę „{name}”?",
     newListPrompt: "Nazwa nowej listy:",
     achievements: "🏆 Osiągnięcia",
-    achDebut: "Debiut",
-    achCollector: "Kolekcjoner",
-    achVeteran: "Weteran",
-    achLegend: "Legenda",
-    achCinephile: "Kinoman",
-    achBinger: "Serialomaniak",
-    achBookworm: "Mól książkowy",
-    achGamer: "Gracz",
-    achOtaku: "Otaku",
-    achMeloman: "Meloman",
-    achCritic: "Krytyk",
-    achSocial: "Towarzyski",
-    achDebutDesc: "Oceń swój pierwszy tytuł",
-    achCountDesc: "Oceń {n} tytułów",
-    achCinephileDesc: "Oceń {n} filmów",
-    achBingerDesc: "Oceń {n} seriali",
-    achBookwormDesc: "Oceń {n} książek",
-    achGamerDesc: "Oceń {n} gier",
-    achOtakuDesc: "Oceń {n} anime lub mangi",
-    achMelomanDesc: "Oceń {n} albumów",
-    achCriticDesc: "Napisz {n} recenzji z tekstem",
-    achSocialDesc: "Zdobądź {n} znajomych",
+    achLblFilm: "Filmy",
+    achLblSerial: "Seriale",
+    achLblBook: "Książki",
+    achLblGame: "Gry",
+    achLblAnime: "Anime",
+    achLblManga: "Manga",
+    achLblMusic: "Albumy",
+    achReqTotal: "Oceń {n} tytułów",
+    achReqRate: "Oceń {n} × {what}",
+    achReqText: "Napisz {n} recenzji z tekstem",
+    achReqPerfect: "Wystaw {n} ocen 10/10",
+    achReqFav: "Przypnij {n} do TOP 4",
+    achReqFollowers: "Zdobądź {n} obserwujących",
+    achReqFollowing: "Obserwuj {n} osób",
+    achReqGenres: "Poznaj {n} gatunków",
+    achReqDecades: "Oceń tytuły z {n} dekad",
+    achReqHarsh: "Wystaw {n} ocen ≤ 3",
+    achReqLists: "Utwórz {n} list",
     notifPremiere: "jest już dostępne — masz to na liście do obejrzenia",
     notifComment: "skomentował(-a) Twoją recenzję",
     notifReply: "odpowiedział(-a) na Twój komentarz",
@@ -543,28 +539,24 @@ const I18N = {
     confirmDeleteList: "Delete list “{name}”?",
     newListPrompt: "New list name:",
     achievements: "🏆 Achievements",
-    achDebut: "Debut",
-    achCollector: "Collector",
-    achVeteran: "Veteran",
-    achLegend: "Legend",
-    achCinephile: "Cinephile",
-    achBinger: "Binger",
-    achBookworm: "Bookworm",
-    achGamer: "Gamer",
-    achOtaku: "Otaku",
-    achMeloman: "Audiophile",
-    achCritic: "Critic",
-    achSocial: "Social",
-    achDebutDesc: "Rate your first title",
-    achCountDesc: "Rate {n} titles",
-    achCinephileDesc: "Rate {n} movies",
-    achBingerDesc: "Rate {n} TV shows",
-    achBookwormDesc: "Rate {n} books",
-    achGamerDesc: "Rate {n} games",
-    achOtakuDesc: "Rate {n} anime or manga",
-    achMelomanDesc: "Rate {n} albums",
-    achCriticDesc: "Write {n} reviews with text",
-    achSocialDesc: "Get {n} friends",
+    achLblFilm: "Films",
+    achLblSerial: "TV shows",
+    achLblBook: "Books",
+    achLblGame: "Games",
+    achLblAnime: "Anime",
+    achLblManga: "Manga",
+    achLblMusic: "Albums",
+    achReqTotal: "Rate {n} titles",
+    achReqRate: "Rate {n} × {what}",
+    achReqText: "Write {n} reviews with text",
+    achReqPerfect: "Give {n} ratings of 10/10",
+    achReqFav: "Pin {n} to TOP 4",
+    achReqFollowers: "Get {n} followers",
+    achReqFollowing: "Follow {n} people",
+    achReqGenres: "Explore {n} genres",
+    achReqDecades: "Rate titles from {n} decades",
+    achReqHarsh: "Give {n} ratings ≤ 3",
+    achReqLists: "Create {n} lists",
     notifPremiere: "is out now — it's on your watchlist",
     notifComment: "commented on your review",
     notifReply: "replied to your comment",
@@ -887,28 +879,24 @@ const I18N = {
     confirmDeleteList: "Liste „{name}” löschen?",
     newListPrompt: "Name der neuen Liste:",
     achievements: "🏆 Erfolge",
-    achDebut: "Debüt",
-    achCollector: "Sammler",
-    achVeteran: "Veteran",
-    achLegend: "Legende",
-    achCinephile: "Cineast",
-    achBinger: "Serienjunkie",
-    achBookworm: "Leseratte",
-    achGamer: "Zocker",
-    achOtaku: "Otaku",
-    achMeloman: "Audiophiler",
-    achCritic: "Kritiker",
-    achSocial: "Gesellig",
-    achDebutDesc: "Bewerte deinen ersten Titel",
-    achCountDesc: "Bewerte {n} Titel",
-    achCinephileDesc: "Bewerte {n} Filme",
-    achBingerDesc: "Bewerte {n} Serien",
-    achBookwormDesc: "Bewerte {n} Bücher",
-    achGamerDesc: "Bewerte {n} Spiele",
-    achOtakuDesc: "Bewerte {n} Anime oder Manga",
-    achMelomanDesc: "Bewerte {n} Alben",
-    achCriticDesc: "Schreibe {n} Rezensionen mit Text",
-    achSocialDesc: "Finde {n} Freunde",
+    achLblFilm: "Filme",
+    achLblSerial: "Serien",
+    achLblBook: "Bücher",
+    achLblGame: "Spiele",
+    achLblAnime: "Anime",
+    achLblManga: "Manga",
+    achLblMusic: "Alben",
+    achReqTotal: "Bewerte {n} Titel",
+    achReqRate: "Bewerte {n} × {what}",
+    achReqText: "Schreibe {n} Rezensionen mit Text",
+    achReqPerfect: "Vergib {n} Bewertungen mit 10/10",
+    achReqFav: "Hefte {n} an die TOP 4",
+    achReqFollowers: "Erhalte {n} Follower",
+    achReqFollowing: "Folge {n} Personen",
+    achReqGenres: "Entdecke {n} Genres",
+    achReqDecades: "Bewerte Titel aus {n} Jahrzehnten",
+    achReqHarsh: "Vergib {n} Bewertungen ≤ 3",
+    achReqLists: "Erstelle {n} Listen",
     notifPremiere: "ist jetzt verfügbar — steht auf deiner Merkliste",
     notifComment: "hat deine Rezension kommentiert",
     notifReply: "hat auf deinen Kommentar geantwortet",
@@ -1223,28 +1211,24 @@ const I18N = {
     confirmDeleteList: "¿Eliminar la lista «{name}»?",
     newListPrompt: "Nombre de la nueva lista:",
     achievements: "🏆 Logros",
-    achDebut: "Debut",
-    achCollector: "Coleccionista",
-    achVeteran: "Veterano",
-    achLegend: "Leyenda",
-    achCinephile: "Cinéfilo",
-    achBinger: "Seriéfilo",
-    achBookworm: "Ratón de biblioteca",
-    achGamer: "Jugador",
-    achOtaku: "Otaku",
-    achMeloman: "Melómano",
-    achCritic: "Crítico",
-    achSocial: "Sociable",
-    achDebutDesc: "Puntúa tu primer título",
-    achCountDesc: "Puntúa {n} títulos",
-    achCinephileDesc: "Puntúa {n} películas",
-    achBingerDesc: "Puntúa {n} series",
-    achBookwormDesc: "Puntúa {n} libros",
-    achGamerDesc: "Puntúa {n} juegos",
-    achOtakuDesc: "Puntúa {n} anime o manga",
-    achMelomanDesc: "Puntúa {n} álbumes",
-    achCriticDesc: "Escribe {n} reseñas con texto",
-    achSocialDesc: "Consigue {n} amigos",
+    achLblFilm: "Películas",
+    achLblSerial: "Series",
+    achLblBook: "Libros",
+    achLblGame: "Juegos",
+    achLblAnime: "Anime",
+    achLblManga: "Manga",
+    achLblMusic: "Álbumes",
+    achReqTotal: "Puntúa {n} títulos",
+    achReqRate: "Puntúa {n} × {what}",
+    achReqText: "Escribe {n} reseñas con texto",
+    achReqPerfect: "Da {n} notas de 10/10",
+    achReqFav: "Fija {n} en el TOP 4",
+    achReqFollowers: "Consigue {n} seguidores",
+    achReqFollowing: "Sigue a {n} personas",
+    achReqGenres: "Explora {n} géneros",
+    achReqDecades: "Puntúa títulos de {n} décadas",
+    achReqHarsh: "Da {n} notas ≤ 3",
+    achReqLists: "Crea {n} listas",
     notifPremiere: "ya está disponible — lo tienes en tu lista",
     notifComment: "comentó tu reseña",
     notifReply: "respondió a tu comentario",
@@ -1560,28 +1544,24 @@ const I18N = {
     confirmDeleteList: "Eliminar a lista «{name}»?",
     newListPrompt: "Nome da nova lista:",
     achievements: "🏆 Conquistas",
-    achDebut: "Estreia",
-    achCollector: "Colecionador",
-    achVeteran: "Veterano",
-    achLegend: "Lenda",
-    achCinephile: "Cinéfilo",
-    achBinger: "Maratonista",
-    achBookworm: "Rato de biblioteca",
-    achGamer: "Jogador",
-    achOtaku: "Otaku",
-    achMeloman: "Melómano",
-    achCritic: "Crítico",
-    achSocial: "Sociável",
-    achDebutDesc: "Avalia o teu primeiro título",
-    achCountDesc: "Avalia {n} títulos",
-    achCinephileDesc: "Avalia {n} filmes",
-    achBingerDesc: "Avalia {n} séries",
-    achBookwormDesc: "Avalia {n} livros",
-    achGamerDesc: "Avalia {n} jogos",
-    achOtakuDesc: "Avalia {n} anime ou manga",
-    achMelomanDesc: "Avalia {n} álbuns",
-    achCriticDesc: "Escreve {n} críticas com texto",
-    achSocialDesc: "Consegue {n} amigos",
+    achLblFilm: "Filmes",
+    achLblSerial: "Séries",
+    achLblBook: "Livros",
+    achLblGame: "Jogos",
+    achLblAnime: "Anime",
+    achLblManga: "Manga",
+    achLblMusic: "Álbuns",
+    achReqTotal: "Avalia {n} títulos",
+    achReqRate: "Avalia {n} × {what}",
+    achReqText: "Escreve {n} críticas com texto",
+    achReqPerfect: "Dá {n} notas de 10/10",
+    achReqFav: "Fixa {n} no TOP 4",
+    achReqFollowers: "Consegue {n} seguidores",
+    achReqFollowing: "Segue {n} pessoas",
+    achReqGenres: "Explora {n} géneros",
+    achReqDecades: "Avalia títulos de {n} décadas",
+    achReqHarsh: "Dá {n} notas ≤ 3",
+    achReqLists: "Cria {n} listas",
     notifPremiere: "já está disponível — tens na tua lista",
     notifComment: "comentou a tua crítica",
     notifReply: "respondeu ao teu comentário",
@@ -1894,28 +1874,24 @@ const I18N = {
     confirmDeleteList: "删除清单“{name}”？",
     newListPrompt: "新清单名称：",
     achievements: "🏆 成就",
-    achDebut: "初评",
-    achCollector: "收藏家",
-    achVeteran: "老手",
-    achLegend: "传奇",
-    achCinephile: "影迷",
-    achBinger: "剧迷",
-    achBookworm: "书虫",
-    achGamer: "玩家",
-    achOtaku: "御宅族",
-    achMeloman: "乐迷",
-    achCritic: "评论家",
-    achSocial: "社交达人",
-    achDebutDesc: "评价你的第一部作品",
-    achCountDesc: "评价 {n} 部作品",
-    achCinephileDesc: "评价 {n} 部电影",
-    achBingerDesc: "评价 {n} 部剧集",
-    achBookwormDesc: "评价 {n} 本书",
-    achGamerDesc: "评价 {n} 款游戏",
-    achOtakuDesc: "评价 {n} 部动画或漫画",
-    achMelomanDesc: "评价 {n} 张专辑",
-    achCriticDesc: "写 {n} 条带文字的评论",
-    achSocialDesc: "结识 {n} 位好友",
+    achLblFilm: "电影",
+    achLblSerial: "剧集",
+    achLblBook: "图书",
+    achLblGame: "游戏",
+    achLblAnime: "动画",
+    achLblManga: "漫画",
+    achLblMusic: "专辑",
+    achReqTotal: "评价 {n} 部作品",
+    achReqRate: "评价 {n} 部{what}",
+    achReqText: "写 {n} 条带文字的评论",
+    achReqPerfect: "打出 {n} 个 10/10",
+    achReqFav: "置顶 {n} 个到 TOP 4",
+    achReqFollowers: "获得 {n} 位粉丝",
+    achReqFollowing: "关注 {n} 个人",
+    achReqGenres: "探索 {n} 种类型",
+    achReqDecades: "评价 {n} 个年代的作品",
+    achReqHarsh: "打出 {n} 个 ≤ 3 的评分",
+    achReqLists: "创建 {n} 个清单",
     notifPremiere: "已经上线——在你的想看清单里",
     notifComment: "评论了你的评论",
     notifReply: "回复了你的评论",
@@ -2223,28 +2199,24 @@ const I18N = {
     confirmDeleteList: "リスト「{name}」を削除しますか？",
     newListPrompt: "新しいリスト名：",
     achievements: "🏆 実績",
-    achDebut: "デビュー",
-    achCollector: "コレクター",
-    achVeteran: "ベテラン",
-    achLegend: "レジェンド",
-    achCinephile: "映画通",
-    achBinger: "ドラマ狂",
-    achBookworm: "本の虫",
-    achGamer: "ゲーマー",
-    achOtaku: "オタク",
-    achMeloman: "音楽通",
-    achCritic: "評論家",
-    achSocial: "社交家",
-    achDebutDesc: "最初の作品を評価する",
-    achCountDesc: "{n} 作品を評価する",
-    achCinephileDesc: "映画を {n} 本評価する",
-    achBingerDesc: "ドラマを {n} 本評価する",
-    achBookwormDesc: "書籍を {n} 冊評価する",
-    achGamerDesc: "ゲームを {n} 本評価する",
-    achOtakuDesc: "アニメまたはマンガを {n} 本評価する",
-    achMelomanDesc: "アルバムを {n} 枚評価する",
-    achCriticDesc: "本文付きレビューを {n} 件書く",
-    achSocialDesc: "友達を {n} 人つくる",
+    achLblFilm: "映画",
+    achLblSerial: "ドラマ",
+    achLblBook: "書籍",
+    achLblGame: "ゲーム",
+    achLblAnime: "アニメ",
+    achLblManga: "マンガ",
+    achLblMusic: "アルバム",
+    achReqTotal: "{n} 作品を評価する",
+    achReqRate: "{what}を {n} 本評価する",
+    achReqText: "本文付きレビューを {n} 件書く",
+    achReqPerfect: "10/10 を {n} 回付ける",
+    achReqFav: "TOP 4 に {n} 件ピン留めする",
+    achReqFollowers: "フォロワーを {n} 人獲得する",
+    achReqFollowing: "{n} 人をフォローする",
+    achReqGenres: "{n} ジャンルを開拓する",
+    achReqDecades: "{n} 年代の作品を評価する",
+    achReqHarsh: "3 以下の評価を {n} 回付ける",
+    achReqLists: "{n} 個のリストを作成する",
     notifPremiere: "が公開されました — あなたのリストにあります",
     notifComment: "があなたのレビューにコメントしました",
     notifReply: "があなたのコメントに返信しました",
@@ -4114,127 +4086,127 @@ async function createListFromPicker() {
   }
 }
 
-// --- Osiągnięcia (odznaki) — liczone z ocen/znajomych, bez bazy. Widoczne na profilu. ---
-// goal = próg; cur(stats) = aktualny postęp. Zdobyte, gdy cur >= goal.
-const ACHIEVEMENTS = [
-  { icon: "🎬", key: "achDebut", desc: "achDebutDesc", goal: 1, cur: (s) => s.total },
-  {
-    icon: "📚",
-    key: "achCollector",
-    desc: "achCountDesc",
-    goal: 10,
-    cur: (s) => s.total,
-  },
-  { icon: "🏆", key: "achVeteran", desc: "achCountDesc", goal: 50, cur: (s) => s.total },
-  { icon: "👑", key: "achLegend", desc: "achCountDesc", goal: 100, cur: (s) => s.total },
-  {
-    icon: "🍿",
-    key: "achCinephile",
-    desc: "achCinephileDesc",
-    goal: 25,
-    cur: (s) => s.byType.FILM ?? 0,
-  },
-  {
-    icon: "📺",
-    key: "achBinger",
-    desc: "achBingerDesc",
-    goal: 25,
-    cur: (s) => s.byType.SERIAL ?? 0,
-  },
-  {
-    icon: "📖",
-    key: "achBookworm",
-    desc: "achBookwormDesc",
-    goal: 25,
-    cur: (s) => s.byType.KSIAZKA ?? 0,
-  },
-  {
-    icon: "🎮",
-    key: "achGamer",
-    desc: "achGamerDesc",
-    goal: 25,
-    cur: (s) => s.byType.GRA ?? 0,
-  },
-  {
-    icon: "🌸",
-    key: "achOtaku",
-    desc: "achOtakuDesc",
-    goal: 25,
-    cur: (s) => (s.byType.ANIME ?? 0) + (s.byType.MANGA ?? 0),
-  },
-  {
-    icon: "🎵",
-    key: "achMeloman",
-    desc: "achMelomanDesc",
-    goal: 25,
-    cur: (s) => s.byType.MUZYKA ?? 0,
-  },
-  {
-    icon: "✍️",
-    key: "achCritic",
-    desc: "achCriticDesc",
-    goal: 10,
-    cur: (s) => s.withText,
-  },
-  {
-    icon: "🤝",
-    key: "achSocial",
-    desc: "achSocialDesc",
-    goal: 5,
-    cur: (s) => Math.max(s.followers, s.following),
-  },
+// --- Osiągnięcia (~100 odznak) — liczone z ocen/znajomych/gatunków, bez bazy. ---
+// Generowane z kategorii × progów (tiers). Zdobyte, gdy cur(stats) >= goal.
+// Kategorie typu mediów mają `label` (podmiot do „{n} × {co}"); reszta wpisuje go w opis.
+// prettier-ignore
+const ACH_CATEGORIES = [
+  { icon: "🏅", desc: "achReqTotal", cur: (s) => s.total, tiers: [1, 5, 10, 20, 35, 50, 75, 100, 150, 200, 300, 500, 750, 1000] },
+  { icon: "🍿", label: "achLblFilm", desc: "achReqRate", cur: (s) => s.byType.FILM ?? 0, tiers: [1, 5, 10, 25, 50, 100, 200] },
+  { icon: "📺", label: "achLblSerial", desc: "achReqRate", cur: (s) => s.byType.SERIAL ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
+  { icon: "📖", label: "achLblBook", desc: "achReqRate", cur: (s) => s.byType.KSIAZKA ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
+  { icon: "🎮", label: "achLblGame", desc: "achReqRate", cur: (s) => s.byType.GRA ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
+  { icon: "🌸", label: "achLblAnime", desc: "achReqRate", cur: (s) => s.byType.ANIME ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
+  { icon: "📗", label: "achLblManga", desc: "achReqRate", cur: (s) => s.byType.MANGA ?? 0, tiers: [1, 5, 10, 25, 50] },
+  { icon: "🎵", label: "achLblMusic", desc: "achReqRate", cur: (s) => s.byType.MUZYKA ?? 0, tiers: [1, 5, 10, 25, 50] },
+  { icon: "✍️", desc: "achReqText", cur: (s) => s.withText, tiers: [1, 5, 10, 25, 50, 100] },
+  { icon: "⭐", desc: "achReqPerfect", cur: (s) => s.perfect, tiers: [1, 5, 10, 25, 50] },
+  { icon: "📌", desc: "achReqFav", cur: (s) => s.favorites, tiers: [1, 4, 8, 12, 16, 20] },
+  { icon: "🤝", desc: "achReqFollowers", cur: (s) => s.followers, tiers: [1, 5, 10, 25, 50, 100] },
+  { icon: "👀", desc: "achReqFollowing", cur: (s) => s.following, tiers: [1, 5, 10, 25, 50] },
+  { icon: "🎭", desc: "achReqGenres", cur: (s) => s.genres, tiers: [1, 3, 5, 8, 12, 18, 25] },
+  { icon: "🕰️", desc: "achReqDecades", cur: (s) => s.decades, tiers: [1, 2, 3, 5, 7] },
+  { icon: "🧊", desc: "achReqHarsh", cur: (s) => s.harsh, tiers: [1, 5, 10, 25] },
+  { icon: "🗂️", desc: "achReqLists", cur: (s) => s.lists, tiers: [1, 3, 5, 10] },
 ];
+const ACHIEVEMENTS = ACH_CATEGORIES.flatMap((c) =>
+  c.tiers.map((goal) => ({
+    icon: c.icon,
+    label: c.label,
+    desc: c.desc,
+    goal,
+    cur: c.cur,
+  })),
+);
+
+// Opis odznaki z podstawionym progiem (i podmiotem dla kategorii typu mediów).
+function achLabel(a) {
+  return t(a.desc, { n: a.goal, what: a.label ? t(a.label) : "" });
+}
 
 function achStats(data) {
   const reviews = data.reviews ?? [];
   const byType = {};
+  const genres = new Set();
+  const decades = new Set();
   let withText = 0;
+  let perfect = 0;
+  let harsh = 0;
+  let favorites = 0;
   for (const r of reviews) {
     const ty = r.media?.type;
     if (ty) byType[ty] = (byType[ty] ?? 0) + 1;
     if (r.text) withText++;
+    if (r.rating >= 10) perfect++;
+    if (r.rating <= 3) harsh++;
+    if (r.favorite) favorites++;
+    for (const g of r.media?.genres ?? []) genres.add(g);
+    const y = r.media?.year;
+    if (y) decades.add(Math.floor(y / 10));
   }
   return {
     total: reviews.length,
     byType,
     withText,
+    perfect,
+    harsh,
+    favorites,
+    genres: genres.size,
+    decades: decades.size,
+    lists: (data.lists ?? []).length,
     followers: data.followersCount ?? 0,
     following: data.followingCount ?? 0,
   };
 }
 
+function achRow(a) {
+  const el = document.createElement("div");
+  el.className = "ach" + (a.earned ? " earned" : "");
+  const ic = document.createElement("div");
+  ic.className = "ach-ic";
+  ic.textContent = a.icon;
+  const nm = document.createElement("div");
+  nm.className = "ach-mid ach-name";
+  nm.textContent = achLabel(a);
+  const pr = document.createElement("div");
+  pr.className = "ach-prog";
+  pr.textContent = a.earned ? "✓" : `${Math.min(a.current, a.goal)}/${a.goal}`;
+  el.append(ic, nm, pr);
+  return el;
+}
+
 function renderAchievements(data) {
-  const box = $("achievements");
-  box.innerHTML = "";
   const s = achStats(data);
   const items = ACHIEVEMENTS.map((a) => {
     const current = a.cur(s);
     return { ...a, current, earned: current >= a.goal };
-  }).sort((a, b) => Number(b.earned) - Number(a.earned)); // zdobyte na górze
-  // Licznik na guziku: ile zdobytych z ilu wszystkich.
-  $("achievementsCount").textContent =
-    `${items.filter((a) => a.earned).length}/${items.length}`;
-  for (const a of items) {
-    const el = document.createElement("div");
-    el.className = "ach" + (a.earned ? " earned" : "");
-    const ic = document.createElement("div");
-    ic.className = "ach-ic";
-    ic.textContent = a.icon;
-    const mid = document.createElement("div");
-    mid.className = "ach-mid";
-    const nm = document.createElement("div");
-    nm.className = "ach-name";
-    nm.textContent = t(a.key);
-    const ds = document.createElement("div");
-    ds.className = "ach-desc";
-    ds.textContent = t(a.desc, { n: a.goal });
-    mid.append(nm, ds);
-    const pr = document.createElement("div");
-    pr.className = "ach-prog";
-    pr.textContent = a.earned ? "✓" : `${Math.min(a.current, a.goal)}/${a.goal}`;
-    el.append(ic, mid, pr);
-    box.append(el);
+  });
+  const earned = items.filter((a) => a.earned);
+  $("achievementsCount").textContent = `${earned.length}/${items.length}`;
+
+  // Podgląd na profilu: 3 najbardziej wymagające ZDOBYTE (najwyższy próg).
+  const preview = $("achievementsPreview");
+  preview.innerHTML = "";
+  const top3 = [...earned].sort((a, b) => b.goal - a.goal).slice(0, 3);
+  for (const a of top3) {
+    const chip = document.createElement("div");
+    chip.className = "ach-chip";
+    chip.title = achLabel(a);
+    chip.textContent = `${a.icon} ${a.goal}`;
+    preview.append(chip);
   }
+  preview.classList.toggle("hidden", top3.length === 0);
+
+  // Pełna lista w oknie: zdobyte (od najwyższego progu), potem niezdobyte najbliższe celu.
+  const box = $("achievements");
+  box.innerHTML = "";
+  const ordered = [
+    ...[...earned].sort((a, b) => b.goal - a.goal),
+    ...items
+      .filter((a) => !a.earned)
+      .sort((a, b) => b.current / b.goal - a.current / a.goal),
+  ];
+  for (const a of ordered) box.append(achRow(a));
 }
 
 // --- Wybór okładek w kategorii (max 4) — używa nakładki „Zobacz wszystko" ---
