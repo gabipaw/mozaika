@@ -701,24 +701,36 @@ h2 {
   font-size: 0.9rem;
 }
 
-/* Podgląd 3 zdobytych osiągnięć nad guzikiem (ikona + próg). */
+/* Podgląd 3 zdobytych osiągnięć nad guzikiem (ikona + opis). */
 .ach-preview {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
   margin: 0 0 10px;
 }
 .ach-chip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: 8px;
+  padding: 6px 10px;
   font-size: 0.8rem;
   font-weight: 600;
   background: var(--card);
   color: var(--text);
   border: 1px solid var(--accent);
-  border-radius: 999px;
+  border-radius: 10px;
+}
+.ach-chip-t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lista wszystkich osiągnięć w oknie MUSI się przewijać (jest ich ~100). */
+#achievementsOverlay .achievements {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* --- Osiągnięcia (odznaki) — lista: ikona | nazwa+opis | postęp --- */

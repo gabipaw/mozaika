@@ -4091,8 +4091,8 @@ async function createListFromPicker() {
 // Kategorie typu mediów mają `label` (podmiot do „{n} × {co}"); reszta wpisuje go w opis.
 // prettier-ignore
 const ACH_CATEGORIES = [
-  { icon: "🏅", desc: "achReqTotal", cur: (s) => s.total, tiers: [1, 5, 10, 20, 35, 50, 75, 100, 150, 200, 300, 500, 750, 1000] },
-  { icon: "🍿", label: "achLblFilm", desc: "achReqRate", cur: (s) => s.byType.FILM ?? 0, tiers: [1, 5, 10, 25, 50, 100, 200] },
+  { icon: "🏅", desc: "achReqTotal", cur: (s) => s.total, tiers: [1, 5, 10, 20, 35, 50, 75, 100, 150, 200, 300, 500] },
+  { icon: "🍿", label: "achLblFilm", desc: "achReqRate", cur: (s) => s.byType.FILM ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "📺", label: "achLblSerial", desc: "achReqRate", cur: (s) => s.byType.SERIAL ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "📖", label: "achLblBook", desc: "achReqRate", cur: (s) => s.byType.KSIAZKA ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "🎮", label: "achLblGame", desc: "achReqRate", cur: (s) => s.byType.GRA ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
@@ -4191,8 +4191,12 @@ function renderAchievements(data) {
   for (const a of top3) {
     const chip = document.createElement("div");
     chip.className = "ach-chip";
-    chip.title = achLabel(a);
-    chip.textContent = `${a.icon} ${a.goal}`;
+    const ic = document.createElement("span");
+    ic.textContent = a.icon;
+    const tx = document.createElement("span");
+    tx.className = "ach-chip-t";
+    tx.textContent = achLabel(a);
+    chip.append(ic, tx);
     preview.append(chip);
   }
   preview.classList.toggle("hidden", top3.length === 0);
