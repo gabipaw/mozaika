@@ -2155,6 +2155,7 @@ h2 {
 
 .detail-actions {
   display: flex;
+  flex-wrap: wrap; /* na telefonie 5 chipów musi się zawijać, inaczej rozpycha stronę w bok */
   gap: 10px;
   margin: 14px 0;
 }
