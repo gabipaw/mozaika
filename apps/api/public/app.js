@@ -4184,23 +4184,6 @@ function renderAchievements(data) {
   const earned = items.filter((a) => a.earned);
   $("achievementsCount").textContent = `${earned.length}/${items.length}`;
 
-  // Podgląd na profilu: 3 najbardziej wymagające ZDOBYTE (najwyższy próg).
-  const preview = $("achievementsPreview");
-  preview.innerHTML = "";
-  const top3 = [...earned].sort((a, b) => b.goal - a.goal).slice(0, 3);
-  for (const a of top3) {
-    const chip = document.createElement("div");
-    chip.className = "ach-chip";
-    const ic = document.createElement("span");
-    ic.textContent = a.icon;
-    const tx = document.createElement("span");
-    tx.className = "ach-chip-t";
-    tx.textContent = achLabel(a);
-    chip.append(ic, tx);
-    preview.append(chip);
-  }
-  preview.classList.toggle("hidden", top3.length === 0);
-
   // Pełna lista w oknie: zdobyte (od najwyższego progu), potem niezdobyte najbliższe celu.
   const box = $("achievements");
   box.innerHTML = "";
