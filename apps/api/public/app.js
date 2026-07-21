@@ -4211,6 +4211,9 @@ function renderAchievements(data) {
     const current = a.cur(s);
     return { ...a, current, earned: current >= a.goal };
   }).sort((a, b) => Number(b.earned) - Number(a.earned)); // zdobyte na górze
+  // Licznik na guziku: ile zdobytych z ilu wszystkich.
+  $("achievementsCount").textContent =
+    `${items.filter((a) => a.earned).length}/${items.length}`;
   for (const a of items) {
     const el = document.createElement("div");
     el.className = "ach" + (a.earned ? " earned" : "");
@@ -6859,6 +6862,17 @@ async function init() {
   });
   $("listPickerOverlay").addEventListener("click", (e) => {
     if (e.target === $("listPickerOverlay")) closeListPicker();
+  });
+  $("achievementsBtn").addEventListener("click", () =>
+    $("achievementsOverlay").classList.remove("hidden"),
+  );
+  $("achievementsClose").addEventListener("click", () =>
+    $("achievementsOverlay").classList.add("hidden"),
+  );
+  $("achievementsOverlay").addEventListener("click", (e) => {
+    if (e.target === $("achievementsOverlay")) {
+      $("achievementsOverlay").classList.add("hidden");
+    }
   });
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", openProfile);

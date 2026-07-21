@@ -470,8 +470,10 @@
                 <div id="tasteBody" class="taste-body"></div>
               </div>
               <div id="achievementsPanel" class="profile-portrait">
-                <h2 class="profile-h" data-i18n="achievements">🏆 Osiągnięcia</h2>
-                <div id="achievements" class="achievements"></div>
+                <button id="achievementsBtn" class="ach-open-btn" type="button">
+                  <span data-i18n="achievements">🏆 Osiągnięcia</span>
+                  <span id="achievementsCount" class="ach-count"></span>
+                </button>
               </div>
             </div>
           </div>
@@ -802,6 +804,24 @@
       </div>
 
       <!-- Nakładka „Zobacz wszystko" — pełna siatka danego typu / listy -->
+      <!-- Wszystkie osiągnięcia (otwierane guzikiem na profilu) -->
+      <div id="achievementsOverlay" class="overlay hidden">
+        <div class="overlay-card">
+          <div class="overlay-head">
+            <h2 data-i18n="achievements">🏆 Osiągnięcia</h2>
+            <button
+              id="achievementsClose"
+              class="overlay-close"
+              type="button"
+              data-i18n="close"
+            >
+              ✕ Zamknij
+            </button>
+          </div>
+          <div id="achievements" class="achievements"></div>
+        </div>
+      </div>
+
       <!-- Wybór list, do których dorzucić bieżący tytuł (z widoku szczegółów) -->
       <div id="listPickerOverlay" class="overlay hidden">
         <div class="overlay-card">

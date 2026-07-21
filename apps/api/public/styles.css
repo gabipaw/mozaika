@@ -674,6 +674,33 @@ h2 {
   font-weight: 700;
 }
 
+/* Guzik „Osiągnięcia" na profilu — otwiera okno z pełną listą. */
+.ach-open-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: border-color 0.15s;
+}
+.ach-open-btn:hover {
+  border-color: var(--accent);
+}
+.ach-count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+
 /* --- Osiągnięcia (odznaki) — lista: ikona | nazwa+opis | postęp --- */
 .achievements {
   display: flex;
