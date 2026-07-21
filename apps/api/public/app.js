@@ -174,6 +174,8 @@ const I18N = {
     notifFollowed: "zaczął(-ęła) Cię obserwować",
     notifLiked: "polubił(-a) Twoją recenzję",
     notifRated: "ocenił(-a) tytuł z Twojej listy",
+    notifNewRating: "ocenił(-a)",
+    ntNewRating: "Nowe oceny znajomych",
     notifPremiere: "jest już dostępne — masz to na liście do obejrzenia",
     notifComment: "skomentował(-a) Twoją recenzję",
     notifReply: "odpowiedział(-a) na Twój komentarz",
@@ -467,6 +469,8 @@ const I18N = {
     notifFollowed: "started following you",
     notifLiked: "liked your review",
     notifRated: "rated a title from your watchlist",
+    notifNewRating: "rated",
+    ntNewRating: "Friends' new ratings",
     notifPremiere: "is out now — it's on your watchlist",
     notifComment: "commented on your review",
     notifReply: "replied to your comment",
@@ -762,6 +766,8 @@ const I18N = {
     notifFollowed: "folgt dir jetzt",
     notifLiked: "gefällt deine Rezension",
     notifRated: "hat einen Titel von deiner Liste bewertet",
+    notifNewRating: "hat bewertet",
+    ntNewRating: "Neue Bewertungen von Freunden",
     notifPremiere: "ist jetzt verfügbar — steht auf deiner Merkliste",
     notifComment: "hat deine Rezension kommentiert",
     notifReply: "hat auf deinen Kommentar geantwortet",
@@ -1049,6 +1055,8 @@ const I18N = {
     notifFollowed: "empezó a seguirte",
     notifLiked: "le gustó tu reseña",
     notifRated: "puntuó un título de tu lista",
+    notifNewRating: "puntuó",
+    ntNewRating: "Nuevas valoraciones de amigos",
     notifPremiere: "ya está disponible — lo tienes en tu lista",
     notifComment: "comentó tu reseña",
     notifReply: "respondió a tu comentario",
@@ -1337,6 +1345,8 @@ const I18N = {
     notifFollowed: "começou a seguir-te",
     notifLiked: "gostou da tua crítica",
     notifRated: "avaliou um título da tua lista",
+    notifNewRating: "avaliou",
+    ntNewRating: "Novas avaliações de amigos",
     notifPremiere: "já está disponível — tens na tua lista",
     notifComment: "comentou a tua crítica",
     notifReply: "respondeu ao teu comentário",
@@ -1622,6 +1632,8 @@ const I18N = {
     notifFollowed: "开始关注你",
     notifLiked: "赞了你的评论",
     notifRated: "评价了你清单里的一部作品",
+    notifNewRating: "评价了",
+    ntNewRating: "好友的新评分",
     notifPremiere: "已经上线——在你的想看清单里",
     notifComment: "评论了你的评论",
     notifReply: "回复了你的评论",
@@ -1902,6 +1914,8 @@ const I18N = {
     notifFollowed: "があなたをフォローしました",
     notifLiked: "があなたのレビューにいいねしました",
     notifRated: "があなたのリストの作品を評価しました",
+    notifNewRating: "を評価しました",
+    ntNewRating: "友達の新しい評価",
     notifPremiere: "が公開されました — あなたのリストにあります",
     notifComment: "があなたのレビューにコメントしました",
     notifReply: "があなたのコメントに返信しました",
@@ -2333,6 +2347,7 @@ const NOTIF_PREF_TYPES = [
   { type: "comment", label: "ntComment" },
   { type: "reply", label: "ntReply" },
   { type: "watchlist_rated", label: "ntWatchlist" },
+  { type: "new_rating", label: "ntNewRating" },
   { type: "premiere", label: "ntPremiere" },
   { type: "message", label: "ntMessage" },
 ];
@@ -3837,6 +3852,7 @@ function updateNotifBadge() {
 function notifVerb(type) {
   if (type === "like") return t("notifLiked");
   if (type === "watchlist_rated") return t("notifRated");
+  if (type === "new_rating") return t("notifNewRating");
   if (type === "premiere") return t("notifPremiere");
   if (type === "comment") return t("notifComment");
   if (type === "reply") return t("notifReply");
@@ -3879,6 +3895,7 @@ function renderNotifList() {
       (isPremiere ||
         n.type === "like" ||
         n.type === "watchlist_rated" ||
+        n.type === "new_rating" ||
         n.type === "comment" ||
         n.type === "reply");
     const row = document.createElement("div");
@@ -5830,13 +5847,21 @@ async function showApp() {
     loadUpcoming(),
     loadCatalog(),
   ]);
-  // Wejście z linku „Kopiuj link do profilu" („/?profile=12") — otwórz od razu ten
-  // profil (własny lub cudzy, read-only). Adres czyścimy, by odświeżenie nie wracało tu.
-  const pid = Number(new URLSearchParams(location.search).get("profile"));
+  // Wejście z deep-linku: „/?profile=12" (link do profilu) lub „/?media=34" (klik w
+  // push „Nowość od znajomego" / „Premiera"). Adres czyścimy, by odświeżenie nie wracało tu.
+  const params = new URLSearchParams(location.search);
+  const pid = Number(params.get("profile"));
+  const mediaDeep = Number(params.get("media"));
+  if (pid || mediaDeep) history.replaceState(null, "", location.pathname);
   if (pid) {
-    history.replaceState(null, "", location.pathname);
     if (pid === me.id) openProfile();
     else openUserProfile(pid);
+  } else if (mediaDeep) {
+    const m = (allMedia ?? []).find((x) => x.id === mediaDeep);
+    if (m) {
+      const rev = myProfile.reviews.find((r) => r.media.id === mediaDeep);
+      openDetail(toDetail(m, m.type, m.id, rev?.rating));
+    }
   }
 }
 

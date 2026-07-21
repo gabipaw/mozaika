@@ -169,6 +169,7 @@ export async function checkPremieres(now: Date = new Date()): Promise<PremiereRu
       await sendPushToUser(it.userId, {
         title: "🍿 Premiera!",
         body: `„${m.title}" jest już dostępne — masz to na liście do obejrzenia.`,
+        url: `/?media=${it.mediaId}`,
       });
       sent++;
     }

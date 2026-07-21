@@ -3,6 +3,7 @@
  *  - "follow"          — ktoś Cię zaobserwował
  *  - "like"            — ktoś polubił Twoją recenzję
  *  - "watchlist_rated" — obserwowany ocenił tytuł z Twojej listy „do obejrzenia"
+ *  - "new_rating"      — obserwowany dodał nową ocenę (nowość od znajomego) + push
  *  - "premiere"        — tytuł z Twojej listy „do obejrzenia" właśnie wyszedł
  *  - "comment"         — ktoś skomentował Twoją recenzję
  *  - "reply"           — ktoś odpowiedział na Twój komentarz
@@ -10,6 +11,7 @@
  * frontowi); premiery dorzuca nocny przebieg crona (patrz `premieres.ts`).
  */
 import { prisma } from "../db.js";
+import { sendPushToUser } from "./push.js";
 
 /**
  * Tworzy powiadomienie (pomija, gdy odbiorca = sprawca — nie powiadamiamy siebie).
@@ -67,6 +69,55 @@ export async function notifyWatchlistWatchers(raterId: number, mediaId: number) 
   });
   await Promise.all(
     watchers.map((w) => create(w.userId, raterId, "watchlist_rated", { mediaId })),
+  );
+}
+
+/**
+ * „Nowość od znajomego": obserwowany dodał NOWĄ ocenę → wpis w apce + push dla
+ * obserwujących. Ci, którzy mają tytuł na liście „do obejrzenia", dostają dokładniejsze
+ * `watchlist_rated` (wyżej), więc ich tu pomijamy, żeby nie zdublować powiadomienia.
+ * Push szanuje wyciszenie typu „new_rating" (in-app pilnuje tego samo `create`).
+ */
+export async function notifyFollowersOfReview(
+  reviewerId: number,
+  mediaId: number,
+  rating: number,
+) {
+  const followers = await prisma.follow.findMany({
+    where: { followedId: reviewerId },
+    select: { follower: { select: { id: true, mutedNotifs: true } } },
+  });
+  if (!followers.length) return;
+
+  const ids = followers.map((f) => f.follower.id);
+  const onWatch = new Set(
+    (
+      await prisma.watchlistItem.findMany({
+        where: { mediaId, userId: { in: ids } },
+        select: { userId: true },
+      })
+    ).map((w) => w.userId),
+  );
+  const [reviewer, media] = await Promise.all([
+    prisma.user.findUnique({ where: { id: reviewerId }, select: { displayName: true } }),
+    prisma.media.findUnique({ where: { id: mediaId }, select: { title: true } }),
+  ]);
+  if (!reviewer || !media) return;
+
+  await Promise.all(
+    followers
+      .map((f) => f.follower)
+      .filter((u) => u.id !== reviewerId && !onWatch.has(u.id))
+      .map(async (u) => {
+        await create(u.id, reviewerId, "new_rating", { mediaId });
+        if (!u.mutedNotifs.includes("new_rating")) {
+          await sendPushToUser(u.id, {
+            title: "🎬 Nowość od znajomego",
+            body: `${reviewer.displayName} ocenił(a) „${media.title}" na ${rating}★`,
+            url: `/?media=${mediaId}`,
+          });
+        }
+      }),
   );
 }
 

@@ -6,7 +6,7 @@
 import { prisma } from "../db.js";
 import { censor } from "./profanity.js";
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors.js";
-import { notifyWatchlistWatchers } from "./notifications.js";
+import { notifyFollowersOfReview, notifyWatchlistWatchers } from "./notifications.js";
 
 export const MIN_RATING = 0.5;
 export const MAX_RATING = 10;
@@ -92,10 +92,14 @@ export async function addReview(input: ReviewInput) {
       text: valid.text,
     },
   });
-  // Tylko przy NOWEJ ocenie: powiadom obserwujących, którzy mają tytuł na liście.
+  // Tylko przy NOWEJ ocenie: powiadom obserwujących. Ci z tytułem na liście dostają
+  // „watchlist_rated", pozostali „nowość od znajomego" (in-app + push).
   if (!before) {
     notifyWatchlistWatchers(valid.userId, valid.mediaId).catch((e) =>
       console.error("notif watchlist nie wyszlo:", e),
+    );
+    notifyFollowersOfReview(valid.userId, valid.mediaId, valid.rating).catch((e) =>
+      console.error("notif nowosc nie wyszlo:", e),
     );
   }
   return review;
