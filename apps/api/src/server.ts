@@ -410,6 +410,82 @@ api.delete("/me/watchlist/:id", requireAuth, async (c) => {
   return c.json({ ok: true });
 });
 
+// --- Własne listy/kolekcje. Właściciela egzekwujemy zawsze przez `where: { userId }`. ---
+const MAX_LIST_NAME = 60;
+
+function cleanListName(raw: unknown): string {
+  const name = String(raw ?? "").trim();
+  if (!name) throw new ValidationError("Podaj nazwę listy.");
+  if (name.length > MAX_LIST_NAME) {
+    throw new ValidationError(`Nazwa listy może mieć najwyżej ${MAX_LIST_NAME} znaków.`);
+  }
+  return name;
+}
+
+// Utwórz nową listę.
+api.post("/me/lists", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const name = cleanListName((await c.req.json()).name);
+  const list = await prisma.list.create({ data: { userId, name } });
+  return c.json({ id: list.id, name: list.name, isPublic: list.isPublic, items: [] });
+});
+
+// Zmień nazwę / widoczność listy.
+api.patch("/me/lists/:id", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const id = intParam(c.req.param("id"), "id");
+  const body = await c.req.json();
+  const data: { name?: string; isPublic?: boolean } = {};
+  if (body.name !== undefined) data.name = cleanListName(body.name);
+  if (typeof body.isPublic === "boolean") data.isPublic = body.isPublic;
+  const res = await prisma.list.updateMany({ where: { id, userId }, data });
+  if (res.count === 0) throw new NotFoundError("Nie ma takiej listy.");
+  return c.json({ ok: true });
+});
+
+// Usuń listę (kaskadowo znikają jej pozycje).
+api.delete("/me/lists/:id", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const id = intParam(c.req.param("id"), "id");
+  await prisma.list.deleteMany({ where: { id, userId } });
+  return c.json({ ok: true });
+});
+
+// Dodaj tytuł do listy (idempotentnie — upsert po parze listId+mediaId).
+api.post("/me/lists/:id/items", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const listId = intParam(c.req.param("id"), "id");
+  const mediaId = Number((await c.req.json()).mediaId);
+  if (!Number.isInteger(mediaId) || mediaId <= 0) {
+    throw new ValidationError("Nieprawidłowy mediaId.");
+  }
+  const list = await prisma.list.findFirst({
+    where: { id: listId, userId },
+    select: { id: true },
+  });
+  if (!list) throw new NotFoundError("Nie ma takiej listy.");
+  await prisma.listItem.upsert({
+    where: { listId_mediaId: { listId, mediaId } },
+    update: {},
+    create: { listId, mediaId },
+  });
+  return c.json({ ok: true });
+});
+
+// Usuń tytuł z listy.
+api.delete("/me/lists/:id/items/:mediaId", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const listId = intParam(c.req.param("id"), "id");
+  const mediaId = intParam(c.req.param("mediaId"), "mediaId");
+  const list = await prisma.list.findFirst({
+    where: { id: listId, userId },
+    select: { id: true },
+  });
+  if (!list) throw new NotFoundError("Nie ma takiej listy.");
+  await prisma.listItem.deleteMany({ where: { listId, mediaId } });
+  return c.json({ ok: true });
+});
+
 // Lista pozostałych użytkowników (do dopasowania gustu / dodania znajomych).
 api.get("/users", async (c) => {
   const users = await prisma.user.findMany({

@@ -319,6 +319,9 @@
               <div class="detail-actions">
                 <button id="favBtn" type="button" class="chip">☆ TOP 4</button>
                 <button id="watchBtn" type="button" class="chip">＋ Do listy</button>
+                <button id="listsBtn" type="button" class="chip" data-i18n="listsChip">
+                  🗂 Listy
+                </button>
                 <button id="statusBtn" type="button" class="chip hidden">
                   ▶ W trakcie
                 </button>
@@ -405,6 +408,18 @@
                 </button>
               </h2>
               <div id="watchlist" class="poster-grid"></div>
+              <h2 class="profile-h">
+                <span id="listsHeading" data-i18n="myLists">Moje listy</span>
+                <button
+                  id="newListBtn"
+                  class="seeall hidden"
+                  type="button"
+                  data-i18n="newList"
+                >
+                  ＋ Nowa
+                </button>
+              </h2>
+              <div id="listsBox"></div>
             </div>
             <div class="profile-right">
               <div id="ratedByCat"></div>
@@ -781,6 +796,35 @@
       </div>
 
       <!-- Nakładka „Zobacz wszystko" — pełna siatka danego typu / listy -->
+      <!-- Wybór list, do których dorzucić bieżący tytuł (z widoku szczegółów) -->
+      <div id="listPickerOverlay" class="overlay hidden">
+        <div class="overlay-card">
+          <div class="overlay-head">
+            <h2 data-i18n="addToList">Dodaj do listy</h2>
+            <button
+              id="listPickerClose"
+              class="overlay-close"
+              type="button"
+              data-i18n="close"
+            >
+              ✕ Zamknij
+            </button>
+          </div>
+          <div id="listPickerBody" class="list-picker"></div>
+          <div class="list-picker-new">
+            <input
+              id="newListInput"
+              type="text"
+              maxlength="60"
+              data-i18n-ph="newListPh"
+              placeholder="Nazwa nowej listy…"
+              autocomplete="off"
+            />
+            <button id="newListCreate" type="button" data-i18n="create">Utwórz</button>
+          </div>
+        </div>
+      </div>
+
       <div id="seeAllOverlay" class="overlay hidden">
         <div class="overlay-card">
           <div class="overlay-head">

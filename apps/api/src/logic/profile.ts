@@ -32,7 +32,7 @@ export async function profilePayload(
     select: { id: true, displayName: true, avatarUrl: true, bio: true, email: withEmail },
   });
 
-  const [rows, watchlist, followersCount, followingCount] = await Promise.all([
+  const [rows, watchlist, lists, followersCount, followingCount] = await Promise.all([
     prisma.review.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
@@ -50,6 +50,20 @@ export async function profilePayload(
       where: { userId },
       orderBy: { createdAt: "desc" },
       select: { media: { select: mediaSelect } },
+    }),
+    // Własne listy: na własnym profilu wszystkie, na cudzym tylko publiczne.
+    prisma.list.findMany({
+      where: { userId, ...(viewerId === userId ? {} : { isPublic: true }) },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        isPublic: true,
+        items: {
+          orderBy: { createdAt: "desc" },
+          select: { media: { select: mediaSelect } },
+        },
+      },
     }),
     prisma.follow.count({ where: { followedId: userId } }).catch(() => 0),
     prisma.follow.count({ where: { followerId: userId } }).catch(() => 0),
@@ -82,5 +96,6 @@ export async function profilePayload(
     mutualFriend,
     reviews,
     watchlist,
+    lists,
   };
 }

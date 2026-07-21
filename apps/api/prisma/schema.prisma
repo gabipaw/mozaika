@@ -44,6 +44,7 @@ model User {
 
   reviews          Review[]
   watchlist        WatchlistItem[]
+  lists            List[] // własne listy/kolekcje tytułów
   following        Follow[]           @relation("following") // kogo ja obserwuję
   followers        Follow[]           @relation("followers") // kto obserwuje mnie
   pushSubs         PushSubscription[]
@@ -196,6 +197,7 @@ model Media {
 
   reviews       Review[]
   watchlist     WatchlistItem[]
+  listItems     ListItem[] // obecność na własnych listach użytkowników
   messages      Message[] // udostępnienia tego tytułu w czacie
   notifications Notification[]
 
@@ -262,4 +264,35 @@ model WatchlistItem {
   mediaId Int
 
   @@unique([userId, mediaId])
+}
+
+/// Własna lista/kolekcja tytułów użytkownika (np. „Najlepsze 2024"). `isPublic` decyduje,
+/// czy widać ją na profilu dla innych. Nazwy mogą się powtarzać (brak unikalności).
+model List {
+  id        Int      @id @default(autoincrement())
+  name      String
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  items ListItem[]
+
+  @@index([userId])
+}
+
+/// Pozycja na liście — powiązanie listy z tytułem. Jeden tytuł raz na listę.
+model ListItem {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  list   List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  listId Int
+
+  media   Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  mediaId Int
+
+  @@unique([listId, mediaId])
+  @@index([mediaId])
 }

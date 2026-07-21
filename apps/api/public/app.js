@@ -184,6 +184,22 @@ const I18N = {
     ratingAny: "Ocena: dowolna",
     yearAny: "Rok: dowolny",
     whereToWatch: "Gdzie obejrzeć",
+    myLists: "Moje listy",
+    listsTitle: "Listy",
+    listsEmpty: "Nie masz jeszcze list — utwórz pierwszą!",
+    listsEmptyRO: "Brak publicznych list.",
+    newList: "＋ Nowa",
+    listEmpty: "Lista jest pusta.",
+    listsChip: "🗂 Listy",
+    addToList: "Dodaj do listy",
+    noListsYet: "Nie masz jeszcze żadnej listy. Utwórz ją poniżej.",
+    newListPh: "Nazwa nowej listy…",
+    create: "Utwórz",
+    listCreated: "Lista utworzona",
+    addedToList: "Dodano do listy",
+    removedFromList: "Usunięto z listy",
+    confirmDeleteList: "Usunąć listę „{name}”?",
+    newListPrompt: "Nazwa nowej listy:",
     notifPremiere: "jest już dostępne — masz to na liście do obejrzenia",
     notifComment: "skomentował(-a) Twoją recenzję",
     notifReply: "odpowiedział(-a) na Twój komentarz",
@@ -487,6 +503,22 @@ const I18N = {
     ratingAny: "Rating: any",
     yearAny: "Year: any",
     whereToWatch: "Where to watch",
+    myLists: "My lists",
+    listsTitle: "Lists",
+    listsEmpty: "No lists yet — create your first!",
+    listsEmptyRO: "No public lists.",
+    newList: "＋ New",
+    listEmpty: "This list is empty.",
+    listsChip: "🗂 Lists",
+    addToList: "Add to list",
+    noListsYet: "You don't have any lists yet. Create one below.",
+    newListPh: "New list name…",
+    create: "Create",
+    listCreated: "List created",
+    addedToList: "Added to list",
+    removedFromList: "Removed from list",
+    confirmDeleteList: "Delete list “{name}”?",
+    newListPrompt: "New list name:",
     notifPremiere: "is out now — it's on your watchlist",
     notifComment: "commented on your review",
     notifReply: "replied to your comment",
@@ -792,6 +824,22 @@ const I18N = {
     ratingAny: "Bewertung: alle",
     yearAny: "Jahr: alle",
     whereToWatch: "Wo streamen",
+    myLists: "Meine Listen",
+    listsTitle: "Listen",
+    listsEmpty: "Noch keine Listen — erstelle die erste!",
+    listsEmptyRO: "Keine öffentlichen Listen.",
+    newList: "＋ Neu",
+    listEmpty: "Diese Liste ist leer.",
+    listsChip: "🗂 Listen",
+    addToList: "Zur Liste hinzufügen",
+    noListsYet: "Du hast noch keine Liste. Erstelle unten eine.",
+    newListPh: "Name der neuen Liste…",
+    create: "Erstellen",
+    listCreated: "Liste erstellt",
+    addedToList: "Zur Liste hinzugefügt",
+    removedFromList: "Von Liste entfernt",
+    confirmDeleteList: "Liste „{name}” löschen?",
+    newListPrompt: "Name der neuen Liste:",
     notifPremiere: "ist jetzt verfügbar — steht auf deiner Merkliste",
     notifComment: "hat deine Rezension kommentiert",
     notifReply: "hat auf deinen Kommentar geantwortet",
@@ -1089,6 +1137,22 @@ const I18N = {
     ratingAny: "Nota: cualquiera",
     yearAny: "Año: cualquiera",
     whereToWatch: "Dónde ver",
+    myLists: "Mis listas",
+    listsTitle: "Listas",
+    listsEmpty: "Aún no tienes listas — ¡crea la primera!",
+    listsEmptyRO: "Sin listas públicas.",
+    newList: "＋ Nueva",
+    listEmpty: "Esta lista está vacía.",
+    listsChip: "🗂 Listas",
+    addToList: "Añadir a lista",
+    noListsYet: "Aún no tienes ninguna lista. Crea una abajo.",
+    newListPh: "Nombre de la nueva lista…",
+    create: "Crear",
+    listCreated: "Lista creada",
+    addedToList: "Añadido a la lista",
+    removedFromList: "Quitado de la lista",
+    confirmDeleteList: "¿Eliminar la lista «{name}»?",
+    newListPrompt: "Nombre de la nueva lista:",
     notifPremiere: "ya está disponible — lo tienes en tu lista",
     notifComment: "comentó tu reseña",
     notifReply: "respondió a tu comentario",
@@ -1387,6 +1451,22 @@ const I18N = {
     ratingAny: "Nota: qualquer",
     yearAny: "Ano: qualquer",
     whereToWatch: "Onde ver",
+    myLists: "As minhas listas",
+    listsTitle: "Listas",
+    listsEmpty: "Ainda não tens listas — cria a primeira!",
+    listsEmptyRO: "Sem listas públicas.",
+    newList: "＋ Nova",
+    listEmpty: "Esta lista está vazia.",
+    listsChip: "🗂 Listas",
+    addToList: "Adicionar à lista",
+    noListsYet: "Ainda não tens nenhuma lista. Cria uma abaixo.",
+    newListPh: "Nome da nova lista…",
+    create: "Criar",
+    listCreated: "Lista criada",
+    addedToList: "Adicionado à lista",
+    removedFromList: "Removido da lista",
+    confirmDeleteList: "Eliminar a lista «{name}»?",
+    newListPrompt: "Nome da nova lista:",
     notifPremiere: "já está disponível — tens na tua lista",
     notifComment: "comentou a tua crítica",
     notifReply: "respondeu ao teu comentário",
@@ -1682,6 +1762,22 @@ const I18N = {
     ratingAny: "评分：全部",
     yearAny: "年份：全部",
     whereToWatch: "在哪观看",
+    myLists: "我的清单",
+    listsTitle: "清单",
+    listsEmpty: "还没有清单——创建第一个吧！",
+    listsEmptyRO: "没有公开的清单。",
+    newList: "＋ 新建",
+    listEmpty: "此清单为空。",
+    listsChip: "🗂 清单",
+    addToList: "添加到清单",
+    noListsYet: "你还没有任何清单，在下面创建一个。",
+    newListPh: "新清单名称…",
+    create: "创建",
+    listCreated: "清单已创建",
+    addedToList: "已添加到清单",
+    removedFromList: "已从清单移除",
+    confirmDeleteList: "删除清单“{name}”？",
+    newListPrompt: "新清单名称：",
     notifPremiere: "已经上线——在你的想看清单里",
     notifComment: "评论了你的评论",
     notifReply: "回复了你的评论",
@@ -1972,6 +2068,22 @@ const I18N = {
     ratingAny: "評価：すべて",
     yearAny: "年：すべて",
     whereToWatch: "配信サービス",
+    myLists: "マイリスト",
+    listsTitle: "リスト",
+    listsEmpty: "まだリストがありません — 最初のリストを作成！",
+    listsEmptyRO: "公開リストはありません。",
+    newList: "＋ 新規",
+    listEmpty: "このリストは空です。",
+    listsChip: "🗂 リスト",
+    addToList: "リストに追加",
+    noListsYet: "まだリストがありません。下で作成してください。",
+    newListPh: "新しいリスト名…",
+    create: "作成",
+    listCreated: "リストを作成しました",
+    addedToList: "リストに追加しました",
+    removedFromList: "リストから削除しました",
+    confirmDeleteList: "リスト「{name}」を削除しますか？",
+    newListPrompt: "新しいリスト名：",
     notifPremiere: "が公開されました — あなたのリストにあります",
     notifComment: "があなたのレビューにコメントしました",
     notifReply: "があなたのコメントに返信しました",
@@ -3664,6 +3776,183 @@ function closeSeeAll() {
   $("seeAllOverlay").classList.add("hidden");
 }
 
+// --- Własne listy/kolekcje ---
+
+// Sekcja list na profilu. Własny profil = zarządzanie (dodaj/publikuj/usuń);
+// cudzy (readOnly) = tylko listy publiczne, bez kontrolek.
+function renderLists(lists, readOnly) {
+  $("listsHeading").textContent = t(readOnly ? "listsTitle" : "myLists");
+  $("newListBtn").classList.toggle("hidden", readOnly);
+  const box = $("listsBox");
+  box.innerHTML = "";
+  if (!lists || !lists.length) {
+    box.innerHTML = `<p class="muted">${t(readOnly ? "listsEmptyRO" : "listsEmpty")}</p>`;
+    return;
+  }
+  for (const list of lists) {
+    const block = document.createElement("div");
+    block.className = "list-block";
+
+    const head = document.createElement("div");
+    head.className = "list-head";
+    const title = document.createElement("button");
+    title.type = "button";
+    title.className = "list-title";
+    title.textContent = `${list.name} · ${list.items.length}`;
+    title.addEventListener("click", () => openSeeAll(list.name, list.items));
+    head.append(title);
+    if (!readOnly) {
+      const pub = document.createElement("button");
+      pub.type = "button";
+      pub.className = "list-mini";
+      pub.textContent = list.isPublic ? "🌐" : "🔒";
+      pub.addEventListener("click", () => toggleListPublic(list));
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "list-mini danger";
+      del.textContent = "🗑";
+      del.addEventListener("click", () => deleteList(list));
+      head.append(pub, del);
+    }
+    block.append(head);
+
+    const row = document.createElement("div");
+    row.className = "poster-row";
+    if (!list.items.length) {
+      row.innerHTML = `<p class="muted small">${t("listEmpty")}</p>`;
+    } else {
+      for (const it of list.items.slice(0, 10)) appendCard(row, it.media, undefined);
+    }
+    block.append(row);
+    box.append(block);
+  }
+}
+
+async function createList() {
+  const name = (window.prompt(t("newListPrompt")) ?? "").trim();
+  if (!name) return;
+  try {
+    await api("/me/lists", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    await loadProfile();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function toggleListPublic(list) {
+  try {
+    await api(`/me/lists/${list.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ isPublic: !list.isPublic }),
+    });
+    await loadProfile();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function deleteList(list) {
+  if (!window.confirm(t("confirmDeleteList", { name: list.name }))) return;
+  try {
+    await api(`/me/lists/${list.id}`, { method: "DELETE" });
+    await loadProfile();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// Wybór list dla bieżącego tytułu (z widoku szczegółów). Tytuł zewnętrzny (z wyników
+// wyszukiwania) najpierw musi trafić do bazy — stąd ensureMedia jak przy watchliście.
+let pickerMediaId = null;
+async function openListPicker() {
+  try {
+    pickerMediaId = await ensureMedia();
+  } catch (e) {
+    toast(e.message);
+    return;
+  }
+  $("newListInput").value = "";
+  renderListPicker();
+  $("listPickerOverlay").classList.remove("hidden");
+}
+function closeListPicker() {
+  $("listPickerOverlay").classList.add("hidden");
+}
+function renderListPicker() {
+  const box = $("listPickerBody");
+  box.innerHTML = "";
+  const lists = myProfile.lists ?? [];
+  if (!lists.length) {
+    box.innerHTML = `<p class="muted small">${t("noListsYet")}</p>`;
+    return;
+  }
+  for (const list of lists) {
+    const inList = list.items.some((it) => it.media.id === pickerMediaId);
+    const row = document.createElement("label");
+    row.className = "list-pick-row";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = inList;
+    cb.addEventListener("change", () => toggleListMembership(list.id, cb.checked));
+    const span = document.createElement("span");
+    span.textContent = list.name;
+    row.append(cb, span);
+    box.append(row);
+  }
+}
+async function toggleListMembership(listId, add) {
+  try {
+    if (add) {
+      await api(`/me/lists/${listId}/items`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mediaId: pickerMediaId }),
+      });
+    } else {
+      await api(`/me/lists/${listId}/items/${pickerMediaId}`, { method: "DELETE" });
+    }
+    await loadMe();
+    renderListPicker();
+    // Odśwież sekcję na własnym profilu, jeśli jest otwarty.
+    if (!$("profileView").classList.contains("hidden") && !viewingUserId) {
+      renderLists(myProfile.lists, false);
+    }
+    toast(t(add ? "addedToList" : "removedFromList"));
+  } catch (e) {
+    toast(e.message);
+    renderListPicker(); // cofnij wizualny stan checkboxa po błędzie
+  }
+}
+async function createListFromPicker() {
+  const name = $("newListInput").value.trim();
+  if (!name) return;
+  try {
+    const list = await api("/me/lists", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (pickerMediaId) {
+      await api(`/me/lists/${list.id}/items`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mediaId: pickerMediaId }),
+      });
+    }
+    $("newListInput").value = "";
+    await loadMe();
+    renderListPicker();
+    toast(t("listCreated"));
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
 // --- Wybór okładek w kategorii (max 4) — używa nakładki „Zobacz wszystko" ---
 let catPickCtx = null; // { group, items } gdy tryb wyboru okładek
 
@@ -4890,6 +5179,9 @@ function renderProfileData(data, readOnly) {
   } else {
     watchSeeAll.classList.add("hidden");
   }
+
+  // Własne listy/kolekcje (na cudzym profilu tylko publiczne — przycina backend).
+  renderLists(data.lists, readOnly);
 
   // Prawa strona: ocenione pogrupowane po kategoriach.
   renderRatedByCat(data.reviews, readOnly);
@@ -6273,6 +6565,16 @@ async function init() {
   $("searchMinYear").addEventListener("change", (e) => {
     searchMinYear = Number(e.target.value);
     renderSearchResults();
+  });
+  $("newListBtn").addEventListener("click", createList);
+  $("listsBtn").addEventListener("click", openListPicker);
+  $("listPickerClose").addEventListener("click", closeListPicker);
+  $("newListCreate").addEventListener("click", createListFromPicker);
+  $("newListInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") createListFromPicker();
+  });
+  $("listPickerOverlay").addEventListener("click", (e) => {
+    if (e.target === $("listPickerOverlay")) closeListPicker();
   });
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", openProfile);
