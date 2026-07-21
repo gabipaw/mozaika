@@ -180,6 +180,9 @@ const I18N = {
     themeSystem: "Systemowy",
     themeLight: "Jasny",
     themeDark: "Ciemny",
+    sortRelevance: "Trafność",
+    ratingAny: "Ocena: dowolna",
+    yearAny: "Rok: dowolny",
     notifPremiere: "jest już dostępne — masz to na liście do obejrzenia",
     notifComment: "skomentował(-a) Twoją recenzję",
     notifReply: "odpowiedział(-a) na Twój komentarz",
@@ -479,6 +482,9 @@ const I18N = {
     themeSystem: "System",
     themeLight: "Light",
     themeDark: "Dark",
+    sortRelevance: "Relevance",
+    ratingAny: "Rating: any",
+    yearAny: "Year: any",
     notifPremiere: "is out now — it's on your watchlist",
     notifComment: "commented on your review",
     notifReply: "replied to your comment",
@@ -780,6 +786,9 @@ const I18N = {
     themeSystem: "System",
     themeLight: "Hell",
     themeDark: "Dunkel",
+    sortRelevance: "Relevanz",
+    ratingAny: "Bewertung: alle",
+    yearAny: "Jahr: alle",
     notifPremiere: "ist jetzt verfügbar — steht auf deiner Merkliste",
     notifComment: "hat deine Rezension kommentiert",
     notifReply: "hat auf deinen Kommentar geantwortet",
@@ -1073,6 +1082,9 @@ const I18N = {
     themeSystem: "Sistema",
     themeLight: "Claro",
     themeDark: "Oscuro",
+    sortRelevance: "Relevancia",
+    ratingAny: "Nota: cualquiera",
+    yearAny: "Año: cualquiera",
     notifPremiere: "ya está disponible — lo tienes en tu lista",
     notifComment: "comentó tu reseña",
     notifReply: "respondió a tu comentario",
@@ -1367,6 +1379,9 @@ const I18N = {
     themeSystem: "Sistema",
     themeLight: "Claro",
     themeDark: "Escuro",
+    sortRelevance: "Relevância",
+    ratingAny: "Nota: qualquer",
+    yearAny: "Ano: qualquer",
     notifPremiere: "já está disponível — tens na tua lista",
     notifComment: "comentou a tua crítica",
     notifReply: "respondeu ao teu comentário",
@@ -1658,6 +1673,9 @@ const I18N = {
     themeSystem: "跟随系统",
     themeLight: "浅色",
     themeDark: "深色",
+    sortRelevance: "相关度",
+    ratingAny: "评分：全部",
+    yearAny: "年份：全部",
     notifPremiere: "已经上线——在你的想看清单里",
     notifComment: "评论了你的评论",
     notifReply: "回复了你的评论",
@@ -1944,6 +1962,9 @@ const I18N = {
     themeSystem: "システムに従う",
     themeLight: "ライト",
     themeDark: "ダーク",
+    sortRelevance: "関連度",
+    ratingAny: "評価：すべて",
+    yearAny: "年：すべて",
     notifPremiere: "が公開されました — あなたのリストにあります",
     notifComment: "があなたのレビューにコメントしました",
     notifReply: "があなたのコメントに返信しました",
@@ -3271,17 +3292,74 @@ function showBrowse() {
   if (me) loadTasteRecommendations();
 }
 
+// Filtry/sortowanie wyników wyszukiwania (po stronie klienta, na ~18 zwróconych).
+let searchResults = [];
+let searchSort = "relevance"; // relevance | rating | year | title
+let searchMinRating = 0;
+let searchMinYear = 0;
+// Rodzaje, których wyniki NIOSĄ ocenę źródła (książki/muzyka jej nie mają).
+const SEARCH_HAS_RATING = new Set(["film", "serial", "anime", "manga", "game"]);
+
 async function runSearch(q) {
   $("searchTitle").textContent = t("results");
   const grid = $("searchGrid");
   grid.innerHTML = `<p class="muted">${t("searching")}</p>`;
   showResults();
   try {
-    const results = await api(`/search?q=${encodeURIComponent(q)}&type=${searchType}`);
-    renderGrid(grid, results, (m) => openDetail(toDetail(m, searchType, null)));
+    searchResults = await api(`/search?q=${encodeURIComponent(q)}&type=${searchType}`);
+    renderSearchTools();
+    renderSearchResults();
   } catch (e) {
+    searchResults = [];
+    $("searchTools").classList.add("hidden");
     grid.innerHTML = `<p class="muted">${e.message}</p>`;
   }
+}
+
+// Pokazuje pasek filtrów, gdy są wyniki; wyłącza filtr/sort po ocenie dla rodzajów
+// bez ocen (książki/muzyka), żeby „8+" nie wycinało wszystkiego.
+function renderSearchTools() {
+  $("searchTools").classList.toggle("hidden", searchResults.length === 0);
+  const hasRating = SEARCH_HAS_RATING.has(searchType);
+  const mr = $("searchMinRating");
+  mr.disabled = !hasRating;
+  if (!hasRating) {
+    mr.value = "0";
+    searchMinRating = 0;
+  }
+  const sortSel = $("searchSort");
+  sortSel.querySelector('option[value="rating"]').disabled = !hasRating;
+  if (!hasRating && searchSort === "rating") {
+    searchSort = "relevance";
+    sortSel.value = "relevance";
+  }
+}
+
+// Nakłada filtry (ocena/rok) i sortowanie na wyniki, rysuje siatkę. „Trafność" =
+// kolejność z API. Odznaka gwiazdki na karcie to ocena ŹRÓDŁA (nie Twoja).
+function renderSearchResults() {
+  let items = searchResults;
+  if (searchMinRating) items = items.filter((m) => (m.rating ?? 0) >= searchMinRating);
+  if (searchMinYear) items = items.filter((m) => (m.year ?? 0) >= searchMinYear);
+  items = [...items];
+  const title = (m) => m.title ?? "";
+  if (searchSort === "rating") {
+    items.sort(
+      (a, b) => (b.rating ?? 0) - (a.rating ?? 0) || title(a).localeCompare(title(b)),
+    );
+  } else if (searchSort === "year") {
+    items.sort(
+      (a, b) => (b.year ?? 0) - (a.year ?? 0) || title(a).localeCompare(title(b)),
+    );
+  } else if (searchSort === "title") {
+    items.sort((a, b) => title(a).localeCompare(title(b)));
+  }
+  renderGrid(
+    $("searchGrid"),
+    items,
+    (m) => openDetail(toDetail(m, searchType, null)),
+    (m) => ({ score: m.rating ?? undefined }),
+  );
 }
 
 // Przełącznik źródła wyszukiwania: filmy (TMDB) / książki (Open Library).
@@ -6145,6 +6223,18 @@ async function init() {
   $("statsBtn").addEventListener("click", toggleStats);
   $("shareProfileBtn").addEventListener("click", copyProfileLink);
   $("tasteMore").addEventListener("click", loadMoreTasteRecs);
+  $("searchSort").addEventListener("change", (e) => {
+    searchSort = e.target.value;
+    renderSearchResults();
+  });
+  $("searchMinRating").addEventListener("change", (e) => {
+    searchMinRating = Number(e.target.value);
+    renderSearchResults();
+  });
+  $("searchMinYear").addEventListener("change", (e) => {
+    searchMinYear = Number(e.target.value);
+    renderSearchResults();
+  });
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", openProfile);
   $("topBack").addEventListener("click", () => {

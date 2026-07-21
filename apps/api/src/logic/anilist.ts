@@ -19,6 +19,7 @@ const MEDIA_FIELDS = `
   title { romaji english }
   startDate { year }
   coverImage { large }
+  averageScore
   genres
   studios(isMain: true) { nodes { name } }
   staff(perPage: 1, sort: RELEVANCE) { nodes { name { full } } }
@@ -51,6 +52,7 @@ interface AniListMedia {
   title: { romaji?: string | null; english?: string | null };
   startDate?: { year?: number | null };
   coverImage?: { large?: string | null };
+  averageScore?: number | null; // 0–100 → skala 0–10
   genres?: string[];
   studios?: { nodes?: { name?: string }[] };
   staff?: { nodes?: { name?: { full?: string | null } }[] };
@@ -81,6 +83,7 @@ function toMedia(m: AniListMedia): ExternalMedia {
     year: m.startDate?.year ?? null,
     posterUrl: m.coverImage?.large ?? null,
     genres: m.genres ?? [],
+    rating: m.averageScore ? Math.round(m.averageScore) / 10 : null, // 0–100 → 0–10
   };
 }
 

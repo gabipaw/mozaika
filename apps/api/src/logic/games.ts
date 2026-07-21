@@ -25,6 +25,7 @@ export interface RawgGame {
   genres?: { name: string }[];
   added?: number; // ilu użytkowników RAWG dodało grę do biblioteki = miara popularności
   ratings_count?: number; // zapasowa miara, gdy `added` nie przyszło
+  rating?: number; // średnia ocena RAWG 0–5 (→ skala 0–10)
 }
 
 /** Do porównań nazw: małe litery, znaki inne niż alfanumeryczne na spacje. */
@@ -85,6 +86,7 @@ function toGame(g: RawgGame): ExternalMedia {
     year: g.released ? Number(g.released.slice(0, 4)) || null : null,
     posterUrl: g.background_image ?? null,
     genres: g.genres?.map((x) => x.name).filter(Boolean) ?? [],
+    rating: g.rating ? Math.round(g.rating * 2 * 10) / 10 : null, // 0–5 → 0–10
   };
 }
 

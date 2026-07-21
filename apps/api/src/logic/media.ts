@@ -13,6 +13,7 @@ export interface ExternalMedia {
   year: number | null;
   posterUrl: string | null;
   genres: string[]; // np. ["Sci-Fi", "Thriller"] — puste, gdy źródło nie poda
+  rating?: number | null; // ocena źródła w skali 0–10 (TMDB/AniList/RAWG); brak dla książek/muzyki
 }
 
 /**

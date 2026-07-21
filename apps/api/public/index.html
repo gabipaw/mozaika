@@ -153,6 +153,29 @@
         <!-- Wyniki wyszukiwania — od razu pod wyszukiwarką -->
         <section id="searchResults" class="hidden">
           <h2 id="searchTitle">Wyniki</h2>
+          <div id="searchTools" class="catalog-tools hidden">
+            <select id="searchSort">
+              <option value="relevance" data-i18n="sortRelevance">Trafność</option>
+              <option value="rating" data-i18n="sortRating">Najwyżej ocenione</option>
+              <option value="year" data-i18n="sortYear">Rok premiery</option>
+              <option value="title" data-i18n="sortTitle">Alfabetycznie</option>
+            </select>
+            <select id="searchMinRating">
+              <option value="0" data-i18n="ratingAny">Ocena: dowolna</option>
+              <option value="6">6+</option>
+              <option value="7">7+</option>
+              <option value="8">8+</option>
+              <option value="9">9+</option>
+            </select>
+            <select id="searchMinYear">
+              <option value="0" data-i18n="yearAny">Rok: dowolny</option>
+              <option value="2020">2020+</option>
+              <option value="2015">2015+</option>
+              <option value="2010">2010+</option>
+              <option value="2000">2000+</option>
+              <option value="1990">1990+</option>
+            </select>
+          </div>
           <div id="searchGrid" class="poster-grid"></div>
         </section>
 

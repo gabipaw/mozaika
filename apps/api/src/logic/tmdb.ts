@@ -32,6 +32,7 @@ interface TmdbItem {
   genre_ids?: number[]; // wyszukiwanie/discover
   genres?: { id: number; name: string }[]; // szczegóły pozycji
   original_language?: string;
+  vote_average?: number; // ocena TMDB 0–10 (do sortowania/filtrowania wyników)
 }
 
 // Stała lista gatunków filmowych TMDB (id → kanoniczna nazwa EN). Trzymamy nazwy EN,
@@ -137,6 +138,8 @@ function toMedia(kind: TmdbKind, m: TmdbItem): ExternalMedia {
     year: data ? Number(data.slice(0, 4)) : null,
     posterUrl: m.poster_path ? `${IMG}${m.poster_path}` : null,
     genres: ids.map((id) => slownik[id]).filter(Boolean),
+    // TMDB bywa 0 dla tytułów bez głosów — traktujemy to jak brak oceny (null).
+    rating: m.vote_average ? Math.round(m.vote_average * 10) / 10 : null,
   };
 }
 
