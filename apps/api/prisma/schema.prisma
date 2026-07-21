@@ -39,6 +39,7 @@ model User {
   passwordHash String? // scrypt: "salt:hash"; null dla starych kont demo
   avatarUrl    String? // zdjęcie profilowe jako data:image (skompresowane ~256px)
   bio          String? // krótki opis „o mnie" na profilu (do 200 znaków)
+  title        String? // wybrany „tytuł" do pokazania przy imieniu (odblokowany osiągnięciami)
   mutedNotifs  String[] @default([]) // wyciszone typy powiadomień (np. "like","follow")
   createdAt    DateTime @default(now())
 

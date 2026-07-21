@@ -177,6 +177,9 @@ const I18N = {
     notifNewRating: "ocenił(-a)",
     ntNewRating: "Nowe oceny znajomych",
     appearance: "Wygląd",
+    title: "Tytuł",
+    titleNone: "Brak",
+    titleSet: "Tytuł ustawiony",
     themeSystem: "Systemowy",
     themeLight: "Jasny",
     themeDark: "Ciemny",
@@ -515,6 +518,9 @@ const I18N = {
     notifNewRating: "rated",
     ntNewRating: "Friends' new ratings",
     appearance: "Appearance",
+    title: "Title",
+    titleNone: "None",
+    titleSet: "Title set",
     themeSystem: "System",
     themeLight: "Light",
     themeDark: "Dark",
@@ -855,6 +861,9 @@ const I18N = {
     notifNewRating: "hat bewertet",
     ntNewRating: "Neue Bewertungen von Freunden",
     appearance: "Darstellung",
+    title: "Titel",
+    titleNone: "Kein",
+    titleSet: "Titel gesetzt",
     themeSystem: "System",
     themeLight: "Hell",
     themeDark: "Dunkel",
@@ -1187,6 +1196,9 @@ const I18N = {
     notifNewRating: "puntuó",
     ntNewRating: "Nuevas valoraciones de amigos",
     appearance: "Apariencia",
+    title: "Título",
+    titleNone: "Ninguno",
+    titleSet: "Título establecido",
     themeSystem: "Sistema",
     themeLight: "Claro",
     themeDark: "Oscuro",
@@ -1520,6 +1532,9 @@ const I18N = {
     notifNewRating: "avaliou",
     ntNewRating: "Novas avaliações de amigos",
     appearance: "Aparência",
+    title: "Título",
+    titleNone: "Nenhum",
+    titleSet: "Título definido",
     themeSystem: "Sistema",
     themeLight: "Claro",
     themeDark: "Escuro",
@@ -1850,6 +1865,9 @@ const I18N = {
     notifNewRating: "评价了",
     ntNewRating: "好友的新评分",
     appearance: "外观",
+    title: "称号",
+    titleNone: "无",
+    titleSet: "已设置称号",
     themeSystem: "跟随系统",
     themeLight: "浅色",
     themeDark: "深色",
@@ -2175,6 +2193,9 @@ const I18N = {
     notifNewRating: "を評価しました",
     ntNewRating: "友達の新しい評価",
     appearance: "外観",
+    title: "称号",
+    titleNone: "なし",
+    titleSet: "称号を設定しました",
     themeSystem: "システムに従う",
     themeLight: "ライト",
     themeDark: "ダーク",
@@ -2634,6 +2655,7 @@ const ACC_RENDER = {
   account: renderAccountSettings,
   notifPrefs: renderNotifPrefs,
   theme: renderThemeList,
+  title: renderTitleList,
   language: renderLangList,
   blocked: renderBlockedList,
   about: renderAbout,
@@ -4196,6 +4218,70 @@ function renderAchievements(data) {
   for (const a of ordered) box.append(achRow(a));
 }
 
+// --- Tytuły (do pokazania przy imieniu) — odblokowywane osiągnięciami z odniesieniami
+// do kultury mediów. Nazwy są celowo nietłumaczone (jak ksywki/odznaki). ---
+const DEV_TITLE = "👑 Developer";
+const TITLES = [
+  { name: "Rookie", unlock: (s) => s.total >= 1 },
+  { name: "Collector", unlock: (s) => s.total >= 50 },
+  { name: "Living Legend", unlock: (s) => s.total >= 250 },
+  { name: "The Cinephile", unlock: (s) => (s.byType.FILM ?? 0) >= 50 },
+  { name: "Binge Master", unlock: (s) => (s.byType.SERIAL ?? 0) >= 50 },
+  { name: "Bookworm", unlock: (s) => (s.byType.KSIAZKA ?? 0) >= 25 },
+  {
+    name: "The Otaku",
+    unlock: (s) => (s.byType.ANIME ?? 0) + (s.byType.MANGA ?? 0) >= 50,
+  },
+  { name: "Speedrunner", unlock: (s) => (s.byType.GRA ?? 0) >= 25 },
+  { name: "Audiophile", unlock: (s) => (s.byType.MUZYKA ?? 0) >= 25 },
+  { name: "The Critic", unlock: (s) => s.withText >= 25 },
+  { name: "Perfectionist", unlock: (s) => s.perfect >= 10 },
+  { name: "The Harsh Judge", unlock: (s) => s.harsh >= 10 },
+  { name: "Time Traveler", unlock: (s) => s.decades >= 5 },
+  { name: "Genre Bender", unlock: (s) => s.genres >= 15 },
+  { name: "The Curator", unlock: (s) => s.lists >= 3 },
+  { name: "Influencer", unlock: (s) => s.followers >= 10 },
+  { name: "Socialite", unlock: (s) => s.following >= 10 },
+];
+
+// Lista tytułów do wyboru w Ustawieniach: „Brak" + odblokowane + (dla twórcy) Developer.
+function renderTitleList() {
+  const box = $("titleList");
+  if (!box) return;
+  box.innerHTML = "";
+  const s = achStats(myProfile);
+  const current = myProfile.user?.title ?? "";
+  const options = [{ name: "", label: t("titleNone") }];
+  for (const ti of TITLES)
+    if (ti.unlock(s)) options.push({ name: ti.name, label: ti.name });
+  if (myProfile.isDev) options.push({ name: DEV_TITLE, label: DEV_TITLE });
+  for (const o of options) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "lang-btn" + (current === o.name ? " active" : "");
+    b.textContent = o.label;
+    b.addEventListener("click", () => setTitle(o.name));
+    box.append(b);
+  }
+}
+
+async function setTitle(name) {
+  try {
+    await api("/me/title", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: name || null }),
+    });
+    if (myProfile.user) myProfile.user.title = name || null;
+    renderTitleList();
+    // Odśwież nagłówek własnego profilu, jeśli otwarty.
+    if (!$("profileView").classList.contains("hidden") && !viewingUserId) loadProfile();
+    toast(t("titleSet"));
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
 // --- Wybór okładek w kategorii (max 4) — używa nakładki „Zobacz wszystko" ---
 let catPickCtx = null; // { group, items } gdy tryb wyboru okładek
 
@@ -5343,6 +5429,10 @@ function renderProfileData(data, readOnly) {
   $("profileName").textContent = readOnly
     ? data.user.displayName
     : t("hi", { name: data.user.displayName });
+  // „Tytuł" przy imieniu (pill) — jeśli ustawiony.
+  const titleEl = $("profileTitle");
+  titleEl.textContent = data.user.title ?? "";
+  titleEl.classList.toggle("hidden", !data.user.title);
   const img = $("avatarImg");
   const initial = $("avatarInitial");
   if (data.user.avatarUrl) {

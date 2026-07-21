@@ -367,6 +367,7 @@
                 <input id="avatarFile" type="file" accept="image/*" class="hidden" />
                 <div class="profile-id">
                   <h1 id="profileName"></h1>
+                  <span id="profileTitle" class="profile-title hidden"></span>
                   <div class="profile-actions">
                     <button id="followProfileBtn" class="follow-btn hidden" type="button">
                       Obserwuj
@@ -628,6 +629,16 @@
               </button>
               <div class="acc-body hidden">
                 <div id="themeList" class="lang-list"></div>
+              </div>
+            </div>
+
+            <!-- Tytuł -->
+            <div class="acc-item">
+              <button class="acc-head" type="button" data-acc="title">
+                <span data-i18n="title">Tytuł</span><span class="acc-chevron">›</span>
+              </button>
+              <div class="acc-body hidden">
+                <div id="titleList" class="lang-list"></div>
               </div>
             </div>
 

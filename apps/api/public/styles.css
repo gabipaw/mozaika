@@ -701,6 +701,19 @@ h2 {
   font-size: 0.9rem;
 }
 
+/* „Tytuł" przy imieniu na profilu (pill). */
+.profile-title {
+  display: inline-block;
+  margin: 4px 0 0;
+  padding: 3px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+}
+
 /* Lista wszystkich osiągnięć w oknie MUSI się przewijać (jest ich 100). Twardy
    max-height + overflow — niezależnie od tego, jak zachowa się flex karty. */
 #achievementsOverlay .achievements {

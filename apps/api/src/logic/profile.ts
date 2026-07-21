@@ -7,6 +7,28 @@ import { prisma } from "../db.js";
 import { reactionSummary } from "./reactions.js";
 import { areFriends } from "./messages.js";
 
+/** Ekskluzywny tytuł twórcy — ustawić może tylko konto „dev". */
+export const DEV_TITLE = "👑 Developer";
+
+/** Czy dany e-mail jest na liście twórców (env DEV_EMAILS, przecinkami). */
+export function isDevEmail(email: string | null | undefined): boolean {
+  const set = new Set(
+    (process.env.DEV_EMAILS ?? "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  return !!email && set.has(email.toLowerCase());
+}
+
+/** Konto twórcy: pierwszy użytkownik (właściciel) albo e-mail z DEV_EMAILS. */
+export function isDevUserByEmail(
+  userId: number,
+  email: string | null | undefined,
+): boolean {
+  return userId === 1 || isDevEmail(email);
+}
+
 const mediaSelect = {
   id: true,
   title: true,
@@ -29,8 +51,20 @@ export async function profilePayload(
 ) {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { id: true, displayName: true, avatarUrl: true, bio: true, email: withEmail },
+    select: {
+      id: true,
+      displayName: true,
+      avatarUrl: true,
+      bio: true,
+      title: true,
+      // e-mail potrzebny też do wykrycia konta twórcy na WŁASNYM profilu (isDev).
+      email: true,
+    },
   });
+  // isDev tylko dla oglądania własnego profilu (picker tytułu) — decyduje o „👑 Developer".
+  const isDev = viewerId === userId && isDevUserByEmail(userId, user.email);
+  // E-mail zwracamy tylko na własnym profilu — na cudzym to wyciek.
+  const userOut = withEmail ? user : { ...user, email: undefined };
 
   const [rows, watchlist, lists, followersCount, followingCount] = await Promise.all([
     prisma.review.findMany({
@@ -88,7 +122,8 @@ export async function profilePayload(
     viewerId && viewerId !== userId ? await areFriends(viewerId, userId) : false;
 
   return {
-    user,
+    user: userOut,
+    isDev,
     count: reviews.length,
     avg,
     followersCount,

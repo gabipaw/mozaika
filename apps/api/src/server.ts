@@ -46,7 +46,7 @@ import {
 import { checkPremieres, ensureReleaseDate, upcomingForUser } from "./logic/premieres.js";
 import { addReview, deleteReview } from "./logic/reviews.js";
 import { react, reactionScore, reactionSummary } from "./logic/reactions.js";
-import { profilePayload } from "./logic/profile.js";
+import { DEV_TITLE, isDevUserByEmail, profilePayload } from "./logic/profile.js";
 import {
   conversation,
   conversations,
@@ -257,6 +257,27 @@ api.patch("/me/profile", requireAuth, async (c) => {
     Object.assign(out, await updateBio(userId, body.bio));
   }
   return c.json(out);
+});
+
+// Ustaw „tytuł" pokazywany przy imieniu (null = brak). „👑 Developer" tylko dla twórcy.
+api.patch("/me/title", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const raw = (await c.req.json()).title;
+  const title =
+    raw === null || raw === undefined || raw === ""
+      ? null
+      : String(raw).trim().slice(0, 40);
+  if (title === DEV_TITLE) {
+    const me = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    if (!isDevUserByEmail(userId, me?.email)) {
+      throw new ForbiddenError("Ten tytuł jest zarezerwowany dla twórcy.");
+    }
+  }
+  await prisma.user.update({ where: { id: userId }, data: { title } });
+  return c.json({ title });
 });
 
 // Zmiana hasła (wymaga podania obecnego).
