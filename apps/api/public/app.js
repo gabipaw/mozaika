@@ -176,6 +176,10 @@ const I18N = {
     notifRated: "ocenił(-a) tytuł z Twojej listy",
     notifNewRating: "ocenił(-a)",
     ntNewRating: "Nowe oceny znajomych",
+    appearance: "Wygląd",
+    themeSystem: "Systemowy",
+    themeLight: "Jasny",
+    themeDark: "Ciemny",
     notifPremiere: "jest już dostępne — masz to na liście do obejrzenia",
     notifComment: "skomentował(-a) Twoją recenzję",
     notifReply: "odpowiedział(-a) na Twój komentarz",
@@ -471,6 +475,10 @@ const I18N = {
     notifRated: "rated a title from your watchlist",
     notifNewRating: "rated",
     ntNewRating: "Friends' new ratings",
+    appearance: "Appearance",
+    themeSystem: "System",
+    themeLight: "Light",
+    themeDark: "Dark",
     notifPremiere: "is out now — it's on your watchlist",
     notifComment: "commented on your review",
     notifReply: "replied to your comment",
@@ -768,6 +776,10 @@ const I18N = {
     notifRated: "hat einen Titel von deiner Liste bewertet",
     notifNewRating: "hat bewertet",
     ntNewRating: "Neue Bewertungen von Freunden",
+    appearance: "Darstellung",
+    themeSystem: "System",
+    themeLight: "Hell",
+    themeDark: "Dunkel",
     notifPremiere: "ist jetzt verfügbar — steht auf deiner Merkliste",
     notifComment: "hat deine Rezension kommentiert",
     notifReply: "hat auf deinen Kommentar geantwortet",
@@ -1057,6 +1069,10 @@ const I18N = {
     notifRated: "puntuó un título de tu lista",
     notifNewRating: "puntuó",
     ntNewRating: "Nuevas valoraciones de amigos",
+    appearance: "Apariencia",
+    themeSystem: "Sistema",
+    themeLight: "Claro",
+    themeDark: "Oscuro",
     notifPremiere: "ya está disponible — lo tienes en tu lista",
     notifComment: "comentó tu reseña",
     notifReply: "respondió a tu comentario",
@@ -1347,6 +1363,10 @@ const I18N = {
     notifRated: "avaliou um título da tua lista",
     notifNewRating: "avaliou",
     ntNewRating: "Novas avaliações de amigos",
+    appearance: "Aparência",
+    themeSystem: "Sistema",
+    themeLight: "Claro",
+    themeDark: "Escuro",
     notifPremiere: "já está disponível — tens na tua lista",
     notifComment: "comentou a tua crítica",
     notifReply: "respondeu ao teu comentário",
@@ -1634,6 +1654,10 @@ const I18N = {
     notifRated: "评价了你清单里的一部作品",
     notifNewRating: "评价了",
     ntNewRating: "好友的新评分",
+    appearance: "外观",
+    themeSystem: "跟随系统",
+    themeLight: "浅色",
+    themeDark: "深色",
     notifPremiere: "已经上线——在你的想看清单里",
     notifComment: "评论了你的评论",
     notifReply: "回复了你的评论",
@@ -1916,6 +1940,10 @@ const I18N = {
     notifRated: "があなたのリストの作品を評価しました",
     notifNewRating: "を評価しました",
     ntNewRating: "友達の新しい評価",
+    appearance: "外観",
+    themeSystem: "システムに従う",
+    themeLight: "ライト",
+    themeDark: "ダーク",
     notifPremiere: "が公開されました — あなたのリストにあります",
     notifComment: "があなたのレビューにコメントしました",
     notifReply: "があなたのコメントに返信しました",
@@ -2111,8 +2139,64 @@ function setLang(code) {
   localStorage.setItem(LANG_KEY, code);
   applyStaticI18n();
   renderLangList();
+  renderThemeList(); // przetłumacz etykiety motywu, jeśli sekcja jest otwarta
   refreshDynamic();
 }
+
+// --- Motyw jasny/ciemny ---
+const THEME_KEY = "mozaika_theme";
+// "system" | "light" | "dark". Domyślnie ciemny — zachowuje dotychczasowy wygląd.
+let themePref = localStorage.getItem(THEME_KEY) || "dark";
+const prefersLight = window.matchMedia?.("(prefers-color-scheme: light)");
+
+function effectiveTheme() {
+  if (themePref === "system") return prefersLight?.matches ? "light" : "dark";
+  return themePref;
+}
+
+// Ustawia data-theme na <html> (ciemny = brak atrybutu, bo :root jest ciemny) i kolor
+// paska systemowego. Wołane od razu przy starcie, więc motyw jest zanim narysujemy.
+function applyTheme() {
+  const light = effectiveTheme() === "light";
+  const root = document.documentElement;
+  if (light) root.setAttribute("data-theme", "light");
+  else root.removeAttribute("data-theme");
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute("content", light ? "#f4f4f8" : "#0e0e14");
+}
+
+function setTheme(pref) {
+  themePref = pref;
+  localStorage.setItem(THEME_KEY, pref);
+  applyTheme();
+  renderThemeList();
+}
+
+const THEME_OPTS = [
+  { code: "system", label: "themeSystem" },
+  { code: "light", label: "themeLight" },
+  { code: "dark", label: "themeDark" },
+];
+function renderThemeList() {
+  const box = $("themeList");
+  if (!box) return;
+  box.innerHTML = "";
+  for (const o of THEME_OPTS) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "lang-btn" + (themePref === o.code ? " active" : "");
+    b.textContent = t(o.label);
+    b.addEventListener("click", () => setTheme(o.code));
+    box.append(b);
+  }
+}
+
+// Gdy wybrano „Systemowy", reaguj na zmianę motywu urządzenia w locie.
+prefersLight?.addEventListener?.("change", () => {
+  if (themePref === "system") applyTheme();
+});
+applyTheme(); // zastosuj zapisany wybór natychmiast (mniej migotania)
 
 // Odświeża teksty ustawiane dynamicznie po zmianie języka. Statyczne (data-i18n)
 // robi applyStaticI18n; tu odświeżamy to, co JS renderuje przez t() — inaczej
@@ -2276,6 +2360,7 @@ async function testPush() {
 const ACC_RENDER = {
   account: renderAccountSettings,
   notifPrefs: renderNotifPrefs,
+  theme: renderThemeList,
   language: renderLangList,
   blocked: renderBlockedList,
   about: renderAbout,

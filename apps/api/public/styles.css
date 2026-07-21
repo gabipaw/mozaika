@@ -10,6 +10,27 @@
   --gold: #ffd166;
 }
 
+/* Motyw jasny — front ustawia data-theme="light" na <html>. Nadpisuje zmienne oraz
+   te nieliczne miejsca z zakodowanym na sztywno ciemnym tłem (topbar, dymki czatu).
+   Odznaki na plakatach (.score/.status-badge) zostają ciemne — leżą na obrazkach. */
+:root[data-theme="light"] {
+  --bg: #f4f4f8;
+  --bg-2: #ffffff;
+  --card: #ffffff;
+  --line: #e3e3ec;
+  --text: #17171f;
+  --muted: #6a6780;
+  --accent: #00a892;
+  --accent-2: #ff7a45;
+  --gold: #b8860b;
+}
+:root[data-theme="light"] .topbar {
+  background: rgba(255, 255, 255, 0.9);
+}
+:root[data-theme="light"] .chat-bubble.them {
+  background: #eceaf2;
+}
+
 * {
   box-sizing: border-box;
 }
