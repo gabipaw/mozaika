@@ -288,6 +288,30 @@ h2 {
   border: 1px solid var(--line);
 }
 
+/* Odznaka statusu (Plan / W trakcie) na plakacie — prawy górny róg, żeby nie
+   nachodziła na ocenę (★) w lewym górnym. Ukończone nie dostają odznaki. */
+.status-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  max-width: calc(100% - 16px);
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Zakładki statusu: lekki odstęp od chipów typu/gatunku pod spodem. */
+.status-tabs {
+  margin-bottom: 10px;
+}
+
 .meta {
   padding: 8px 10px 10px;
 }

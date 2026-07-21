@@ -103,6 +103,11 @@ const I18N = {
     statTotal: "Razem",
     shareProfileBtn: "🔗 Kopiuj link",
     shareCopied: "Skopiowano link do profilu",
+    statusPlan: "Plan",
+    statusInProgress: "W trakcie",
+    statusDone: "Ukończone",
+    markInProgress: "▶ W trakcie",
+    markDone: "✓ Ukończone",
     favDecade: "Ulubiona dekada: lata {decade}.",
     recBy: "poleca {n} os.",
     noRecs: "Brak — oceń kilka tytułów, a coś dobierzemy.",
@@ -387,6 +392,11 @@ const I18N = {
     statTotal: "Total",
     shareProfileBtn: "🔗 Copy link",
     shareCopied: "Profile link copied",
+    statusPlan: "Plan",
+    statusInProgress: "In progress",
+    statusDone: "Done",
+    markInProgress: "▶ In progress",
+    markDone: "✓ Done",
     favDecade: "Favourite decade: the {decade}s.",
     recBy: "recommended by {n}",
     noRecs: "Nothing yet — rate a few titles and we'll find some.",
@@ -673,6 +683,11 @@ const I18N = {
     statTotal: "Gesamt",
     shareProfileBtn: "🔗 Link kopieren",
     shareCopied: "Profil-Link kopiert",
+    statusPlan: "Geplant",
+    statusInProgress: "Läuft",
+    statusDone: "Fertig",
+    markInProgress: "▶ Läuft",
+    markDone: "✓ Fertig",
     favDecade: "Lieblingsjahrzehnt: die {decade}er.",
     recBy: "empfohlen von {n} Pers.",
     noRecs: "Nichts — bewerte ein paar Titel, dann finden wir etwas.",
@@ -951,6 +966,11 @@ const I18N = {
     statTotal: "Total",
     shareProfileBtn: "🔗 Copiar enlace",
     shareCopied: "Enlace del perfil copiado",
+    statusPlan: "Pendiente",
+    statusInProgress: "En curso",
+    statusDone: "Terminado",
+    markInProgress: "▶ En curso",
+    markDone: "✓ Terminado",
     favDecade: "Década favorita: los {decade}.",
     recBy: "recomendado por {n} pers.",
     noRecs: "Nada — puntúa algunos títulos y elegiremos algo.",
@@ -1230,6 +1250,11 @@ const I18N = {
     statTotal: "Total",
     shareProfileBtn: "🔗 Copiar link",
     shareCopied: "Link do perfil copiado",
+    statusPlan: "Planeado",
+    statusInProgress: "Em curso",
+    statusDone: "Concluído",
+    markInProgress: "▶ Em curso",
+    markDone: "✓ Concluído",
     favDecade: "Década favorita: os anos {decade}.",
     recBy: "recomendado por {n} pess.",
     noRecs: "Nada — avalia alguns títulos e escolhemos algo.",
@@ -1508,6 +1533,11 @@ const I18N = {
     statTotal: "总计",
     shareProfileBtn: "🔗 复制链接",
     shareCopied: "已复制个人资料链接",
+    statusPlan: "计划",
+    statusInProgress: "进行中",
+    statusDone: "已完成",
+    markInProgress: "▶ 进行中",
+    markDone: "✓ 已完成",
     favDecade: "最爱的年代：{decade} 年代。",
     recBy: "{n} 人推荐",
     noRecs: "暂无——先打几个分，我们就来挑。",
@@ -1779,6 +1809,11 @@ const I18N = {
     statTotal: "合計",
     shareProfileBtn: "🔗 リンクをコピー",
     shareCopied: "プロフィールのリンクをコピーしました",
+    statusPlan: "予定",
+    statusInProgress: "進行中",
+    statusDone: "完了",
+    markInProgress: "▶ 進行中",
+    markDone: "✓ 完了",
     favDecade: "好きな年代：{decade} 年代。",
     recBy: "{n} 人がおすすめ",
     noRecs: "なし — いくつか評価すると選びます。",
@@ -2669,6 +2704,12 @@ function posterCard(m, opts = {}) {
     s.textContent = `★ ${opts.score}`;
     poster.append(s);
   }
+  if (opts.statusLabel) {
+    const b = document.createElement("span");
+    b.className = "status-badge";
+    b.textContent = opts.statusLabel;
+    poster.append(b);
+  }
   card.append(poster);
 
   // Na profilu pokazujemy sam plakat (bez nazwy/roku pod spodem). Żeby dało się
@@ -2751,14 +2792,16 @@ function toDetail(m, type, mediaId, myRating) {
 }
 
 // Siatka klikalnych kart — klik otwiera szczegóły (opis + ocena + komentarz).
-function renderGrid(container, list, onClick) {
+// optsFor(m) (opcjonalne) pozwala dołożyć opcje karty per element (np. odznaka statusu);
+// bez niego karta dostaje tylko ocenę, jak dotychczas.
+function renderGrid(container, list, onClick, optsFor) {
   container.innerHTML = "";
   if (list.length === 0) {
     container.innerHTML = `<p class="muted">${t("nothingFound")}</p>`;
     return;
   }
   for (const m of list) {
-    const { card } = posterCard(m, { score: m.myRating });
+    const { card } = posterCard(m, optsFor ? optsFor(m) : { score: m.myRating });
     card.addEventListener("click", () => onClick(m));
     container.append(card);
   }
@@ -2767,6 +2810,7 @@ function renderGrid(container, list, onClick) {
 let catalogItems = []; // Twoje ocenione tytuły (z gatunkami)
 let catalogGenre = null; // wybrany gatunek do filtrowania (null = wszystkie)
 let catalogType = null; // wybrany typ medium do filtrowania (null = wszystkie)
+let catalogStatus = "all"; // all | plan | in_progress | done (zakładka statusu)
 let catalogQuery = ""; // szukanie po tytule w obrębie katalogu
 let catalogSort = "recent"; // recent | rating | title | year
 let statsOpen = false; // czy panel statystyk katalogu jest rozwinięty
@@ -2788,22 +2832,64 @@ async function loadCatalog() {
   catalogItems = myProfile.reviews.map((r) => ({
     ...r.media,
     myRating: r.rating,
+    status: r.status, // IN_PROGRESS | DONE — zakładki „W trakcie" / „Ukończone"
     addedAt: r.createdAt, // do statystyk „w tym roku" (sort „ostatnio" to kolejność z API)
   }));
-  if (
-    catalogGenre &&
-    !catalogItems.some((m) => (m.genres ?? []).includes(catalogGenre))
-  ) {
-    catalogGenre = null; // wybrany gatunek zniknął z katalogu → wróć do „Wszystkie"
-  }
-  if (catalogType && !catalogItems.some((m) => m.type === catalogType)) {
-    catalogType = null; // wybrany typ zniknął z katalogu → wróć do „Wszystkie"
-  }
-  $("catalogTools").classList.toggle("hidden", catalogItems.length === 0);
+  // Katalog jest widoczny, gdy masz cokolwiek: oceny LUB tytuły w planie (watchlista).
+  const hasAny = catalogItems.length > 0 || (myProfile.watchlist?.length ?? 0) > 0;
+  $("catalogTools").classList.toggle("hidden", !hasAny);
+  $("catalogStatusTabs").classList.toggle("hidden", !hasAny);
+  renderCatalogStatusTabs();
   renderCatalogTypes();
   renderCatalogFilter();
   renderCatalog();
   if (statsOpen) renderStats(); // panel otwarty (np. po zmianie języka) — przelicz na nowo
+}
+
+// Lista katalogu dla wybranej zakładki statusu (przed filtrem typu/gatunku/frazy).
+// „Plan" to watchlista (tytuły nieocenione), reszta to Twoje oceny wg statusu.
+function baseCatalog() {
+  if (catalogStatus === "plan") {
+    return (myProfile.watchlist ?? []).map((w) => ({ ...w.media, plan: true }));
+  }
+  if (catalogStatus === "in_progress") {
+    return catalogItems.filter((m) => m.status === "IN_PROGRESS");
+  }
+  if (catalogStatus === "done") {
+    return catalogItems.filter((m) => m.status === "DONE");
+  }
+  return catalogItems; // "all"
+}
+
+// Zakładki statusu nad katalogiem: Wszystkie / Plan / W trakcie / Ukończone.
+const CATALOG_STATUS_TABS = [
+  ["all", "allGenres"], // „Wszystkie" — ten sam napis co przy gatunkach
+  ["plan", "statusPlan"],
+  ["in_progress", "statusInProgress"],
+  ["done", "statusDone"],
+];
+function renderCatalogStatusTabs() {
+  const box = $("catalogStatusTabs");
+  box.innerHTML = "";
+  for (const [value, key] of CATALOG_STATUS_TABS) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "genre-chip filter" + (catalogStatus === value ? " active" : "");
+    b.textContent = t(key);
+    b.addEventListener("click", () => {
+      if (catalogStatus === value) return; // zakładki nie „odklikujemy" do niczego
+      catalogStatus = value;
+      // Zmiana zakładki zeruje filtry typu/gatunku — inaczej wybór z innej zakładki
+      // mógłby dać pusty widok (np. gatunek, którego nie ma w planie).
+      catalogType = null;
+      catalogGenre = null;
+      renderCatalogStatusTabs();
+      renderCatalogTypes();
+      renderCatalogFilter();
+      renderCatalog();
+    });
+    box.append(b);
+  }
 }
 
 /**
@@ -2831,32 +2917,41 @@ function sortCatalog(items) {
 /** Katalog po nałożeniu gatunku i frazy, w wybranej kolejności. */
 function visibleCatalog() {
   const q = catalogQuery.trim().toLowerCase();
-  let items = catalogItems;
+  let items = baseCatalog();
   if (catalogType) items = items.filter((m) => m.type === catalogType);
   if (catalogGenre) items = items.filter((m) => (m.genres ?? []).includes(catalogGenre));
   if (q) items = items.filter((m) => (m.title ?? "").toLowerCase().includes(q));
   return sortCatalog(items);
 }
 
-// Filtruje katalog (gatunek + fraza), sortuje i rysuje siatkę.
-function renderCatalog() {
-  const items = visibleCatalog();
-  renderGrid($("catalog"), items, (m) =>
-    openDetail(toDetail(m, m.type, m.id, m.myRating)),
-  );
-  // Komunikat tylko wtedy, gdy to FILTRY wyczyściły widok — przy pustym katalogu
-  // „nic nie pasuje" byłoby mylące, bo nie ma jeszcze czego szukać.
-  $("catalogEmpty").classList.toggle(
-    "hidden",
-    items.length > 0 || catalogItems.length === 0,
-  );
+// Etykieta odznaki statusu na karcie: „Plan"/„W trakcie". Ukończone bez odznaki —
+// gwiazdka z oceną wystarcza, a badge na każdej karcie tylko zaśmiecałby siatkę.
+function statusLabelFor(m) {
+  if (m.plan) return t("statusPlan");
+  if (m.status === "IN_PROGRESS") return t("statusInProgress");
+  return null;
 }
 
-// Chipy gatunków nad katalogiem (tylko gdy są min. 2 różne gatunki).
+// Filtruje katalog (status + typ + gatunek + fraza), sortuje i rysuje siatkę.
+function renderCatalog() {
+  const items = visibleCatalog();
+  renderGrid(
+    $("catalog"),
+    items,
+    (m) => openDetail(toDetail(m, m.type, m.id, m.myRating)),
+    (m) => ({ score: m.plan ? undefined : m.myRating, statusLabel: statusLabelFor(m) }),
+  );
+  // Komunikat tylko wtedy, gdy to FILTRY/zakładka wyczyściły widok — przy zupełnie
+  // pustym katalogu „nic nie pasuje" byłoby mylące, bo nie ma jeszcze czego szukać.
+  const hasAny = catalogItems.length > 0 || (myProfile.watchlist?.length ?? 0) > 0;
+  $("catalogEmpty").classList.toggle("hidden", items.length > 0 || !hasAny);
+}
+
+// Chipy gatunków nad katalogiem (tylko gdy są min. 2 różne gatunki w bieżącej zakładce).
 function renderCatalogFilter() {
   const box = $("catalogGenres");
   box.innerHTML = "";
-  const genres = [...new Set(catalogItems.flatMap((m) => m.genres ?? []))].sort();
+  const genres = [...new Set(baseCatalog().flatMap((m) => m.genres ?? []))].sort();
   if (genres.length < 2) return;
 
   const chip = (label, value) => {
@@ -2889,7 +2984,7 @@ const CATALOG_TYPE_ORDER = [
 function renderCatalogTypes() {
   const box = $("catalogTypes");
   box.innerHTML = "";
-  const present = new Set(catalogItems.map((m) => m.type));
+  const present = new Set(baseCatalog().map((m) => m.type));
   if (present.size < 2) return;
   const types = CATALOG_TYPE_ORDER.filter((ty) => present.has(ty));
 
@@ -5066,6 +5161,12 @@ function updateDetailButtons() {
   $("favBtn").textContent = isFav ? t("favActive") : t("fav");
   $("watchBtn").classList.toggle("active", onWatch);
   $("watchBtn").textContent = onWatch ? t("watchActive") : t("watchAdd");
+  // Status (W trakcie / Ukończone) — tylko dla ocenionych (status wisi na recenzji).
+  // Napis to AKCJA (dokąd przełączy), a podświetlenie = tytuł jest „w trakcie".
+  const inProg = rev?.status === "IN_PROGRESS";
+  $("statusBtn").classList.toggle("hidden", !rev);
+  $("statusBtn").classList.toggle("active", inProg);
+  $("statusBtn").textContent = inProg ? t("markDone") : t("markInProgress");
   // „Usuń ocenę" tylko gdy JEST co usuwać — inaczej przycisk myli.
   $("deleteBtn").classList.toggle("hidden", !rev);
   $("deleteBtn").textContent = t("deleteReview");
@@ -5149,6 +5250,31 @@ async function toggleWatchlist() {
     loadUpcoming(); // tytuł mógł właśnie dojść (albo zniknąć) z „Nadchodzących"
     updateDetailButtons();
     toast(t(onWatch ? "removedList" : "addedList"));
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// Przełącza status ocenionego tytułu: Ukończone ↔ W trakcie. „Plan" to watchlista
+// (osobny przycisk „Do listy"), więc tu krążymy tylko między dwoma stanami oceny.
+async function toggleStatus() {
+  const mid = detailCtx?.mediaId;
+  const rev = mid ? myProfile.reviews.find((r) => r.media.id === mid) : null;
+  if (!mid || !rev) {
+    toast(t("rateFirst"));
+    return;
+  }
+  const next = rev.status === "IN_PROGRESS" ? "DONE" : "IN_PROGRESS";
+  try {
+    await api("/me/review-status", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ mediaId: mid, status: next }),
+    });
+    await loadMe();
+    await loadCatalog();
+    updateDetailButtons();
+    toast(next === "IN_PROGRESS" ? t("statusInProgress") : t("statusDone"));
   } catch (e) {
     toast(e.message);
   }
@@ -5855,6 +5981,7 @@ async function init() {
   $("avatarFile").addEventListener("change", onAvatarPick);
   $("favBtn").addEventListener("click", toggleFavorite);
   $("watchBtn").addEventListener("click", toggleWatchlist);
+  $("statusBtn").addEventListener("click", toggleStatus);
   $("shareBtn").addEventListener("click", () => {
     if (detailCtx?.mediaId) shareMediaPick(detailCtx.mediaId);
   });

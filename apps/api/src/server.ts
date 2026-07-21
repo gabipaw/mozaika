@@ -349,6 +349,33 @@ api.post("/me/favorite", requireAuth, async (c) => {
   return c.json({ favorite });
 });
 
+// Ustaw status ocenionego tytułu (W trakcie / Ukończone). „Plan" to watchlista,
+// więc tu tylko dwa stany. Wymaga istniejącej oceny — status wisi na recenzji.
+api.post("/me/review-status", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const body = await c.req.json();
+  const mediaId = Number(body.mediaId);
+  const status = String(body.status);
+  if (!Number.isInteger(mediaId) || mediaId <= 0) {
+    throw new ValidationError("Nieprawidłowy mediaId.");
+  }
+  if (status !== "IN_PROGRESS" && status !== "DONE") {
+    throw new ValidationError("Status musi być IN_PROGRESS albo DONE.");
+  }
+  const review = await prisma.review.findUnique({
+    where: { userId_mediaId: { userId, mediaId } },
+    select: { id: true },
+  });
+  if (!review) {
+    throw new NotFoundError("Najpierw oceń ten tytuł, żeby ustawić status.");
+  }
+  await prisma.review.update({
+    where: { userId_mediaId: { userId, mediaId } },
+    data: { status: status as "IN_PROGRESS" | "DONE" },
+  });
+  return c.json({ status });
+});
+
 // Dodaj tytuł do listy „do obejrzenia/zagrania".
 api.post("/me/watchlist", requireAuth, async (c) => {
   const userId = c.get("userId");
