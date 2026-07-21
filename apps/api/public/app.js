@@ -200,6 +200,19 @@ const I18N = {
     removedFromList: "Usunięto z listy",
     confirmDeleteList: "Usunąć listę „{name}”?",
     newListPrompt: "Nazwa nowej listy:",
+    achievements: "🏆 Osiągnięcia",
+    achDebut: "Debiut",
+    achCollector: "Kolekcjoner",
+    achVeteran: "Weteran",
+    achLegend: "Legenda",
+    achCinephile: "Kinoman",
+    achBinger: "Serialomaniak",
+    achBookworm: "Mól książkowy",
+    achGamer: "Gracz",
+    achOtaku: "Otaku",
+    achMeloman: "Meloman",
+    achCritic: "Krytyk",
+    achSocial: "Towarzyski",
     notifPremiere: "jest już dostępne — masz to na liście do obejrzenia",
     notifComment: "skomentował(-a) Twoją recenzję",
     notifReply: "odpowiedział(-a) na Twój komentarz",
@@ -519,6 +532,19 @@ const I18N = {
     removedFromList: "Removed from list",
     confirmDeleteList: "Delete list “{name}”?",
     newListPrompt: "New list name:",
+    achievements: "🏆 Achievements",
+    achDebut: "Debut",
+    achCollector: "Collector",
+    achVeteran: "Veteran",
+    achLegend: "Legend",
+    achCinephile: "Cinephile",
+    achBinger: "Binger",
+    achBookworm: "Bookworm",
+    achGamer: "Gamer",
+    achOtaku: "Otaku",
+    achMeloman: "Audiophile",
+    achCritic: "Critic",
+    achSocial: "Social",
     notifPremiere: "is out now — it's on your watchlist",
     notifComment: "commented on your review",
     notifReply: "replied to your comment",
@@ -840,6 +866,19 @@ const I18N = {
     removedFromList: "Von Liste entfernt",
     confirmDeleteList: "Liste „{name}” löschen?",
     newListPrompt: "Name der neuen Liste:",
+    achievements: "🏆 Erfolge",
+    achDebut: "Debüt",
+    achCollector: "Sammler",
+    achVeteran: "Veteran",
+    achLegend: "Legende",
+    achCinephile: "Cineast",
+    achBinger: "Serienjunkie",
+    achBookworm: "Leseratte",
+    achGamer: "Zocker",
+    achOtaku: "Otaku",
+    achMeloman: "Audiophiler",
+    achCritic: "Kritiker",
+    achSocial: "Gesellig",
     notifPremiere: "ist jetzt verfügbar — steht auf deiner Merkliste",
     notifComment: "hat deine Rezension kommentiert",
     notifReply: "hat auf deinen Kommentar geantwortet",
@@ -1153,6 +1192,19 @@ const I18N = {
     removedFromList: "Quitado de la lista",
     confirmDeleteList: "¿Eliminar la lista «{name}»?",
     newListPrompt: "Nombre de la nueva lista:",
+    achievements: "🏆 Logros",
+    achDebut: "Debut",
+    achCollector: "Coleccionista",
+    achVeteran: "Veterano",
+    achLegend: "Leyenda",
+    achCinephile: "Cinéfilo",
+    achBinger: "Seriéfilo",
+    achBookworm: "Ratón de biblioteca",
+    achGamer: "Jugador",
+    achOtaku: "Otaku",
+    achMeloman: "Melómano",
+    achCritic: "Crítico",
+    achSocial: "Sociable",
     notifPremiere: "ya está disponible — lo tienes en tu lista",
     notifComment: "comentó tu reseña",
     notifReply: "respondió a tu comentario",
@@ -1467,6 +1519,19 @@ const I18N = {
     removedFromList: "Removido da lista",
     confirmDeleteList: "Eliminar a lista «{name}»?",
     newListPrompt: "Nome da nova lista:",
+    achievements: "🏆 Conquistas",
+    achDebut: "Estreia",
+    achCollector: "Colecionador",
+    achVeteran: "Veterano",
+    achLegend: "Lenda",
+    achCinephile: "Cinéfilo",
+    achBinger: "Maratonista",
+    achBookworm: "Rato de biblioteca",
+    achGamer: "Jogador",
+    achOtaku: "Otaku",
+    achMeloman: "Melómano",
+    achCritic: "Crítico",
+    achSocial: "Sociável",
     notifPremiere: "já está disponível — tens na tua lista",
     notifComment: "comentou a tua crítica",
     notifReply: "respondeu ao teu comentário",
@@ -1778,6 +1843,19 @@ const I18N = {
     removedFromList: "已从清单移除",
     confirmDeleteList: "删除清单“{name}”？",
     newListPrompt: "新清单名称：",
+    achievements: "🏆 成就",
+    achDebut: "初评",
+    achCollector: "收藏家",
+    achVeteran: "老手",
+    achLegend: "传奇",
+    achCinephile: "影迷",
+    achBinger: "剧迷",
+    achBookworm: "书虫",
+    achGamer: "玩家",
+    achOtaku: "御宅族",
+    achMeloman: "乐迷",
+    achCritic: "评论家",
+    achSocial: "社交达人",
     notifPremiere: "已经上线——在你的想看清单里",
     notifComment: "评论了你的评论",
     notifReply: "回复了你的评论",
@@ -2084,6 +2162,19 @@ const I18N = {
     removedFromList: "リストから削除しました",
     confirmDeleteList: "リスト「{name}」を削除しますか？",
     newListPrompt: "新しいリスト名：",
+    achievements: "🏆 実績",
+    achDebut: "デビュー",
+    achCollector: "コレクター",
+    achVeteran: "ベテラン",
+    achLegend: "レジェンド",
+    achCinephile: "映画通",
+    achBinger: "ドラマ狂",
+    achBookworm: "本の虫",
+    achGamer: "ゲーマー",
+    achOtaku: "オタク",
+    achMeloman: "音楽通",
+    achCritic: "評論家",
+    achSocial: "社交家",
     notifPremiere: "が公開されました — あなたのリストにあります",
     notifComment: "があなたのレビューにコメントしました",
     notifReply: "があなたのコメントに返信しました",
@@ -3953,6 +4044,77 @@ async function createListFromPicker() {
   }
 }
 
+// --- Osiągnięcia (odznaki) — liczone z ocen/znajomych, bez bazy. Widoczne na profilu. ---
+// goal = próg; cur(stats) = aktualny postęp. Zdobyte, gdy cur >= goal.
+const ACHIEVEMENTS = [
+  { icon: "🎬", key: "achDebut", goal: 1, cur: (s) => s.total },
+  { icon: "📚", key: "achCollector", goal: 10, cur: (s) => s.total },
+  { icon: "🏆", key: "achVeteran", goal: 50, cur: (s) => s.total },
+  { icon: "👑", key: "achLegend", goal: 100, cur: (s) => s.total },
+  { icon: "🍿", key: "achCinephile", goal: 25, cur: (s) => s.byType.FILM ?? 0 },
+  { icon: "📺", key: "achBinger", goal: 25, cur: (s) => s.byType.SERIAL ?? 0 },
+  { icon: "📖", key: "achBookworm", goal: 25, cur: (s) => s.byType.KSIAZKA ?? 0 },
+  { icon: "🎮", key: "achGamer", goal: 25, cur: (s) => s.byType.GRA ?? 0 },
+  {
+    icon: "🌸",
+    key: "achOtaku",
+    goal: 25,
+    cur: (s) => (s.byType.ANIME ?? 0) + (s.byType.MANGA ?? 0),
+  },
+  { icon: "🎵", key: "achMeloman", goal: 25, cur: (s) => s.byType.MUZYKA ?? 0 },
+  { icon: "✍️", key: "achCritic", goal: 10, cur: (s) => s.withText },
+  {
+    icon: "🤝",
+    key: "achSocial",
+    goal: 5,
+    cur: (s) => Math.max(s.followers, s.following),
+  },
+];
+
+function achStats(data) {
+  const reviews = data.reviews ?? [];
+  const byType = {};
+  let withText = 0;
+  for (const r of reviews) {
+    const ty = r.media?.type;
+    if (ty) byType[ty] = (byType[ty] ?? 0) + 1;
+    if (r.text) withText++;
+  }
+  return {
+    total: reviews.length,
+    byType,
+    withText,
+    followers: data.followersCount ?? 0,
+    following: data.followingCount ?? 0,
+  };
+}
+
+function renderAchievements(data) {
+  const box = $("achievements");
+  box.innerHTML = "";
+  const s = achStats(data);
+  const items = ACHIEVEMENTS.map((a) => {
+    const current = a.cur(s);
+    return { ...a, current, earned: current >= a.goal };
+  }).sort((a, b) => Number(b.earned) - Number(a.earned)); // zdobyte na górze
+  for (const a of items) {
+    const el = document.createElement("div");
+    el.className = "ach" + (a.earned ? " earned" : "");
+    el.title = t(a.key);
+    const ic = document.createElement("div");
+    ic.className = "ach-ic";
+    ic.textContent = a.icon;
+    const nm = document.createElement("div");
+    nm.className = "ach-name";
+    nm.textContent = t(a.key);
+    const pr = document.createElement("div");
+    pr.className = "ach-prog";
+    pr.textContent = a.earned ? "✓" : `${Math.min(a.current, a.goal)}/${a.goal}`;
+    el.append(ic, nm, pr);
+    box.append(el);
+  }
+}
+
 // --- Wybór okładek w kategorii (max 4) — używa nakładki „Zobacz wszystko" ---
 let catPickCtx = null; // { group, items } gdy tryb wyboru okładek
 
@@ -5182,6 +5344,9 @@ function renderProfileData(data, readOnly) {
 
   // Własne listy/kolekcje (na cudzym profilu tylko publiczne — przycina backend).
   renderLists(data.lists, readOnly);
+
+  // Osiągnięcia — liczone z danych profilu (działa też dla cudzego profilu).
+  renderAchievements(data);
 
   // Prawa strona: ocenione pogrupowane po kategoriach.
   renderRatedByCat(data.reviews, readOnly);
