@@ -78,6 +78,10 @@ const I18N = {
     catAnime: "anime",
     catManga: "mangę",
     catGame: "gry",
+    catSerial: "seriale",
+    catBook: "książki",
+    catMusic: "muzykę",
+    tasteMore: "Pokaż więcej",
     yourCatalog: "Twój katalog",
     yourCatalogHint: "Tytuły, które oceniłeś.",
     allGenres: "Wszystkie",
@@ -367,6 +371,10 @@ const I18N = {
     catAnime: "anime",
     catManga: "manga",
     catGame: "games",
+    catSerial: "TV shows",
+    catBook: "books",
+    catMusic: "music",
+    tasteMore: "Show more",
     yourCatalog: "Your catalog",
     yourCatalogHint: "Titles you've rated.",
     allGenres: "All",
@@ -658,6 +666,10 @@ const I18N = {
     catAnime: "Anime",
     catManga: "Manga",
     catGame: "Spiele",
+    catSerial: "Serien",
+    catBook: "Bücher",
+    catMusic: "Musik",
+    tasteMore: "Mehr anzeigen",
     yourCatalog: "Dein Katalog",
     yourCatalogHint: "Titel, die du bewertet hast.",
     allGenres: "Alle",
@@ -941,6 +953,10 @@ const I18N = {
     catAnime: "anime",
     catManga: "manga",
     catGame: "juegos",
+    catSerial: "series",
+    catBook: "libros",
+    catMusic: "música",
+    tasteMore: "Ver más",
     yourCatalog: "Tu catálogo",
     yourCatalogHint: "Títulos que has puntuado.",
     allGenres: "Todos",
@@ -1225,6 +1241,10 @@ const I18N = {
     catAnime: "anime",
     catManga: "manga",
     catGame: "jogos",
+    catSerial: "séries",
+    catBook: "livros",
+    catMusic: "música",
+    tasteMore: "Ver mais",
     yourCatalog: "O teu catálogo",
     yourCatalogHint: "Títulos que avaliaste.",
     allGenres: "Todos",
@@ -1508,6 +1528,10 @@ const I18N = {
     catAnime: "动画",
     catManga: "漫画",
     catGame: "游戏",
+    catSerial: "剧集",
+    catBook: "图书",
+    catMusic: "音乐",
+    tasteMore: "显示更多",
     yourCatalog: "你的目录",
     yourCatalogHint: "你打过分的作品。",
     allGenres: "全部",
@@ -1784,6 +1808,10 @@ const I18N = {
     catAnime: "アニメ",
     catManga: "マンガ",
     catGame: "ゲーム",
+    catSerial: "ドラマ",
+    catBook: "書籍",
+    catMusic: "音楽",
+    tasteMore: "もっと見る",
     yourCatalog: "あなたのカタログ",
     yourCatalogHint: "評価した作品。",
     allGenres: "すべて",
@@ -3211,9 +3239,12 @@ async function loadRecommendations() {
 // Nazwa kategorii (do powodu „Bo lubisz …") wg klucza rodzaju z API.
 const CAT_LABEL = {
   film: "catFilm",
+  serial: "catSerial",
   anime: "catAnime",
   manga: "catManga",
   game: "catGame",
+  book: "catBook",
+  music: "catMusic",
 };
 function catLabel(typeKey) {
   const key = CAT_LABEL[typeKey];
@@ -3287,8 +3318,29 @@ async function loadUpcoming() {
 // Odkrywanie pod gust — świeże tytuły z zewnątrz (TMDB/AniList/RAWG), nie z katalogu.
 // Pozycje są zewnętrzne (mają externalId, brak mediaId) — klik otwiera detal i ocenę.
 // Sekcja idzie za aktywną zakładką: klikasz „Gry" → same gry.
+// Rozmiar strony discovery — zgodny z DEFAULT_DISCOVER_LIMIT po stronie backendu.
+// Gdy backend zwróci pełną stronę, zakładamy, że może być więcej → pokazujemy „Pokaż więcej".
+const TASTE_PAGE = 24;
+let tasteShown = 0; // ile kart „Pod Twój gust" już wisi (= offset kolejnej strony)
+
+function appendTasteCards(recs) {
+  const row = $("tasteRecs");
+  for (const r of recs) {
+    const { card } = posterCard(r, {
+      score: r.score,
+      recby: tasteReasonLabel(r.reason, r),
+    });
+    card.addEventListener("click", () => openDetail(toDetail(r, r.type, null)));
+    row.append(card);
+  }
+  tasteShown += recs.length;
+}
+
 async function loadTasteRecommendations() {
   const row = $("tasteRecs");
+  const moreBtn = $("tasteMore");
+  moreBtn.classList.add("hidden");
+  tasteShown = 0;
   if (!DISCOVERABLE_KEYS.includes(searchType)) {
     row.innerHTML = `<p class="muted">${t("noDiscoverForType")}</p>`;
     return;
@@ -3296,21 +3348,32 @@ async function loadTasteRecommendations() {
   row.innerHTML = `<p class="muted">${t("loading")}</p>`;
   try {
     const recs = await api(`/me/discover?type=${encodeURIComponent(searchType)}`);
+    row.innerHTML = "";
     if (recs.length === 0) {
       row.innerHTML = `<p class="muted">${t("noTasteRecsType")}</p>`;
       return;
     }
-    row.innerHTML = "";
-    for (const r of recs) {
-      const { card } = posterCard(r, {
-        score: r.score,
-        recby: tasteReasonLabel(r.reason, r),
-      });
-      card.addEventListener("click", () => openDetail(toDetail(r, r.type, null)));
-      row.append(card);
-    }
+    appendTasteCards(recs);
+    moreBtn.classList.toggle("hidden", recs.length < TASTE_PAGE);
   } catch (e) {
     row.innerHTML = `<p class="muted">${e.message}</p>`;
+  }
+}
+
+// „Pokaż więcej" — dokłada kolejną stronę z tej samej puli (offset = ile już widać).
+async function loadMoreTasteRecs() {
+  const moreBtn = $("tasteMore");
+  moreBtn.disabled = true;
+  try {
+    const recs = await api(
+      `/me/discover?type=${encodeURIComponent(searchType)}&offset=${tasteShown}`,
+    );
+    appendTasteCards(recs);
+    moreBtn.classList.toggle("hidden", recs.length < TASTE_PAGE);
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    moreBtn.disabled = false;
   }
 }
 
@@ -5971,6 +6034,7 @@ async function init() {
   $("surpriseBtn").addEventListener("click", surpriseMe);
   $("statsBtn").addEventListener("click", toggleStats);
   $("shareProfileBtn").addEventListener("click", copyProfileLink);
+  $("tasteMore").addEventListener("click", loadMoreTasteRecs);
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", openProfile);
   $("topBack").addEventListener("click", () => {

@@ -136,6 +136,52 @@ export function discoverRawg(yearFrom: number, yearTo: number): Promise<External
   );
 }
 
+/**
+ * Nazwa gatunku RAWG (tak, jak trafia do bazy z `toGame`) → slug do filtra `genres=`
+ * w API RAWG. RAWG oczekuje slugów, nie nazw wyświetlanych, stąd mapowanie.
+ */
+const RAWG_GENRE_SLUGS: Record<string, string> = {
+  Action: "action",
+  Indie: "indie",
+  Adventure: "adventure",
+  RPG: "role-playing-games-rpg",
+  Strategy: "strategy",
+  Shooter: "shooter",
+  Casual: "casual",
+  Simulation: "simulation",
+  Puzzle: "puzzle",
+  Arcade: "arcade",
+  Platformer: "platformer",
+  "Massively Multiplayer": "massively-multiplayer",
+  Racing: "racing",
+  Sports: "sports",
+  Fighting: "fighting",
+  Family: "family",
+  "Board Games": "board-games",
+  Card: "card",
+  Educational: "educational",
+};
+
+/** Czy RAWG zna ten gatunek (mamy dla niego slug do filtrowania). */
+export function recognizesRawgGenre(genre: string): boolean {
+  return genre in RAWG_GENRE_SLUGS;
+}
+
+/** „Odkrywanie" gier po gatunku: najpopularniejsze w danym gatunku z okna lat. */
+export function discoverRawgByGenre(
+  genre: string,
+  yearFrom: number,
+  yearTo: number,
+): Promise<ExternalMedia[]> {
+  const slug = RAWG_GENRE_SLUGS[genre];
+  if (!slug) return Promise.resolve([]);
+  return discoverGames(
+    () =>
+      `${RAWG}/games?key=${apiKey()}&page_size=18&ordering=-added` +
+      `&genres=${slug}&dates=${yearFrom}-01-01,${yearTo}-12-31`,
+  );
+}
+
 /** „Podobne gry" wg RAWG (suggested — dobiera po gatunku/treści). */
 export function similarRawg(externalId: string): Promise<ExternalMedia[]> {
   const id = externalId.trim();

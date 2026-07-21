@@ -296,7 +296,9 @@ api.get("/me/recommendations", requireAuth, async (c) => {
 // ?type=film|anime|manga|game — zawęża do jednego rodzaju (zakładka na froncie).
 api.get("/me/discover", requireAuth, async (c) => {
   const type = c.req.query("type");
-  return c.json(await tasteDiscovery(c.get("userId"), undefined, type));
+  // offset = „Pokaż więcej" (kolejna strona z tej samej puli, bez powtórek). Ujemne/śmieci → 0.
+  const offset = Math.max(0, Number(c.req.query("offset")) || 0);
+  return c.json(await tasteDiscovery(c.get("userId"), undefined, type, offset));
 });
 
 // Portret gustu — top gatunki/typy/dekady + „surowość" vs średnia serwisu.

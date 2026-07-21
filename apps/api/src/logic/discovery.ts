@@ -24,7 +24,12 @@ import {
   similarAniList,
 } from "./anilist.js";
 import { discoverBooks, discoverBooksByGenre, recognizesBookGenre } from "./books.js";
-import { discoverRawg, similarRawg } from "./games.js";
+import {
+  discoverRawg,
+  discoverRawgByGenre,
+  recognizesRawgGenre,
+  similarRawg,
+} from "./games.js";
 import { discoverMusic, discoverMusicByGenre, recognizesMusicGenre } from "./music.js";
 import type { ExternalMedia } from "./media.js";
 import {
@@ -105,6 +110,8 @@ const DISCOVERABLE: Record<string, Source> = {
     key: "game",
     discover: (f, t) => discoverRawg(f, t),
     similar: (id) => similarRawg(id),
+    discoverByGenre: (g, f, t) => discoverRawgByGenre(g, f, t),
+    recognizesGenre: (g) => recognizesRawgGenre(g),
   },
   // Książki i muzyka NIE mają w swoich API odpowiednika „podobne do” — dlatego
   // opierają się na gatunku i popularności. Gatunek książki bierzemy z gustu
@@ -224,9 +231,7 @@ export const POOL_TTL_MS = 10 * 60 * 1000; // 10 minut
 
 interface PoolCache {
   at: number;
-  similarRaw: DiscoverItem[][];
-  genreRaw: DiscoverItem[][];
-  popularRaw: DiscoverItem[][];
+  ordered: DiscoverItem[]; // pełna, już posortowana lista (do stronicowania „Pokaż więcej")
 }
 // Klucz: `userId:typ` — każdy filtr rodzaju ma WŁASNĄ pulę, inaczej wejście na
 // „Gry" nadpisałoby pulę „Filmów" i po powrocie widziałbyś gry w filmach.
@@ -262,6 +267,7 @@ export async function tasteDiscovery(
   userId: number,
   limit: number = DEFAULT_DISCOVER_LIMIT,
   typeKey?: string,
+  offset: number = 0,
 ): Promise<DiscoverItem[]> {
   const allowed = typesForKey(typeKey);
   if (allowed.length === 0) return []; // np. książki / muzyka
@@ -316,6 +322,26 @@ export async function tasteDiscovery(
     reason,
   });
 
+  // Ulubione gatunki/dekady (delta>0, poparcie ≥2) — do UŚCIŚLANIA powodu „popularne".
+  const favGenres = new Set(
+    profile.genres.filter((a) => a.delta > 0 && a.count >= 2).map((a) => a.key),
+  );
+  const favDecades = new Set(
+    profile.decades.filter((a) => a.delta > 0 && a.count >= 2).map((a) => a.key),
+  );
+  // Zamiast gołego „popularne" spróbuj podać KONKRETNY powód z cech samego tytułu:
+  // jego gatunek, który lubisz, albo jego dekada, którą lubisz. „popular” dopiero,
+  // gdy nic nie pasuje — dzięki temu prawie każda karta ma powód pod gust.
+  const explainPopular = (m: ExternalMedia): RecReason => {
+    const g = (m.genres ?? []).find((x) => favGenres.has(x));
+    if (g) return { kind: "genre", genre: g };
+    if (m.year !== null && m.year !== undefined) {
+      const dec = String(Math.floor(m.year / 10) * 10);
+      if (favDecades.has(dec)) return { kind: "decade", decade: dec };
+    }
+    return { kind: "popular" };
+  };
+
   // Ziarna „podobne do…" bierzemy tylko z wybranego rodzaju — inaczej przy filtrze
   // „Gry" pytalibyśmy RAWG o gry podobne do filmu, którego RAWG w ogóle nie zna.
   const seeds = pickSeeds(
@@ -365,33 +391,32 @@ export async function tasteDiscovery(
         types.map(async (enumType) => {
           const found = await DISCOVERABLE[enumType].discover(from, to);
           return found.map((m) => {
-            // Popularne wybieramy z ulubionych rodzajów, więc zawsze umiemy wyjaśnić
-            // powód: dekada (gdy silna) albo sam rodzaj — nigdy gołe „w guście".
             const r = scorer({ mediaId: 0, type: enumType, year: m.year }).reason;
-            // Gdy rodzaj wybrał SAM (zakładka), „Bo lubisz gry" byłoby kłamstwem —
-            // może nie mieć ani jednej oceny gry. Uczciwy powód to popularność.
-            if (typeKey) {
-              const honest: RecReason =
-                r.kind === "general" || r.kind === "type" ? { kind: "popular" } : r;
-              return toItem(m, enumType, honest);
-            }
-            return toItem(m, enumType, r.kind === "general" ? { kind: "type" } : r);
+            // Powód „rodzajowy"/ogólny uściślamy z cech tytułu (gatunek/dekada). „Bo
+            // lubisz gry" i tak byłoby słabe przy zakładce „Gry" (tautologia), a często
+            // wręcz nieprawdziwe — konkretny gatunek/dekada tytułu jest uczciwszy.
+            const specific =
+              r.kind === "general" || r.kind === "type" ? explainPopular(m) : r;
+            return toItem(m, enumType, specific);
           });
         }),
       ),
     ]);
-    pools = { at: Date.now(), similarRaw, genreRaw, popularRaw };
+    // Kolejność ustalamy RAZ na okno cache (nie co wejście), żeby „Pokaż więcej"
+    // dokładało kolejne, NIEPOWTARZAJĄCE się strony. Rotacja zmienia się co POOL_TTL_MS
+    // albo po nowej ocenie (invalidateDiscoveryCache czyści pulę).
+    const similar = dedupeByKey(
+      interleave(shuffle(similarRaw.map(shuffle))).filter(fresh),
+    );
+    const genre = dedupeByKey(interleave(shuffle(genreRaw.map(shuffle))).filter(fresh));
+    const popular = dedupeByKey(
+      interleave(shuffle(popularRaw.map(shuffle))).filter(fresh),
+    );
+    // Miks trzech sygnałów round-robin, żeby KAŻDY był widoczny (nie zdominuje „podobne").
+    const ordered = dedupeByKey(interleave([similar, genre, popular]));
+    pools = { at: Date.now(), ordered };
     poolCache.set(cacheKey, pools);
   }
-  const { similarRaw, genreRaw, popularRaw } = pools;
 
-  // Rotacja: tasujemy pulę każdego ziarna/gatunku/rodzaju ORAZ ich kolejność, więc
-  // każde wejście daje inny zestaw (wciąż dobrany pod gust — jakość zachowana).
-  const similar = dedupeByKey(interleave(shuffle(similarRaw.map(shuffle))).filter(fresh));
-  const genre = dedupeByKey(interleave(shuffle(genreRaw.map(shuffle))).filter(fresh));
-  const popular = dedupeByKey(interleave(shuffle(popularRaw.map(shuffle))).filter(fresh));
-
-  // Miks trzech sygnałów round-robin, żeby KAŻDY był widoczny (nie zdominuje „podobne"):
-  // podobne + po gatunku + popularne na przemian. Krótsze strumienie dopełniają dłuższe.
-  return dedupeByKey(interleave([similar, genre, popular])).slice(0, limit);
+  return pools.ordered.slice(offset, offset + limit);
 }
