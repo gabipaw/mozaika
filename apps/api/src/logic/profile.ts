@@ -10,23 +10,17 @@ import { areFriends } from "./messages.js";
 /** Ekskluzywny tytuł twórcy — ustawić może tylko konto „dev". */
 export const DEV_TITLE = "👑 Developer";
 
-/** Czy dany e-mail jest na liście twórców (env DEV_EMAILS, przecinkami). */
+// Konto twórcy Mozaiki (na stałe) + ewentualne dodatkowe z env DEV_EMAILS.
+const BUILTIN_DEV_EMAILS = ["gabipaw0@gmail.com"];
+
+/** Czy dany e-mail należy do twórcy (wbudowany + env DEV_EMAILS, przecinkami). */
 export function isDevEmail(email: string | null | undefined): boolean {
   const set = new Set(
-    (process.env.DEV_EMAILS ?? "")
-      .split(",")
+    [...BUILTIN_DEV_EMAILS, ...(process.env.DEV_EMAILS ?? "").split(",")]
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean),
   );
   return !!email && set.has(email.toLowerCase());
-}
-
-/** Konto twórcy: pierwszy użytkownik (właściciel) albo e-mail z DEV_EMAILS. */
-export function isDevUserByEmail(
-  userId: number,
-  email: string | null | undefined,
-): boolean {
-  return userId === 1 || isDevEmail(email);
 }
 
 const mediaSelect = {
@@ -62,7 +56,7 @@ export async function profilePayload(
     },
   });
   // isDev tylko dla oglądania własnego profilu (picker tytułu) — decyduje o „👑 Developer".
-  const isDev = viewerId === userId && isDevUserByEmail(userId, user.email);
+  const isDev = viewerId === userId && isDevEmail(user.email);
   // E-mail zwracamy tylko na własnym profilu — na cudzym to wyciek.
   const userOut = withEmail ? user : { ...user, email: undefined };
 

@@ -46,7 +46,7 @@ import {
 import { checkPremieres, ensureReleaseDate, upcomingForUser } from "./logic/premieres.js";
 import { addReview, deleteReview } from "./logic/reviews.js";
 import { react, reactionScore, reactionSummary } from "./logic/reactions.js";
-import { DEV_TITLE, isDevUserByEmail, profilePayload } from "./logic/profile.js";
+import { DEV_TITLE, isDevEmail, profilePayload } from "./logic/profile.js";
 import {
   conversation,
   conversations,
@@ -272,7 +272,7 @@ api.patch("/me/title", requireAuth, async (c) => {
       where: { id: userId },
       select: { email: true },
     });
-    if (!isDevUserByEmail(userId, me?.email)) {
+    if (!isDevEmail(me?.email)) {
       throw new ForbiddenError("Ten tytuł jest zarezerwowany dla twórcy.");
     }
   }
