@@ -4207,7 +4207,7 @@ const ACH_QUOTES = [
     "„Finish him!” — Mortal Kombat",
     "„War. War never changes.” — Fallout",
     "„A man chooses, a slave obeys.” — BioShock",
-    "„Praise the Sun! \\[T]/” — Dark Souls",
+    "„Never f*ck with Kim Kitsuragi.” — Disco Elysium",
   ],
   // 🌸 ANIME — 6 (JoJo i Hokuto no Ken zostają na progach 5 i 50)
   [
