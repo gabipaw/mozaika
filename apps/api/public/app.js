@@ -4173,14 +4173,14 @@ const ACH_QUOTES = [
     "„I'll be back.” — Terminator",
     "„What we do in life echoes in eternity.” — Gladiator",
   ],
-  // 🍿 FILM — 6
+  // 🍿 FILM — 6. Bond ma {name} — podstawiamy imię użytkownika przy wyświetlaniu.
   [
-    "„May the Force be with you.” — Gwiezdne wojny",
-    "„Here's looking at you, kid.” — Casablanca",
-    "„You talkin' to me?” — Taksówkarz",
-    "„I'm gonna make him an offer he can't refuse.” — Ojciec chrzestny",
-    "„I see dead people.” — Szósty zmysł",
-    "„The first rule of Fight Club is: you do not talk about Fight Club.” — Podziemny krąg",
+    "„You either die a hero, or live long enough to see yourself become the villain.” — Mroczny Rycerz",
+    "„Every man dies. Not every man really lives.” — Braveheart",
+    "„Welcome to the real world.” — Matrix",
+    "„This is your life, and it's ending one minute at a time.” — Fight Club",
+    "„The name's Bond. {name} Bond.” — James Bond",
+    "„The path of the righteous man is beset on all sides…” — Pulp Fiction",
   ],
   // 📺 SERIAL — 6
   [
@@ -4361,7 +4361,7 @@ function achStats(data) {
   };
 }
 
-function achRow(a) {
+function achRow(a, name) {
   const el = document.createElement("div");
   el.className = "ach" + (a.earned ? " earned" : "");
   const ic = document.createElement("div");
@@ -4377,7 +4377,7 @@ function achRow(a) {
   if (a.earned && a.quote) {
     const q = document.createElement("div");
     q.className = "ach-quote";
-    q.textContent = a.quote;
+    q.textContent = personalize(a.quote, name);
     mid.append(q);
   }
   const pr = document.createElement("div");
@@ -4389,6 +4389,7 @@ function achRow(a) {
 
 function renderAchievements(data) {
   const s = achStats(data);
+  const name = data.user?.displayName;
   const items = ACHIEVEMENTS.map((a) => {
     const current = a.cur(s);
     return { ...a, current, earned: current >= a.goal };
@@ -4405,7 +4406,7 @@ function renderAchievements(data) {
       .filter((a) => !a.earned)
       .sort((a, b) => b.current / b.goal - a.current / a.goal),
   ];
-  for (const a of ordered) box.append(achRow(a));
+  for (const a of ordered) box.append(achRow(a, name));
 }
 
 // --- Tytuły (do pokazania przy imieniu) = cytaty z odznak. Jeden achievement =
@@ -4418,6 +4419,12 @@ function quoteOnly(q) {
   const i = q.lastIndexOf(" — ");
   return i === -1 ? q : q.slice(0, i);
 }
+// Podstawia imię użytkownika w cytatach z {name} (np. tytuł „Bonda"). Wołane
+// PRZY WYŚWIETLANIU — w bazie/tytule zostaje literalne {name}, żeby na cudzym
+// profilu podstawić właściciela i by lookup w TITLE_BY_NAME dalej działał.
+function personalize(text, name) {
+  return text ? text.replaceAll("{name}", name || "") : text;
+}
 const TITLES = ACHIEVEMENTS.filter((a) => a.quote).map((a) => ({
   name: quoteOnly(a.quote),
   unlock: (s) => a.cur(s) >= a.goal,
@@ -4429,7 +4436,7 @@ const TITLE_BY_NAME = new Map(
 );
 
 // Okno „info o tytule" — pełny cytat + które osiągnięcie go odblokowało.
-function openTitleInfo(title) {
+function openTitleInfo(title, name) {
   if (!title) return;
   const body = $("titleInfoBody");
   body.innerHTML = "";
@@ -4437,7 +4444,7 @@ function openTitleInfo(title) {
   const quote = document.createElement("div");
   quote.className = "title-info-quote";
   // Pełny cytat ze źródłem (a.quote), albo sam tytuł gdy spoza listy (np. Developer).
-  quote.textContent = a ? a.quote : title;
+  quote.textContent = personalize(a ? a.quote : title, name);
   body.append(quote);
   const how = document.createElement("div");
   how.className = "title-info-how";
@@ -4465,10 +4472,11 @@ function renderTitleList() {
   if (!box) return;
   box.innerHTML = "";
   const s = achStats(myProfile);
+  const me = myProfile.user?.displayName;
   const current = myProfile.user?.title ?? "";
   const options = [{ name: "", label: t("titleNone") }];
   for (const ti of TITLES)
-    if (ti.unlock(s)) options.push({ name: ti.name, label: ti.name });
+    if (ti.unlock(s)) options.push({ name: ti.name, label: personalize(ti.name, me) });
   if (myProfile.isDev) options.push({ name: DEV_TITLE, label: DEV_TITLE });
   for (const o of options) {
     const b = document.createElement("button");
@@ -5644,14 +5652,19 @@ function renderProfileData(data, readOnly) {
   $("profileName").textContent = readOnly
     ? data.user.displayName
     : t("hi", { name: data.user.displayName });
-  // „Tytuł" przy imieniu (pill) — jeśli ustawiony.
+  // „Tytuł" przy imieniu (pill) — jeśli ustawiony. Cytaty z {name} personalizujemy
+  // imieniem właściciela profilu; surowy tytuł trzymamy do lookupu po kliknięciu.
   const titleEl = $("profileTitle");
-  titleEl.textContent = data.user.title ?? "";
-  titleEl.title = data.user.title ?? ""; // pełny cytat w tooltipie (pigułka obcięta)
-  titleEl.classList.toggle("hidden", !data.user.title);
+  const rawTitle = data.user.title ?? "";
+  const shownTitle = personalize(rawTitle, data.user.displayName);
+  titleEl.textContent = shownTitle;
+  titleEl.title = shownTitle; // pełny cytat w tooltipie (pigułka obcięta)
+  titleEl.dataset.raw = rawTitle;
+  titleEl.dataset.owner = data.user.displayName;
+  titleEl.classList.toggle("hidden", !rawTitle);
   // Klikalny tytuł: pokazuje pełny cytat i jak został zdobyty.
   titleEl.setAttribute("role", "button");
-  titleEl.setAttribute("tabindex", data.user.title ? "0" : "-1");
+  titleEl.setAttribute("tabindex", rawTitle ? "0" : "-1");
   const img = $("avatarImg");
   const initial = $("avatarInitial");
   if (data.user.avatarUrl) {
@@ -7142,14 +7155,15 @@ async function init() {
       $("achievementsOverlay").classList.add("hidden");
     }
   });
-  // Klik w tytuł przy imieniu → pełny cytat + jak zdobyty.
-  $("profileTitle").addEventListener("click", () =>
-    openTitleInfo($("profileTitle").textContent),
-  );
+  // Klik w tytuł przy imieniu → pełny cytat + jak zdobyty. Używamy surowego
+  // tytułu (z {name}) do lookupu i imienia właściciela do podstawienia.
+  const openTitle = () =>
+    openTitleInfo($("profileTitle").dataset.raw, $("profileTitle").dataset.owner);
+  $("profileTitle").addEventListener("click", openTitle);
   $("profileTitle").addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      openTitleInfo($("profileTitle").textContent);
+      openTitle();
     }
   });
   $("titleInfoClose").addEventListener("click", closeTitleInfo);
