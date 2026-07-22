@@ -4224,7 +4224,7 @@ const ACH_QUOTES = [
     "„The thing I fear most is losing myself.” — Guts (Berserk)",
     "„I have no enemies. Nobody in this whole world is my enemy.” — Thorfinn (Vinland Saga)",
     "„To be invincible means to be able to defeat yourself.” — Miyamoto Musashi (Vagabond)",
-    "„Lesson 5: The next step is always the most important.” — Gyro Zeppeli (JoJo SBR)",
+    "„My heart and actions are utterly unclouded. They are all those of 'justice'.” — Funny Valentine (JoJo SBR)",
   ],
   // 🎵 MUZYKA — 5
   [
