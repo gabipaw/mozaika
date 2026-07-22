@@ -720,6 +720,10 @@ h2 {
   white-space: nowrap;
   vertical-align: bottom;
   cursor: pointer;
+  /* Delikatna poświata — założony tytuł czuć jako wyróżnienie, nie zwykły tekst. */
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 3px 14px -4px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 .profile-title:hover {
   background: var(--accent);
@@ -730,10 +734,23 @@ h2 {
   padding: 4px 2px 2px;
 }
 .title-info-quote {
+  position: relative;
+  padding-left: 30px;
   font-size: 1.1rem;
   font-weight: 700;
   line-height: 1.35;
   color: var(--text);
+}
+/* Duży cudzysłów jako ornament — cytat czyta się jak filmowy pull-quote. */
+.title-info-quote::before {
+  content: "\201E";
+  position: absolute;
+  left: -4px;
+  top: -16px;
+  font: 800 54px Georgia, serif;
+  color: var(--accent);
+  opacity: 0.35;
+  line-height: 1;
 }
 .title-info-how {
   display: flex;
