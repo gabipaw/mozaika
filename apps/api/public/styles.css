@@ -3113,6 +3113,14 @@ h2 {
 .acc-body {
   padding: 2px 2px 16px;
 }
+/* Lista tytułów bywa długa (cytat na każdą zdobytą odznakę) — ograniczamy
+   wysokość i przewijamy WEWNĄTRZ, żeby nie rozpychała panelu ustawień poza
+   ekran (inaczej dolne sekcje/tytuły są nieosiągalne). */
+#titleList {
+  max-height: 44vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
 
 /* Formularze konta: nazwa (rząd), hasło (kolumna). */
 .settings-form {
