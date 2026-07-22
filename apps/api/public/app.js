@@ -4140,7 +4140,7 @@ const ACH_CATEGORIES = [
   { icon: "📖", label: "achLblBook", desc: "achReqRate", cur: (s) => s.byType.KSIAZKA ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "🎮", label: "achLblGame", desc: "achReqRate", cur: (s) => s.byType.GRA ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "🌸", label: "achLblAnime", desc: "achReqRate", cur: (s) => s.byType.ANIME ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
-  { icon: "📗", label: "achLblManga", desc: "achReqRate", cur: (s) => s.byType.MANGA ?? 0, tiers: [1, 5, 10, 25, 50] },
+  { icon: "📗", label: "achLblManga", desc: "achReqRate", cur: (s) => s.byType.MANGA ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "🎵", label: "achLblMusic", desc: "achReqRate", cur: (s) => s.byType.MUZYKA ?? 0, tiers: [1, 5, 10, 25, 50] },
   { icon: "✍️", desc: "achReqText", cur: (s) => s.withText, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "⭐", desc: "achReqPerfect", cur: (s) => s.perfect, tiers: [1, 5, 10, 25, 50] },
@@ -4218,13 +4218,14 @@ const ACH_QUOTES = [
     "„Omae wa mou shindeiru. — Nani?!” — Hokuto no Ken",
     "„If the truth is cruel, then a lie must be kind. That’s why kindness is a lie.” — Hachiman Hikigaya",
   ],
-  // 📗 MANGA — 5
+  // 📗 MANGA — 6
   [
     "„What's wrong isn't me. What's wrong is the world.” — Kaneki Ken (Tokyo Ghoul)",
     "„The thing I fear most is losing myself.” — Guts (Berserk)",
     "„I have no enemies. Nobody in this whole world is my enemy.” — Thorfinn (Vinland Saga)",
     "„To be invincible means to be able to defeat yourself.” — Miyamoto Musashi (Vagabond)",
     "„My heart and actions are utterly unclouded. They are all those of 'justice'.” — Funny Valentine (JoJo SBR)",
+    "„The reason I am killing you is simple. It's because you aimed your blade at my only pride.” — Byakuya Kuchiki (Bleach)",
   ],
   // 🎵 MUZYKA — 5
   [
