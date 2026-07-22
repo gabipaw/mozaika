@@ -4207,7 +4207,7 @@ const ACH_QUOTES = [
     "„Finish him!” — Mortal Kombat",
     "„Snake? Snake?! SNAAAKE!” — Metal Gear Solid",
     "„Seven minutes. Seven minutes is all I can spare to play with you.” — Albert Wesker (Resident Evil 5)",
-    "„Never f*ck with Kim Kitsuragi.” — Disco Elysium",
+    "„Never f*ck with {name} Kitsuragi.” — Disco Elysium",
   ],
   // 🌸 ANIME — 6 (JoJo i Hokuto no Ken zostają na progach 5 i 50)
   [
