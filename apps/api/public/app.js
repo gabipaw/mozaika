@@ -4131,13 +4131,172 @@ const ACH_CATEGORIES = [
   { icon: "🧊", desc: "achReqHarsh", cur: (s) => s.harsh, tiers: [1, 5, 10, 25] },
   { icon: "🗂️", desc: "achReqLists", cur: (s) => s.lists, tiers: [1, 3, 5, 10] },
 ];
-const ACHIEVEMENTS = ACH_CATEGORIES.flatMap((c) =>
-  c.tiers.map((goal) => ({
+// Popkulturowy cytat odsłaniany PO zdobyciu odznaki — jeden na próg, temat pod
+// kategorię (filmy → cytaty filmowe itd.), rosnąco od najbardziej kultowych.
+// Kolejność i długość MUSZĄ zgadzać się z ACH_CATEGORIES (te same tiers). Celowo
+// nietłumaczone — jak ksywki. Bez znaków " wewnątrz (łamałyby string).
+// prettier-ignore
+const ACH_QUOTES = [
+  // 🏅 total — 12
+  [
+    "„Każda podróż zaczyna się od jednego kroku.” — Laozi",
+    "„Just keep swimming.” — Gdzie jest Nemo",
+    "„To infinity… and beyond!” — Toy Story",
+    "„I love the smell of napalm in the morning.” — Czas apokalipsy",
+    "„Say hello to my little friend!” — Scarface",
+    "„Carpe diem. Chwytaj dzień.” — Stowarzyszenie Umarłych Poetów",
+    "„Life moves pretty fast…” — Wolny dzień Ferrisa Buellera",
+    "„Elementary, my dear Watson.” — Sherlock Holmes",
+    "„Houston, we have a problem.” — Apollo 13",
+    "„They may take our lives, but they'll never take our freedom!” — Braveheart",
+    "„I'll be back.” — Terminator",
+    "„What we do in life echoes in eternity.” — Gladiator",
+  ],
+  // 🍿 FILM — 6
+  [
+    "„May the Force be with you.” — Gwiezdne wojny",
+    "„Here's looking at you, kid.” — Casablanca",
+    "„You talkin' to me?” — Taksówkarz",
+    "„I'm gonna make him an offer he can't refuse.” — Ojciec chrzestny",
+    "„I see dead people.” — Szósty zmysł",
+    "„The first rule of Fight Club is: you do not talk about Fight Club.” — Podziemny krąg",
+  ],
+  // 📺 SERIAL — 6
+  [
+    "„Winter is coming.” — Gra o tron",
+    "„How you doin'?” — Przyjaciele",
+    "„That's what she said.” — The Office",
+    "„Say my name.” — Breaking Bad",
+    "„I am the one who knocks.” — Breaking Bad",
+    "„Valar morghulis. Wszyscy ludzie muszą umrzeć.” — Gra o tron",
+  ],
+  // 📖 KSIAZKA — 6
+  [
+    "„Not all those who wander are lost.” — Władca Pierścieni",
+    "„Big Brother is watching you.” — Rok 1984",
+    "„Fear is the mind-killer.” — Diuna",
+    "„So it goes.” — Rzeźnia numer pięć",
+    "„It was the best of times, it was the worst of times.” — Opowieść o dwóch miastach",
+    "„Whatever our souls are made of, his and mine are the same.” — Wichrowe Wzgórza",
+  ],
+  // 🎮 GRA — 6
+  [
+    "„It's dangerous to go alone! Take this.” — The Legend of Zelda",
+    "„The cake is a lie.” — Portal",
+    "„Finish him!” — Mortal Kombat",
+    "„War. War never changes.” — Fallout",
+    "„A man chooses, a slave obeys.” — BioShock",
+    "„Praise the Sun! \\[T]/” — Dark Souls",
+  ],
+  // 🌸 ANIME — 6
+  [
+    "„Believe it! (Dattebayo)” — Naruto",
+    "„Yare yare daze.” — JoJo's Bizarre Adventure",
+    "„People die when they are killed.” — Fate/stay night",
+    "„I'm gonna be King of the Pirates!” — One Piece",
+    "„Omae wa mou shindeiru. — Nani?!” — Hokuto no Ken",
+    "„Tatakae. Tatakae! (Walcz!)” — Attack on Titan",
+  ],
+  // 📗 MANGA — 5
+  [
+    "„I'll take a potato chip… and eat it!” — Death Note",
+    "„Plus Ultra!” — My Hero Academia",
+    "„A lesson without pain is meaningless.” — Fullmetal Alchemist",
+    "„Wszystko zgodnie z planem. (Keikaku doori.)” — Death Note",
+    "„The world is not perfect. But it's there for us.” — Fullmetal Alchemist",
+  ],
+  // 🎵 MUZYKA — 5
+  [
+    "„Is this the real life? Is this just fantasy?” — Queen, Bohemian Rhapsody",
+    "„All you need is love.” — The Beatles",
+    "„Hello darkness, my old friend.” — Simon & Garfunkel",
+    "„We will, we will rock you.” — Queen",
+    "„And now, the end is near…” — Frank Sinatra, My Way",
+  ],
+  // ✍️ text — 6
+  [
+    "„The pen is mightier than the sword.” — Edward Bulwer-Lytton",
+    "„There is no greater agony than bearing an untold story inside you.” — Maya Angelou",
+    "„Fill your paper with the breathings of your heart.” — William Wordsworth",
+    "„You can make anything by writing.” — C.S. Lewis",
+    "„Write drunk, edit sober.” — (przyp. Hemingwayowi)",
+    "„A word after a word after a word is power.” — Margaret Atwood",
+  ],
+  // ⭐ perfect — 5
+  [
+    "„Nobody's perfect.” — Pół żartem, pół serio",
+    "„Chase perfection and we can catch excellence.” — Vince Lombardi",
+    "„If you look for perfection, you'll never be content.” — Lew Tołstoj",
+    "„Have no fear of perfection — you'll never reach it.” — Salvador Dalí",
+    "„Ars longa, vita brevis.” — Hipokrates",
+  ],
+  // 📌 favorites — 6
+  [
+    "„We'll always have Paris.” — Casablanca",
+    "„After all this time? Always.” — Harry Potter",
+    "„To me, you are perfect.” — To właśnie miłość",
+    "„You had me at hello.” — Jerry Maguire",
+    "„I'm just a girl, standing in front of a boy…” — Notting Hill",
+    "„Love means never having to say you're sorry.” — Love Story",
+  ],
+  // 🤝 followers — 6
+  [
+    "„With great power comes great responsibility.” — Spider-Man",
+    "„Where everybody knows your name.” — Zdrówko (Cheers)",
+    "„Are you not entertained?!” — Gladiator",
+    "„I'm the king of the world!” — Titanic",
+    "„Fame! I'm gonna live forever.” — Fame",
+    "„It's gonna be legen— wait for it —dary!” — Jak poznałem waszą matkę",
+  ],
+  // 👀 following — 5
+  [
+    "„I'll be watching you.” — The Police, Every Breath You Take",
+    "„I see you.” — Avatar",
+    "„Keep your friends close, but your enemies closer.” — Ojciec chrzestny II",
+    "„Curiouser and curiouser!” — Alicja w Krainie Czarów",
+    "„The truth is out there.” — Z Archiwum X",
+  ],
+  // 🎭 genres — 7
+  [
+    "„Life is like a box of chocolates.” — Forrest Gump",
+    "„Variety's the very spice of life.” — William Cowper",
+    "„So many books, so little time.” — Frank Zappa",
+    "„A jack of all trades, master of none.” — przysłowie",
+    "„Toto, I've a feeling we're not in Kansas anymore.” — Czarnoksiężnik z Oz",
+    "„Infinite diversity in infinite combinations.” — Star Trek",
+    "„Why not both?” — internetowa mądrość",
+  ],
+  // 🕰️ decades — 5
+  [
+    "„Great Scott!” — Powrót do przyszłości",
+    "„Roads? Where we're going, we don't need roads.” — Powrót do przyszłości",
+    "„I've seen things you people wouldn't believe…” — Łowca androidów",
+    "„Time is a flat circle.” — Detektyw",
+    "„The past is never dead. It's not even past.” — William Faulkner",
+  ],
+  // 🧊 harsh — 4
+  [
+    "„Frankly, my dear, I don't give a damn.” — Przeminęło z wiatrem",
+    "„You can't handle the truth!” — Ludzie honoru",
+    "„What is this? A center for ants?” — Zoolander",
+    "„Hasta la vista, baby.” — Terminator 2",
+  ],
+  // 🗂️ lists — 4
+  [
+    "„Gotta catch 'em all!” — Pokémon",
+    "„A place for everything, and everything in its place.” — Isabella Beeton",
+    "„My precious.” — Władca Pierścieni",
+    "„I love it when a plan comes together.” — Drużyna A",
+  ],
+];
+const ACHIEVEMENTS = ACH_CATEGORIES.flatMap((c, ci) =>
+  c.tiers.map((goal, ti) => ({
     icon: c.icon,
     label: c.label,
     desc: c.desc,
     goal,
     cur: c.cur,
+    quote: ACH_QUOTES[ci]?.[ti],
   })),
 );
 
@@ -4187,13 +4346,23 @@ function achRow(a) {
   const ic = document.createElement("div");
   ic.className = "ach-ic";
   ic.textContent = a.icon;
+  const mid = document.createElement("div");
+  mid.className = "ach-mid";
   const nm = document.createElement("div");
-  nm.className = "ach-mid ach-name";
+  nm.className = "ach-name";
   nm.textContent = achLabel(a);
+  mid.append(nm);
+  // Cytat to nagroda — odsłaniany dopiero po zdobyciu odznaki.
+  if (a.earned && a.quote) {
+    const q = document.createElement("div");
+    q.className = "ach-quote";
+    q.textContent = a.quote;
+    mid.append(q);
+  }
   const pr = document.createElement("div");
   pr.className = "ach-prog";
   pr.textContent = a.earned ? "✓" : `${Math.min(a.current, a.goal)}/${a.goal}`;
-  el.append(ic, nm, pr);
+  el.append(ic, mid, pr);
   return el;
 }
 
