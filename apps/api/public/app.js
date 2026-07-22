@@ -4141,7 +4141,7 @@ const ACH_CATEGORIES = [
   { icon: "🎮", label: "achLblGame", desc: "achReqRate", cur: (s) => s.byType.GRA ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "🌸", label: "achLblAnime", desc: "achReqRate", cur: (s) => s.byType.ANIME ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "📗", label: "achLblManga", desc: "achReqRate", cur: (s) => s.byType.MANGA ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
-  { icon: "🎵", label: "achLblMusic", desc: "achReqRate", cur: (s) => s.byType.MUZYKA ?? 0, tiers: [1, 5, 10, 25, 50] },
+  { icon: "🎵", label: "achLblMusic", desc: "achReqRate", cur: (s) => s.byType.MUZYKA ?? 0, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "✍️", desc: "achReqText", cur: (s) => s.withText, tiers: [1, 5, 10, 25, 50, 100] },
   { icon: "⭐", desc: "achReqPerfect", cur: (s) => s.perfect, tiers: [1, 5, 10, 25, 50] },
   { icon: "📌", desc: "achReqFav", cur: (s) => s.favorites, tiers: [1, 4, 8, 12, 16, 20] },
@@ -4227,13 +4227,14 @@ const ACH_QUOTES = [
     "„My heart and actions are utterly unclouded. They are all those of 'justice'.” — Funny Valentine (JoJo SBR)",
     "„The reason I am killing you is simple. It's because you aimed your blade at my only pride.” — Byakuya Kuchiki (Bleach)",
   ],
-  // 🎵 MUZYKA — 5
+  // 🎵 MUZYKA — 6 (teksty piosenek celowo w oryginale)
   [
     "„Is this the real life? Is this just fantasy?” — Queen, Bohemian Rhapsody",
     "„All you need is love.” — The Beatles",
     "„Hello darkness, my old friend.” — Simon & Garfunkel",
     "„We will, we will rock you.” — Queen",
     "„And now, the end is near…” — Frank Sinatra, My Way",
+    "„Imagine all the people living life in peace.” — John Lennon, Imagine",
   ],
   // ✍️ text — 6
   [
