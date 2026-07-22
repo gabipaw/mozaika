@@ -4220,11 +4220,11 @@ const ACH_QUOTES = [
   ],
   // 📗 MANGA — 5
   [
-    "„I'll take a potato chip… and eat it!” — Death Note",
-    "„Plus Ultra!” — My Hero Academia",
+    "„What's wrong isn't me. What's wrong is the world.” — Kaneki Ken (Tokyo Ghoul)",
+    "„The thing I fear most is losing myself.” — Guts (Berserk)",
     "„I have no enemies. Nobody in this whole world is my enemy.” — Thorfinn (Vinland Saga)",
-    "„Wszystko zgodnie z planem. (Keikaku doori.)” — Death Note",
-    "„The world is not perfect. But it's there for us.” — Fullmetal Alchemist",
+    "„To be invincible means to be able to defeat yourself.” — Miyamoto Musashi (Vagabond)",
+    "„Lesson 5: The next step is always the most important.” — Gyro Zeppeli (JoJo SBR)",
   ],
   // 🎵 MUZYKA — 5
   [
