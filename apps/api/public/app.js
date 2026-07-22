@@ -4378,7 +4378,7 @@ function achRow(a, name) {
   if (a.earned && a.quote) {
     const q = document.createElement("div");
     q.className = "ach-quote";
-    q.textContent = personalize(a.quote, name);
+    q.textContent = personalize(trQuote(a.quote), name);
     mid.append(q);
   }
   const pr = document.createElement("div");
@@ -4432,6 +4432,94 @@ function personalize(text, name) {
   const uname = (name || "").split("@")[0];
   return text.replaceAll("{name}", uname);
 }
+// Tłumaczenia cytatów-tytułów. Klucz = KANONICZNY cytat (to, co ląduje w bazie
+// jako User.title). Tu wyłącznie WYŚWIETLANIE — baza, TITLE_BY_NAME i zapis dalej
+// jadą na kanonicznym, więc zmiana języka nie psuje wybranego tytułu, a cudzy tytuł
+// tłumaczy się u oglądającego. Memy/okrzyki celowo pominięte → fallback do oryginału.
+// Brak wpisu dla języka też → fallback. {name} zostaje (podstawiane przez personalize).
+// prettier-ignore
+const QUOTE_I18N = {
+  "„What's wrong isn't me. What's wrong is the world.” — Kaneki Ken (Tokyo Ghoul)": {
+    pl: "„To nie ze mną jest coś nie tak — to ze światem.” — Kaneki Ken (Tokyo Ghoul)",
+    de: "„Nicht ich bin falsch. Es ist die Welt.” — Kaneki Ken (Tokyo Ghoul)",
+    es: "„El que está mal no soy yo, sino el mundo.” — Kaneki Ken (Tokyo Ghoul)",
+    pt: "„O errado não sou eu, e sim o mundo.” — Kaneki Ken (Tokyo Ghoul)",
+    zh: "「错的不是我，而是这个世界。」 — Kaneki Ken (Tokyo Ghoul)",
+    ja: "「間違っているのは僕じゃない。世界の方だ。」 — Kaneki Ken (Tokyo Ghoul)",
+  },
+  "„The thing I fear most is losing myself.” — Guts (Berserk)": {
+    pl: "„Najbardziej boję się utraty samego siebie.” — Guts (Berserk)",
+    de: "„Was ich am meisten fürchte, ist es, mich selbst zu verlieren.” — Guts (Berserk)",
+    es: "„Lo que más temo es perderme a mí mismo.” — Guts (Berserk)",
+    pt: "„O que mais temo é perder a mim mesmo.” — Guts (Berserk)",
+    zh: "「我最害怕的，是失去自己。」 — Guts (Berserk)",
+    ja: "「俺が最も恐れているのは、自分を見失うことだ。」 — Guts (Berserk)",
+  },
+  "„I have no enemies. Nobody in this whole world is my enemy.” — Thorfinn (Vinland Saga)": {
+    pl: "„Nie mam wrogów. Nikt na całym świecie nie jest moim wrogiem.” — Thorfinn (Vinland Saga)",
+    de: "„Ich habe keine Feinde. Niemand auf der ganzen Welt ist mein Feind.” — Thorfinn (Vinland Saga)",
+    es: "„No tengo enemigos. Nadie en todo el mundo es mi enemigo.” — Thorfinn (Vinland Saga)",
+    pt: "„Não tenho inimigos. Ninguém no mundo inteiro é meu inimigo.” — Thorfinn (Vinland Saga)",
+    zh: "「我没有敌人。这世上没有一个人是我的敌人。」 — Thorfinn (Vinland Saga)",
+    ja: "「俺に敵はいない。この世界の誰一人、俺の敵じゃない。」 — Thorfinn (Vinland Saga)",
+  },
+  "„To be invincible means to be able to defeat yourself.” — Miyamoto Musashi (Vagabond)": {
+    pl: "„Być niepokonanym to umieć pokonać samego siebie.” — Miyamoto Musashi (Vagabond)",
+    de: "„Unbesiegbar zu sein heißt, sich selbst besiegen zu können.” — Miyamoto Musashi (Vagabond)",
+    es: "„Ser invencible significa ser capaz de vencerte a ti mismo.” — Miyamoto Musashi (Vagabond)",
+    pt: "„Ser invencível é ser capaz de vencer a si mesmo.” — Miyamoto Musashi (Vagabond)",
+    zh: "「所谓无敌，就是能够战胜自己。」 — Miyamoto Musashi (Vagabond)",
+    ja: "「無敵とは、己に勝てるということだ。」 — Miyamoto Musashi (Vagabond)",
+  },
+  "„My heart and actions are utterly unclouded. They are all those of 'justice'.” — Funny Valentine (JoJo SBR)": {
+    pl: "„Moje serce i czyny są całkowicie czyste. Wszystkie służą sprawiedliwości.” — Funny Valentine (JoJo SBR)",
+    de: "„Mein Herz und meine Taten sind völlig klar. Sie alle dienen der Gerechtigkeit.” — Funny Valentine (JoJo SBR)",
+    es: "„Mi corazón y mis actos están del todo despejados. Todos son los de la justicia.” — Funny Valentine (JoJo SBR)",
+    pt: "„Meu coração e meus atos são absolutamente límpidos. Todos são os da justiça.” — Funny Valentine (JoJo SBR)",
+    zh: "「我的心与行动毫无阴霾，皆是『正义』之举。」 — Funny Valentine (JoJo SBR)",
+    ja: "「私の心と行動には一点の曇りもない。すべては『正義』のためだ。」 — Funny Valentine (JoJo SBR)",
+  },
+  "„The reason I am killing you is simple. It's because you aimed your blade at my only pride.” — Byakuya Kuchiki (Bleach)": {
+    pl: "„Powód, dla którego cię zabijam, jest prosty: wycelowałeś ostrze w moją jedyną dumę.” — Byakuya Kuchiki (Bleach)",
+    de: "„Der Grund, warum ich dich töte, ist einfach: Du hast deine Klinge gegen meinen einzigen Stolz gerichtet.” — Byakuya Kuchiki (Bleach)",
+    es: "„La razón por la que te mato es simple: apuntaste tu espada a mi único orgullo.” — Byakuya Kuchiki (Bleach)",
+    pt: "„A razão pela qual vou te matar é simples: você apontou sua lâmina para o meu único orgulho.” — Byakuya Kuchiki (Bleach)",
+    zh: "「我杀你的理由很简单——因为你将刀刃指向了我唯一的骄傲。」 — Byakuya Kuchiki (Bleach)",
+    ja: "「お前を斬る理由は単純だ。お前が、私の唯一の誇りに刃を向けたからだ。」 — Byakuya Kuchiki (Bleach)",
+  },
+  "„Seven minutes. Seven minutes is all I can spare to play with you.” — Albert Wesker (Resident Evil 5)": {
+    pl: "„Siedem minut. Tylko tyle mogę poświęcić na zabawę z tobą.” — Albert Wesker (Resident Evil 5)",
+    de: "„Sieben Minuten. Mehr Zeit kann ich nicht erübrigen, um mit dir zu spielen.” — Albert Wesker (Resident Evil 5)",
+    es: "„Siete minutos. Es todo el tiempo que puedo dedicar a jugar contigo.” — Albert Wesker (Resident Evil 5)",
+    pt: "„Sete minutos. É todo o tempo que posso gastar brincando com você.” — Albert Wesker (Resident Evil 5)",
+    zh: "「七分钟。我只能抽出七分钟来陪你玩。」 — Albert Wesker (Resident Evil 5)",
+    ja: "「7分だ。お前と遊んでやれるのは、たった7分だけだ。」 — Albert Wesker (Resident Evil 5)",
+  },
+  "„Never f*ck with {name} Kitsuragi.” — Disco Elysium": {
+    pl: "„Nigdy nie zadzieraj z {name} Kitsuragi.” — Disco Elysium",
+    de: "„Leg dich niemals mit {name} Kitsuragi an.” — Disco Elysium",
+    es: "„Nunca te metas con {name} Kitsuragi.” — Disco Elysium",
+    pt: "„Nunca mexa com {name} Kitsuragi.” — Disco Elysium",
+    zh: "「永远别惹 {name} Kitsuragi。」 — Disco Elysium",
+    ja: "「{name}・キツラギに手を出すな。」 — Disco Elysium",
+  },
+};
+// Tłumaczy pełny cytat (ze źródłem) na aktualny język; fallback = kanoniczny.
+function trQuote(canonical) {
+  const e = QUOTE_I18N[canonical];
+  return (e && e[lang]) || canonical;
+}
+// Wersja dla samego tytułu (bez źródła) — pochodna QUOTE_I18N, ten sam klucz co w bazie.
+const TITLE_I18N = new Map();
+for (const [full, tr] of Object.entries(QUOTE_I18N)) {
+  const m = {};
+  for (const [lg, v] of Object.entries(tr)) m[lg] = quoteOnly(v);
+  TITLE_I18N.set(quoteOnly(full), m);
+}
+function trTitle(canonicalTitle) {
+  const m = TITLE_I18N.get(canonicalTitle);
+  return (m && m[lang]) || canonicalTitle;
+}
 const TITLES = ACHIEVEMENTS.filter((a) => a.quote).map((a) => ({
   name: quoteOnly(a.quote),
   unlock: (s) => a.cur(s) >= a.goal,
@@ -4451,7 +4539,7 @@ function openTitleInfo(title, name) {
   const quote = document.createElement("div");
   quote.className = "title-info-quote";
   // Pełny cytat ze źródłem (a.quote), albo sam tytuł gdy spoza listy (np. Developer).
-  quote.textContent = personalize(a ? a.quote : title, name);
+  quote.textContent = personalize(a ? trQuote(a.quote) : trTitle(title), name);
   body.append(quote);
   const how = document.createElement("div");
   how.className = "title-info-how";
@@ -4485,7 +4573,7 @@ function renderTitleList() {
   // Konto twórcy (isDev) ma wszystkie tytuły odblokowane do wyboru.
   for (const ti of TITLES)
     if (myProfile.isDev || ti.unlock(s))
-      options.push({ name: ti.name, label: personalize(ti.name, me) });
+      options.push({ name: ti.name, label: personalize(trTitle(ti.name), me) });
   if (myProfile.isDev) options.push({ name: DEV_TITLE, label: DEV_TITLE });
   for (const o of options) {
     const b = document.createElement("button");
@@ -5665,7 +5753,7 @@ function renderProfileData(data, readOnly) {
   // imieniem właściciela profilu; surowy tytuł trzymamy do lookupu po kliknięciu.
   const titleEl = $("profileTitle");
   const rawTitle = data.user.title ?? "";
-  const shownTitle = personalize(rawTitle, data.user.displayName);
+  const shownTitle = personalize(trTitle(rawTitle), data.user.displayName);
   titleEl.textContent = shownTitle;
   titleEl.title = shownTitle; // pełny cytat w tooltipie (pigułka obcięta)
   titleEl.dataset.raw = rawTitle;
