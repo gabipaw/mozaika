@@ -4205,8 +4205,8 @@ const ACH_QUOTES = [
     "„It's dangerous to go alone! Take this.” — The Legend of Zelda",
     "„The cake is a lie.” — Portal",
     "„Finish him!” — Mortal Kombat",
-    "„War. War never changes.” — Fallout",
-    "„A man chooses, a slave obeys.” — BioShock",
+    "„Snake? Snake?! SNAAAKE!” — Metal Gear Solid",
+    "„Seven minutes. Seven minutes is all I can spare to play with you.” — Albert Wesker (Resident Evil 5)",
     "„Never f*ck with Kim Kitsuragi.” — Disco Elysium",
   ],
   // 🌸 ANIME — 6 (JoJo i Hokuto no Ken zostają na progach 5 i 50)
