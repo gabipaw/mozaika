@@ -4207,7 +4207,7 @@ const ACH_QUOTES = [
     "„Finish him!” — Mortal Kombat",
     "„Snake? Snake?! SNAAAKE!” — Metal Gear Solid",
     "„Seven minutes. Seven minutes is all I can spare to play with you.” — Albert Wesker (Resident Evil 5)",
-    "„Never f*ck with {name} Kitsuragi.” — Disco Elysium",
+    "„Never f*ck with {name} Kitsuragi.” — Disco Elysium (Kim Kitsuragi)",
   ],
   // 🌸 ANIME — 6 (JoJo i Hokuto no Ken zostają na progach 5 i 50)
   [
@@ -4495,13 +4495,13 @@ const QUOTE_I18N = {
     zh: "「七分钟。我只能抽出七分钟来陪你玩。」 — Albert Wesker (Resident Evil 5)",
     ja: "「7分だ。お前と遊んでやれるのは、たった7分だけだ。」 — Albert Wesker (Resident Evil 5)",
   },
-  "„Never f*ck with {name} Kitsuragi.” — Disco Elysium": {
-    pl: "„Nigdy nie zadzieraj z {name} Kitsuragi.” — Disco Elysium",
-    de: "„Leg dich niemals mit {name} Kitsuragi an.” — Disco Elysium",
-    es: "„Nunca te metas con {name} Kitsuragi.” — Disco Elysium",
-    pt: "„Nunca mexa com {name} Kitsuragi.” — Disco Elysium",
-    zh: "「永远别惹 {name} Kitsuragi。」 — Disco Elysium",
-    ja: "「{name}・キツラギに手を出すな。」 — Disco Elysium",
+  "„Never f*ck with {name} Kitsuragi.” — Disco Elysium (Kim Kitsuragi)": {
+    pl: "„Nigdy nie zadzieraj z {name} Kitsuragi.” — Disco Elysium (Kim Kitsuragi)",
+    de: "„Leg dich niemals mit {name} Kitsuragi an.” — Disco Elysium (Kim Kitsuragi)",
+    es: "„Nunca te metas con {name} Kitsuragi.” — Disco Elysium (Kim Kitsuragi)",
+    pt: "„Nunca mexa com {name} Kitsuragi.” — Disco Elysium (Kim Kitsuragi)",
+    zh: "「永远别惹 {name} Kitsuragi。」 — Disco Elysium (Kim Kitsuragi)",
+    ja: "「{name}・キツラギに手を出すな。」 — Disco Elysium (Kim Kitsuragi)",
   },
   "„Każda podróż zaczyna się od jednego kroku.” — Laozi": {
     en: "„A journey of a thousand miles begins with a single step.” — Laozi",
