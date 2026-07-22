@@ -833,6 +833,24 @@
         </div>
       </div>
 
+      <!-- Info o tytule: pełny cytat + jak zdobyty (klik w pigułkę przy imieniu) -->
+      <div id="titleInfoOverlay" class="overlay hidden">
+        <div class="overlay-card title-info-card">
+          <div class="overlay-head">
+            <h2 data-i18n="titleInfoHead">🏷️ Twój tytuł</h2>
+            <button
+              id="titleInfoClose"
+              class="overlay-close"
+              type="button"
+              data-i18n="close"
+            >
+              ✕ Zamknij
+            </button>
+          </div>
+          <div id="titleInfoBody" class="title-info"></div>
+        </div>
+      </div>
+
       <!-- Wybór list, do których dorzucić bieżący tytuł (z widoku szczegółów) -->
       <div id="listPickerOverlay" class="overlay hidden">
         <div class="overlay-card">

@@ -719,6 +719,35 @@ h2 {
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: bottom;
+  cursor: pointer;
+}
+.profile-title:hover {
+  background: var(--accent);
+  color: #05221d;
+}
+/* Okno „info o tytule": duży cytat + skąd go masz. */
+.title-info {
+  padding: 4px 2px 2px;
+}
+.title-info-quote {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text);
+}
+.title-info-how {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.title-info-ic {
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 /* Lista wszystkich osiągnięć w oknie MUSI się przewijać (jest ich 100). Twardy

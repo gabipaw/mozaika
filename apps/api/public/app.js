@@ -204,6 +204,9 @@ const I18N = {
     confirmDeleteList: "Usunąć listę „{name}”?",
     newListPrompt: "Nazwa nowej listy:",
     achievements: "🏆 Osiągnięcia",
+    titleInfoHead: "🏷️ Twój tytuł",
+    titleInfoHow: "Odblokowane przez: {req}",
+    titleInfoSpecial: "Tytuł specjalny.",
     achLblFilm: "Filmy",
     achLblSerial: "Seriale",
     achLblBook: "Książki",
@@ -545,6 +548,9 @@ const I18N = {
     confirmDeleteList: "Delete list “{name}”?",
     newListPrompt: "New list name:",
     achievements: "🏆 Achievements",
+    titleInfoHead: "🏷️ Your title",
+    titleInfoHow: "Unlocked by: {req}",
+    titleInfoSpecial: "Special title.",
     achLblFilm: "Films",
     achLblSerial: "TV shows",
     achLblBook: "Books",
@@ -888,6 +894,9 @@ const I18N = {
     confirmDeleteList: "Liste „{name}” löschen?",
     newListPrompt: "Name der neuen Liste:",
     achievements: "🏆 Erfolge",
+    titleInfoHead: "🏷️ Dein Titel",
+    titleInfoHow: "Freigeschaltet durch: {req}",
+    titleInfoSpecial: "Spezialtitel.",
     achLblFilm: "Filme",
     achLblSerial: "Serien",
     achLblBook: "Bücher",
@@ -1223,6 +1232,9 @@ const I18N = {
     confirmDeleteList: "¿Eliminar la lista «{name}»?",
     newListPrompt: "Nombre de la nueva lista:",
     achievements: "🏆 Logros",
+    titleInfoHead: "🏷️ Tu título",
+    titleInfoHow: "Desbloqueado por: {req}",
+    titleInfoSpecial: "Título especial.",
     achLblFilm: "Películas",
     achLblSerial: "Series",
     achLblBook: "Libros",
@@ -1559,6 +1571,9 @@ const I18N = {
     confirmDeleteList: "Eliminar a lista «{name}»?",
     newListPrompt: "Nome da nova lista:",
     achievements: "🏆 Conquistas",
+    titleInfoHead: "🏷️ Seu título",
+    titleInfoHow: "Desbloqueado por: {req}",
+    titleInfoSpecial: "Título especial.",
     achLblFilm: "Filmes",
     achLblSerial: "Séries",
     achLblBook: "Livros",
@@ -1892,6 +1907,9 @@ const I18N = {
     confirmDeleteList: "删除清单“{name}”？",
     newListPrompt: "新清单名称：",
     achievements: "🏆 成就",
+    titleInfoHead: "🏷️ 你的称号",
+    titleInfoHow: "解锁方式：{req}",
+    titleInfoSpecial: "特殊称号。",
     achLblFilm: "电影",
     achLblSerial: "剧集",
     achLblBook: "图书",
@@ -2220,6 +2238,9 @@ const I18N = {
     confirmDeleteList: "リスト「{name}」を削除しますか？",
     newListPrompt: "新しいリスト名：",
     achievements: "🏆 実績",
+    titleInfoHead: "🏷️ あなたの称号",
+    titleInfoHow: "解除条件：{req}",
+    titleInfoSpecial: "特別な称号。",
     achLblFilm: "映画",
     achLblSerial: "ドラマ",
     achLblBook: "書籍",
@@ -4401,6 +4422,42 @@ const TITLES = ACHIEVEMENTS.filter((a) => a.quote).map((a) => ({
   name: quoteOnly(a.quote),
   unlock: (s) => a.cur(s) >= a.goal,
 }));
+// Odwrotna mapa: nazwa tytułu (sam cytat) → odznaka, która go daje. Pozwala po
+// kliknięciu w tytuł pokazać pełny cytat (ze źródłem) i jak został zdobyty.
+const TITLE_BY_NAME = new Map(
+  ACHIEVEMENTS.filter((a) => a.quote).map((a) => [quoteOnly(a.quote), a]),
+);
+
+// Okno „info o tytule" — pełny cytat + które osiągnięcie go odblokowało.
+function openTitleInfo(title) {
+  if (!title) return;
+  const body = $("titleInfoBody");
+  body.innerHTML = "";
+  const a = TITLE_BY_NAME.get(title);
+  const quote = document.createElement("div");
+  quote.className = "title-info-quote";
+  // Pełny cytat ze źródłem (a.quote), albo sam tytuł gdy spoza listy (np. Developer).
+  quote.textContent = a ? a.quote : title;
+  body.append(quote);
+  const how = document.createElement("div");
+  how.className = "title-info-how";
+  if (a) {
+    const ic = document.createElement("span");
+    ic.className = "title-info-ic";
+    ic.textContent = a.icon;
+    const txt = document.createElement("span");
+    txt.textContent = t("titleInfoHow", { req: achLabel(a) });
+    how.append(ic, txt);
+  } else {
+    how.textContent = t("titleInfoSpecial");
+  }
+  body.append(how);
+  $("titleInfoOverlay").classList.remove("hidden");
+}
+
+function closeTitleInfo() {
+  $("titleInfoOverlay").classList.add("hidden");
+}
 
 // Lista tytułów do wyboru w Ustawieniach: „Brak" + odblokowane + (dla twórcy) Developer.
 function renderTitleList() {
@@ -5592,6 +5649,9 @@ function renderProfileData(data, readOnly) {
   titleEl.textContent = data.user.title ?? "";
   titleEl.title = data.user.title ?? ""; // pełny cytat w tooltipie (pigułka obcięta)
   titleEl.classList.toggle("hidden", !data.user.title);
+  // Klikalny tytuł: pokazuje pełny cytat i jak został zdobyty.
+  titleEl.setAttribute("role", "button");
+  titleEl.setAttribute("tabindex", data.user.title ? "0" : "-1");
   const img = $("avatarImg");
   const initial = $("avatarInitial");
   if (data.user.avatarUrl) {
@@ -7082,6 +7142,20 @@ async function init() {
       $("achievementsOverlay").classList.add("hidden");
     }
   });
+  // Klik w tytuł przy imieniu → pełny cytat + jak zdobyty.
+  $("profileTitle").addEventListener("click", () =>
+    openTitleInfo($("profileTitle").textContent),
+  );
+  $("profileTitle").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openTitleInfo($("profileTitle").textContent);
+    }
+  });
+  $("titleInfoClose").addEventListener("click", closeTitleInfo);
+  $("titleInfoOverlay").addEventListener("click", (e) => {
+    if (e.target === $("titleInfoOverlay")) closeTitleInfo();
+  });
   $("logout").addEventListener("click", logout);
   $("hello").addEventListener("click", openProfile);
   $("topBack").addEventListener("click", () => {
@@ -7210,7 +7284,8 @@ async function init() {
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if ($("settingsOverlay").classList.contains("open")) closeSettings();
+    if (!$("titleInfoOverlay").classList.contains("hidden")) closeTitleInfo();
+    else if ($("settingsOverlay").classList.contains("open")) closeSettings();
     else if (!$("notifOverlay").classList.contains("hidden")) closeNotif();
     else if (!$("friendsOverlay").classList.contains("hidden")) closeFriends();
     else if (!$("seeAllOverlay").classList.contains("hidden")) closeSeeAll();
