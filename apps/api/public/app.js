@@ -4387,31 +4387,20 @@ function renderAchievements(data) {
   for (const a of ordered) box.append(achRow(a));
 }
 
-// --- Tytuły (do pokazania przy imieniu) — odblokowywane osiągnięciami z odniesieniami
-// do kultury mediów. Nazwy są celowo nietłumaczone (jak ksywki/odznaki). ---
+// --- Tytuły (do pokazania przy imieniu) = cytaty z odznak. Jeden achievement =
+// jeden tytuł: zdobycie odznaki odblokowuje jej popkulturowy cytat jako noszony
+// tytuł. Nazwy celowo nietłumaczone (jak ksywki). ---
 const DEV_TITLE = "👑 Developer";
-const TITLES = [
-  { name: "Rookie", unlock: (s) => s.total >= 1 },
-  { name: "Collector", unlock: (s) => s.total >= 50 },
-  { name: "Living Legend", unlock: (s) => s.total >= 250 },
-  { name: "The Cinephile", unlock: (s) => (s.byType.FILM ?? 0) >= 50 },
-  { name: "Binge Master", unlock: (s) => (s.byType.SERIAL ?? 0) >= 50 },
-  { name: "Bookworm", unlock: (s) => (s.byType.KSIAZKA ?? 0) >= 25 },
-  {
-    name: "The Otaku",
-    unlock: (s) => (s.byType.ANIME ?? 0) + (s.byType.MANGA ?? 0) >= 50,
-  },
-  { name: "Speedrunner", unlock: (s) => (s.byType.GRA ?? 0) >= 25 },
-  { name: "Audiophile", unlock: (s) => (s.byType.MUZYKA ?? 0) >= 25 },
-  { name: "The Critic", unlock: (s) => s.withText >= 25 },
-  { name: "Perfectionist", unlock: (s) => s.perfect >= 10 },
-  { name: "The Harsh Judge", unlock: (s) => s.harsh >= 10 },
-  { name: "Time Traveler", unlock: (s) => s.decades >= 5 },
-  { name: "Genre Bender", unlock: (s) => s.genres >= 15 },
-  { name: "The Curator", unlock: (s) => s.lists >= 3 },
-  { name: "Influencer", unlock: (s) => s.followers >= 10 },
-  { name: "Socialite", unlock: (s) => s.following >= 10 },
-];
+// Sam cytat bez atrybucji „ — Źródło" — tytuł to sam cytat. Obcinamy OSTATNI
+// separator, bo część cytatów sama zawiera „ — " (np. „…shindeiru. — Nani?!").
+function quoteOnly(q) {
+  const i = q.lastIndexOf(" — ");
+  return i === -1 ? q : q.slice(0, i);
+}
+const TITLES = ACHIEVEMENTS.filter((a) => a.quote).map((a) => ({
+  name: quoteOnly(a.quote),
+  unlock: (s) => a.cur(s) >= a.goal,
+}));
 
 // Lista tytułów do wyboru w Ustawieniach: „Brak" + odblokowane + (dla twórcy) Developer.
 function renderTitleList() {
@@ -5601,6 +5590,7 @@ function renderProfileData(data, readOnly) {
   // „Tytuł" przy imieniu (pill) — jeśli ustawiony.
   const titleEl = $("profileTitle");
   titleEl.textContent = data.user.title ?? "";
+  titleEl.title = data.user.title ?? ""; // pełny cytat w tooltipie (pigułka obcięta)
   titleEl.classList.toggle("hidden", !data.user.title);
   const img = $("avatarImg");
   const initial = $("avatarInitial");

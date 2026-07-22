@@ -712,6 +712,13 @@ h2 {
   background: var(--card);
   border: 1px solid var(--accent);
   border-radius: 999px;
+  /* Tytuł = cytat: bywa długi (np. Fight Club). Nie rozpychamy nagłówka —
+     obcinamy z wielokropkiem, pełny tekst w tooltipie (atrybut title). */
+  max-width: min(100%, 42ch);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 
 /* Lista wszystkich osiągnięć w oknie MUSI się przewijać (jest ich 100). Twardy
