@@ -4419,11 +4419,15 @@ function quoteOnly(q) {
   const i = q.lastIndexOf(" — ");
   return i === -1 ? q : q.slice(0, i);
 }
-// Podstawia imię użytkownika w cytatach z {name} (np. tytuł „Bonda"). Wołane
+// Podstawia username użytkownika w cytatach z {name} (np. tytuł „Bonda"). Wołane
 // PRZY WYŚWIETLANIU — w bazie/tytule zostaje literalne {name}, żeby na cudzym
 // profilu podstawić właściciela i by lookup w TITLE_BY_NAME dalej działał.
+// Bierzemy część przed „@": gdy nazwa to e-mail, w cytacie ma być username, nie
+// pełny adres (dla zwykłych nazw bez „@" nic to nie zmienia).
 function personalize(text, name) {
-  return text ? text.replaceAll("{name}", name || "") : text;
+  if (!text) return text;
+  const uname = (name || "").split("@")[0];
+  return text.replaceAll("{name}", uname);
 }
 const TITLES = ACHIEVEMENTS.filter((a) => a.quote).map((a) => ({
   name: quoteOnly(a.quote),
