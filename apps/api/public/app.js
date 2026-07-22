@@ -4390,9 +4390,11 @@ function achRow(a, name) {
 function renderAchievements(data) {
   const s = achStats(data);
   const name = data.user?.displayName;
+  // Konto twórcy (isDev) ma wszystkie osiągnięcia odblokowane.
+  const dev = !!data.isDev;
   const items = ACHIEVEMENTS.map((a) => {
     const current = a.cur(s);
-    return { ...a, current, earned: current >= a.goal };
+    return { ...a, current, earned: dev || current >= a.goal };
   });
   const earned = items.filter((a) => a.earned);
   $("achievementsCount").textContent = `${earned.length}/${items.length}`;
@@ -4479,8 +4481,10 @@ function renderTitleList() {
   const me = myProfile.user?.displayName;
   const current = myProfile.user?.title ?? "";
   const options = [{ name: "", label: t("titleNone") }];
+  // Konto twórcy (isDev) ma wszystkie tytuły odblokowane do wyboru.
   for (const ti of TITLES)
-    if (ti.unlock(s)) options.push({ name: ti.name, label: personalize(ti.name, me) });
+    if (myProfile.isDev || ti.unlock(s))
+      options.push({ name: ti.name, label: personalize(ti.name, me) });
   if (myProfile.isDev) options.push({ name: DEV_TITLE, label: DEV_TITLE });
   for (const o of options) {
     const b = document.createElement("button");
