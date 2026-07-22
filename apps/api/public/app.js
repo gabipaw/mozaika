@@ -4209,20 +4209,20 @@ const ACH_QUOTES = [
     "„A man chooses, a slave obeys.” — BioShock",
     "„Praise the Sun! \\[T]/” — Dark Souls",
   ],
-  // 🌸 ANIME — 6
+  // 🌸 ANIME — 6 (JoJo i Hokuto no Ken zostają na progach 5 i 50)
   [
-    "„Believe it! (Dattebayo)” — Naruto",
+    "„Those who do not understand true pain can never understand true peace.” — Pain (Naruto Shippuden)",
     "„Yare yare daze.” — JoJo's Bizarre Adventure",
-    "„People die when they are killed.” — Fate/stay night",
-    "„I'm gonna be King of the Pirates!” — One Piece",
+    "„A lesson without pain is meaningless.” — Edward Elric",
+    "„I am Kira.” — Death Note",
     "„Omae wa mou shindeiru. — Nani?!” — Hokuto no Ken",
-    "„Tatakae. Tatakae! (Walcz!)” — Attack on Titan",
+    "„If the truth is cruel, then a lie must be kind. That’s why kindness is a lie.” — Hachiman Hikigaya",
   ],
   // 📗 MANGA — 5
   [
     "„I'll take a potato chip… and eat it!” — Death Note",
     "„Plus Ultra!” — My Hero Academia",
-    "„A lesson without pain is meaningless.” — Fullmetal Alchemist",
+    "„I have no enemies. Nobody in this whole world is my enemy.” — Thorfinn (Vinland Saga)",
     "„Wszystko zgodnie z planem. (Keikaku doori.)” — Death Note",
     "„The world is not perfect. But it's there for us.” — Fullmetal Alchemist",
   ],
